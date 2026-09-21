@@ -1,0 +1,17 @@
+{
+  "version": "scCellFie-0.6.2-human-Recon2",
+  "enabled": true,
+  "threshold_key": "sccellfie_threshold",
+  "organism": "human",
+  "source": "https://github.com/earmingol/scCellFie/tree/main/task_data/homo_sapiens",
+  "retrieved_at": "2026-09-21",
+  "files": {
+    "Rxn-Info-Recon2-2.json": "3930736d67ff6beda56d5173c3e4b7ebeb768eb92c4aa7e872d1823d5cf136c1",
+    "Task-Info.csv": "1d5b148f8a1b440d6d7556bed346ea6e818e78b00a495c0d304996cb5a4222d3",
+    "Task_by_Rxn.csv": "5abd0aff87d02b29a0725c8f828deb62d2a03f536fc92c083c6c26d46c4a3447",
+    "Task_by_Gene.csv": "e19001535af75e99ed2e55965d5d5845bae0e6638188142a44dc99045d467c94",
+    "Rxn_by_Gene.csv": "5d800dc02c0741b15c7a4ffaa7ee82c722dfc1ebbace118641748f6c6fb0d7fc",
+    "Thresholds.csv": "10cf06e90df4f267426d34c7725a44dfe576e6cf9e739467a51b71500626eda0"
+  },
+  "note": "All six official human Recon2 database files are frozen with SHA-256. Thresholds.csv supplies the sccellfie_threshold column used for every expression source."
+}

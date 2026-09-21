@@ -1,0 +1,25 @@
+{
+  "version": "replogle-v1",
+  "status": "frozen",
+  "source": "arcinstitute/State-Replogle-Filtered :: replogle_concat.h5ad",
+  "split_unit": "perturbation",
+  "cell_line": "K562",
+  "development_groups": [],
+  "calibration_groups": [],
+  "test_groups": [
+    "AAAS",
+    "AAMP",
+    "AARS",
+    "AARS2",
+    "AASDHPPT",
+    "AATF",
+    "ABCB7",
+    "ABCE1",
+    "ABHD11",
+    "ABHD17A",
+    "ABT1",
+    "ACD"
+  ],
+  "frozen_test_group_count": 969,
+  "decision_rule": "Test groups are the K562 fewshot test perturbations declared in the upstream k562.toml. Calibration groups stay empty until a development split is chosen; the full test list must not be evaluated until then."
+}

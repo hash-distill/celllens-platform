@@ -1,0 +1,7 @@
+api_prefix: /api/v1
+single_gpu_concurrency: 1
+cpu_concurrency: 2
+max_projection_points: 12000
+poll_interval_seconds: 2
+run_retention_days: 30
+

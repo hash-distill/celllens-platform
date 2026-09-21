@@ -1,0 +1,14 @@
+version: metabolic-gate-v1
+organism: human
+threshold_key: sccellfie_threshold
+evidence_levels:
+  supported:
+    min_gene_fraction: 0.80
+    min_reaction_fraction: 0.80
+  exploratory:
+    min_gene_fraction: 0.60
+    min_reaction_fraction: 0.60
+notes:
+  - Thresholds are development defaults and must be frozen before opening the final test split.
+  - Missing genes are reported; they are never silently filled with zero.
+

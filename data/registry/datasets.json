@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "id": "replogle-k562-control-v1",
+      "cell_line": "K562",
+      "control_path": "data/raw/replogle-k562/control.h5ad",
+      "control_sha256": "38fba985d1ad907ab2d583e109795031dc67ec3cc7e2c3b4a70cd7aabc9e6678",
+      "observed_path": "data/raw/replogle-k562/heldout.h5ad",
+      "observed_sha256": "90f4fb4bfc7867b7903d0c78bff74a71ad38c1ccb1175db84cc4c7f4f3d8b427",
+      "split_path": "configs/splits/replogle-v1.json",
+      "split_sha256": "b3e2c9c2d53ce488a2ebd42b4132333e4b5b0947bbb6680d81d8abdc50de01b2",
+      "license": "Replogle et al. 2022 (CC-BY-4.0)",
+      "enabled": true
+    }
+  ]
+}
