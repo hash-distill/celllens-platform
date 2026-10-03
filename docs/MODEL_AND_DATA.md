@@ -43,9 +43,9 @@ scCellFie 使用冻结的 sccellfie_threshold，各来源共用阈值，关闭�
 
 ## 验证边界
 
-validation 分支在有匹配观测且代谢分析成功时生成 validation_metrics.json，含 Spearman、MAE、方向一致率、Top-K 重叠及有效/排除任务数。当前无公开查询接口，指标也不在 RunSummary 中。
+validation 分支在有匹配观测且代谢分析成功时生成 validation_metrics.json，含 Spearman、MAE、方向一致率、Top-K 重叠及有效/排除任务数。可通过 /runs/{run_id}/validation 查询已生成指标；指标不在 RunSummary 中，协议状态仍为 unconfirmed。
 
-拆分记录需在正式实验前核对：test_groups 列出 12 个扰动，frozen_test_group_count 却写为 969；development/calibration 列表为空。请求入口没有按拆分限制验证请求。因此不能称它为已完成的完整 969 扰动验证协议。本次仅整理文档，没有修改拆分或算法代码。
+拆分记录需在正式实验前核对：test_groups 列出 12 个扰动，frozen_test_group_count 却写为 969；development/calibration 列表为空。请求入口没有按拆分限制验证请求。因此不能称它为已完成的完整 969 扰动验证协议。当前保留原拆分及评价算法，前端不开放验证提交；需先由数据负责人确定开发/校准名单与冻结测试协议。
 
 历史 MYC 在线冒烟验证了工程链路。2026-10-03 复查命中其缓存，六类结果接口正常。正式生物学泛化、匹配基线和留出评估尚未完成，不能从工程测试或合成演示推断。
 

@@ -1,5 +1,8 @@
+from typing import Literal
+
 from fastapi import APIRouter, Request
 
+from backend.app.core.precomputed import available_bundles
 from backend.app.schemas import ContextItem
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
@@ -44,7 +47,7 @@ def contexts(request: Request) -> list[ContextItem]:
             and container.settings.gpu_available
         )
         validation_ready = validation_ready and online_ready
-        precomputed_ready = (container.settings.demo_root / row["cell_line"]).is_dir()
+        precomputed_ready = bool(available_bundles(container.settings.demo_root, row["cell_line"]))
         reasons = []
         if not model_ready:
             reasons.append("model assets are disabled, missing, or have invalid hashes")
@@ -69,6 +72,17 @@ def contexts(request: Request) -> list[ContextItem]:
 
 
 @router.get("/perturbations")
-def perturbations(cell_line: str, request: Request) -> dict[str, object]:
-    registry = request.app.state.container.registry
-    return {"cell_line": cell_line, "items": registry.supported_perturbations(cell_line)}
+def perturbations(
+    cell_line: str,
+    request: Request,
+    mode: Literal["online", "precomputed", "validation"] = "online",
+) -> dict[str, object]:
+    container = request.app.state.container
+    if mode == "precomputed":
+        items = available_bundles(container.settings.demo_root, cell_line)
+    elif mode == "validation":
+        # No approved development validation protocol/list is registered yet.
+        items = []
+    else:
+        items = container.registry.supported_perturbations(cell_line)
+    return {"cell_line": cell_line, "mode": mode, "items": items}

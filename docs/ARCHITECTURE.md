@@ -1,12 +1,12 @@
 # 系统架构
 
-CellLens 分为三个层次：HTTP 接口接收请求，任务管线执行模型与科学计算，MySQL 和文件系统保存过程及产物。前端将通过公开接口访问这些能力，目前尚未接入。
+CellLens 分为三个层次：HTTP 接口接收请求，任务管线执行模型与科学计算，MySQL 和文件系统保存过程及产物。Vue 前端通过公开接口访问这些能力，生产构建由 FastAPI 提供；开发环境由 Vite 代理 /api。
 
 ## 一次分析如何流转
 
 ```mermaid
 flowchart TD
-    UI[前端工作台：待接入] --> API[FastAPI 接口]
+    UI[Vue 工作台] --> API[FastAPI 接口]
     API --> CHECK[校验请求与注册资产]
     CHECK --> MODE{运行模式}
     MODE -->|online / validation| CACHE{完成结果缓存}
@@ -39,6 +39,7 @@ flowchart TD
 
 | 层次 | 位置 | 职责 |
 |---|---|---|
+| 前端 | `frontend/src/` | 页面、Pinia 状态、统一请求层、图表及本机记录 |
 | 应用入口 | `backend/app/main.py`、`container.py`、`config.py` | 配置、组件组装、worker 生命周期、health/ready |
 | HTTP 与契约 | `backend/app/api/`、`schemas.py` | catalog、运行与结果接口、严格请求与响应结构 |
 | 资产管理 | `backend/app/core/registry.py` | 注册表、工程内路径限制、文件哈希验证 |
@@ -93,4 +94,4 @@ data/derived/runs/
 
 模型或表达契约失败会使任务失败。已捕获的代谢数据库、覆盖或表达问题会留下转录结果，并写入代谢不可用警告；未捕获异常仍会使整个任务失败。只有成功完成的在线/验证运行进入缓存。
 
-当前尚无用户登录、权限隔离、公开运行列表、完整溯源查询接口和验证指标查询接口；应按内部科研使用范围理解现有服务。
+当前可查询运行 manifest 中的历史模型、数据与哈希，以及已有验证指标。尚无用户登录、权限隔离或公开运行列表；验证协议与基因—反应—任务映射仍需补齐，服务按内部科研使用范围使用。

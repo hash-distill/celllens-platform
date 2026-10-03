@@ -1,15 +1,17 @@
 import csv
 import json
+import math
 import random
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 
 from backend.app.core.cache import build_cache_key, code_fingerprint
 from backend.app.core.errors import AssetNotReadyError, RegistryError
+from backend.app.core.precomputed import load_bundle
 from backend.app.core.run_manifest import atomic_write_json, file_sha256
 from backend.app.schemas import CreateRunRequest, CreateRunResponse, RunRecord, RunStatus, RunSummary
 
@@ -54,9 +56,7 @@ async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunRe
             "checkpoint_sha256": container.registry.verify_entry(
                 model, "checkpoint_path", "checkpoint_sha256"
             ),
-            "control_sha256": container.registry.verify_entry(
-                dataset, "control_path", "control_sha256"
-            ),
+            "control_sha256": container.registry.verify_entry(dataset, "control_path", "control_sha256"),
         }
         for entry, path_field, hash_field in (
             (model, "gene_list_path", "gene_list_sha256"),
@@ -102,43 +102,22 @@ def _create_precomputed_run(payload: CreateRunRequest, container: Any) -> Create
             },
         )
     try:
-        manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
-        files = manifest["files"]
-        if not isinstance(files, dict) or "summary.json" not in files:
-            raise ValueError("Precomputed manifest must hash summary.json")
-        for relative_name, expected in files.items():
-            artifact = (source / relative_name).resolve()
-            if not artifact.is_relative_to(source.resolve()) or not artifact.is_file():
-                raise ValueError(f"Invalid precomputed artifact path: {relative_name}")
-            if file_sha256(artifact).lower() != str(expected).lower():
-                raise ValueError(f"Precomputed artifact hash mismatch: {relative_name}")
-        template = RunSummary.model_validate_json(summary_source.read_text(encoding="utf-8"))
+        template, manifest = load_bundle(source, payload.cell_line, payload.perturbation)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise HTTPException(
             status_code=500,
             detail={"code": "INVALID_PRECOMPUTED_RESULT", "message": str(exc)},
         ) from exc
-    if template.cell_line != payload.cell_line or template.perturbation.upper() != payload.perturbation:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "code": "INVALID_PRECOMPUTED_RESULT",
-                "message": "Summary context does not match request",
-            },
-        )
-
     run_id = container.pipeline.allocate_run_id()
     container.store.create(run_id, payload)
     destination = container.settings.derived_root / run_id
     destination.mkdir(parents=True, exist_ok=False)
-    for item in source.iterdir():
-        if item.name == "summary.json":
+    for relative_name in manifest["files"]:
+        if relative_name in {"summary.json", "manifest.json"}:
             continue
-        target = destination / item.name
-        if item.is_dir():
-            shutil.copytree(item, target)
-        elif item.is_file():
-            shutil.copy2(item, target)
+        target = destination / relative_name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source / relative_name, target)
     summary = template.model_copy(update={"run_id": run_id})
     atomic_write_json(destination / "summary.json", summary.model_dump(mode="json"))
     atomic_write_json(
@@ -146,6 +125,9 @@ def _create_precomputed_run(payload: CreateRunRequest, container: Any) -> Create
         {
             "request": payload.model_dump(mode="json"),
             "source": str(source.relative_to(container.settings.project_root)),
+            "source_type": "synthetic_precomputed",
+            "source_manifest_sha256": file_sha256(source_manifest),
+            "bundle_files": manifest["files"],
         },
     )
     record = container.store.transition(
@@ -224,10 +206,64 @@ def get_metabolic_tasks(
     run_id: str,
     request: Request,
     limit: int = Query(default=1000, ge=1, le=10_000),
+    scope: Literal["top", "all"] = "top",
 ) -> dict[str, Any]:
+    if scope == "all":
+        root = request.app.state.container.settings.derived_root / run_id
+        if (root / "metabolic_task_scores.csv").is_file() and (root / "metabolic_coverage.csv").is_file():
+            scores_path = _artifact_path(run_id, "metabolic_task_scores.csv", request)
+            coverage_path = _artifact_path(run_id, "metabolic_coverage.csv", request)
+            try:
+                import pandas as pd
+
+                scores = pd.read_csv(scores_path, index_col=0)
+                coverage = pd.read_csv(coverage_path, index_col=0)
+                numeric = scores.drop(columns=["source"]).apply(pd.to_numeric, errors="coerce")
+                grouped = numeric.groupby(scores["source"], observed=True).mean()
+                delta = grouped.loc["predicted"] - grouped.loc["control"]
+                items = []
+                for task in delta.abs().sort_values(ascending=False).index:
+                    value = float(delta[task])
+                    if not math.isfinite(value):
+                        continue
+                    observed = (
+                        float(grouped.loc["observed", task] - grouped.loc["control", task])
+                        if "observed" in grouped.index
+                        else None
+                    )
+                    entry = coverage.loc[str(task)]
+                    items.append(
+                        {
+                            "id": str(task),
+                            "label": str(task),
+                            "predicted_delta": value,
+                            "observed_delta": observed
+                            if observed is not None and math.isfinite(observed)
+                            else None,
+                            "coverage": float(entry["gene_fraction"]),
+                            "evidence_level": str(entry["evidence_level"]),
+                            "determinant_genes": [],
+                        }
+                    )
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                raise HTTPException(status_code=500, detail={"code": "INVALID_ARTIFACT"}) from exc
+            return {
+                "items": items[:limit],
+                "limit": limit,
+                "truncated": len(items) > limit,
+                "total": len(items),
+                "scope": "all",
+                "excluded_count": len(delta) - len(items),
+            }
     summary = get_summary(run_id, request)
     items = [item.model_dump(mode="json") for item in summary.metabolic_tasks[:limit]]
-    return {"items": items, "limit": limit, "truncated": len(summary.metabolic_tasks) > limit}
+    return {
+        "items": items,
+        "limit": limit,
+        "truncated": len(summary.metabolic_tasks) > limit,
+        "total": len(summary.metabolic_tasks),
+        "scope": "top",
+    }
 
 
 @router.get("/{run_id}/reactions")
@@ -271,6 +307,68 @@ def get_reactions(
 def get_report(run_id: str, request: Request) -> FileResponse:
     path = _artifact_path(run_id, "report.html", request)
     return FileResponse(path, media_type="text/html", filename=f"celllens-{run_id}.html")
+
+
+@router.get("/{run_id}/provenance")
+def get_provenance(run_id: str, request: Request) -> dict[str, Any]:
+    path = _artifact_path(run_id, "manifest.json", request)
+    document = _json_artifact(path)
+    record = request.app.state.container.store.get(run_id)
+    allowed_assets = {
+        "model_id",
+        "dataset_id",
+        "checkpoint_sha256",
+        "gene_list_sha256",
+        "config_sha256",
+        "control_sha256",
+        "observed_sha256",
+        "split_sha256",
+    }
+    assets = document.get("assets", {})
+    return {
+        "run_id": run_id,
+        "source_type": "synthetic_precomputed"
+        if record.request.mode == "precomputed"
+        else record.request.mode,
+        "created_at": record.created_at.isoformat(),
+        "completed_at": record.updated_at.isoformat(),
+        "manifest_sha256": file_sha256(path),
+        "code_sha256": document.get("code_sha256"),
+        "source_manifest_sha256": document.get("source_manifest_sha256"),
+        "assets": {key: value for key, value in assets.items() if key in allowed_assets}
+        if isinstance(assets, dict)
+        else {},
+    }
+
+
+@router.get("/{run_id}/validation")
+def get_validation(run_id: str, request: Request) -> dict[str, Any]:
+    path = _artifact_path(run_id, "validation_metrics.json", request)
+    document = _json_artifact(path)
+    keys = (
+        "spearman",
+        "mae",
+        "direction_agreement",
+        "top_k_overlap",
+        "valid_task_count",
+        "excluded_task_count",
+    )
+    return {
+        "run_id": run_id,
+        "metrics": {key: document.get(key) for key in keys},
+        "protocol_status": "unconfirmed",
+        "warnings": ["Matched observations alone do not establish an approved validation split or protocol."],
+    }
+
+
+def _json_artifact(path: Path) -> dict[str, Any]:
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(document, dict):
+            raise ValueError("JSON artifact must contain an object")
+        return document
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail={"code": "INVALID_ARTIFACT"}) from exc
 
 
 def _artifact_path(run_id: str, filename: str, request: Request) -> Path:

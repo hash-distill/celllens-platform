@@ -91,6 +91,21 @@
               "type": "string",
               "title": "Cell Line"
             }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "online",
+                "precomputed",
+                "validation"
+              ],
+              "type": "string",
+              "default": "online",
+              "title": "Mode"
+            }
           }
         ],
         "responses": {
@@ -372,6 +387,20 @@
               "default": 1000,
               "title": "Limit"
             }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "top",
+                "all"
+              ],
+              "type": "string",
+              "default": "top",
+              "title": "Scope"
+            }
           }
         ],
         "responses": {
@@ -477,6 +506,94 @@
         "responses": {
           "200": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/provenance": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Get Provenance",
+        "operationId": "get_provenance_api_v1_runs__run_id__provenance_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Provenance Api V1 Runs  Run Id  Provenance Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/validation": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Get Validation",
+        "operationId": "get_validation_api_v1_runs__run_id__validation_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Validation Api V1 Runs  Run Id  Validation Get"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
