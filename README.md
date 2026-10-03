@@ -1,71 +1,63 @@
-# 细胞知镜（CellLens）代码工程
+# 细胞知镜（CellLens）
 
-本工程实现“STATE 扰动表达预测 + scCellFie 代谢任务解释 + 匹配留出验证 + 交互式前端”的后端基础。STATE 通过官方 `state tx infer` 命令调用，运行元数据使用 MySQL，H5AD/CSV/JSON 科学产物保存在文件系统并在数据库登记 SHA-256。
+CellLens 用于探索单基因扰动后的细胞表达与代谢变化：STATE 预测扰动表达，scCellFie 将表达结果转换为代谢任务分数，后端保存运行过程与结果，并提供查询和报告接口。
+
+目前仓库实现的是可运行的后端。前端成品尚未交付，`frontend/` 仅保留共享类型与对接入口，因此当前还没有可以打开使用的完整网页系统。
 
 ## 当前能力
 
-- MySQL + SQLAlchemy 2.0 持久化，Alembic 管理表结构；
-- `online`、`validation`、`precomputed` 三种模式独立分流；
-- worker、GPU、模型、数据文件及哈希门禁；
-- 单 A6000 进程内队列和 MySQL 跨进程资源锁；
-- attempt、lease、heartbeat、启动恢复、严格状态机和 attempt 独立临时目录；
-- STATE 输出 H5AD 可读性、有限值、扰动标签、基因顺序和 provenance 校验；
-- 对照/预测/观测基因交集、真实转录差异、冻结 scCellFie 数据库、代谢覆盖和留出指标；
-- scCellFie 未冻结或覆盖不足时生成真实的转录结果，并明确标注代谢降级原因；
-- 预计算演示无需 GPU 和本机模型资产。
-- 确定性缓存键覆盖请求、模型/数据/代谢库哈希与后端代码指纹；
-- 提供投影、基因、代谢任务、反应聚合和 HTML 报告接口。
+| 功能 | 当前状态 |
+|---|---|
+| K562 在线分析 | 模型、输入数据与代谢数据库已登记；真实运行曾通过，2026-10-03 复查结果接口正常 |
+| 匹配观测验证 | 已实现处理分支；需要观测数据包含请求扰动，尚未完成正式泛化评估 |
+| 无 GPU 演示 | K562/MYC 合成预计算样例可用于接口和页面开发 |
+| RPE1 | 模型与数据未核验，保持禁用 |
+| 结果查询 | 摘要、二维投影、基因变化、代谢任务、反应聚合和 HTML 报告 |
+| 前端工作台 | 待交付、集成与浏览器验收 |
 
-K562 的 STATE checkpoint、2000 基因面板、control/heldout H5AD 和 scCellFie 六个数据库文件已登记并通过 SHA-256 审计。RPE1 资产仍保持禁用，不会用占位资产生成结果。
+任务完成表示工程流程结束，不代表预测已通过生物学验证；代谢部分可能因覆盖不足而降级，需阅读结果中的警告。
 
-## 启动 MySQL
+## 文档阅读顺序
 
-本机已配置独立的 MySQL 9.2 数据目录（端口 3307），最短启动路径：
+| 文档 | 读完能了解什么 |
+|---|---|
+| [系统架构](docs/ARCHITECTURE.md) | 模块职责、请求执行、数据库与结果文件的关系 |
+| [运行与检查](docs/OPERATIONS.md) | 本机启动、新环境配置、演示模式及常见问题 |
+| [接口说明](docs/API.md) | 请求参数、运行状态、结果语义和错误处理 |
+| [模型与数据](docs/MODEL_AND_DATA.md) | 资产来源、计算方法、覆盖等级和验证边界 |
+| [前端对接](docs/FRONTEND.md) | 页面范围、调用顺序、缺失能力及交付要求 |
+| [第三方说明](docs/THIRD_PARTY_NOTICES.md) | 模型、代码和数据的许可记录 |
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start_mysql.ps1
-uv run alembic upgrade head
-uv run python scripts/check_mysql.py
-```
+完整接口结构见 [OpenAPI 文件](docs/openapi.json)，以当前源码生成的契约为准。
 
-机器上已有的 `MySQL92/3306` 服务不受影响。若要在 Windows 登录前自动启动 3307 实例，需要管理员把 `ops/mysql-celllens.ini` 注册为独立服务；普通权限可直接运行上述脚本。详细表结构见 `docs/DATABASE.md`。
+## 本机快速启动
 
-## 启动后端
-
-```powershell
-uv sync --extra model --extra report --group dev
-uv run pytest
-uv run uvicorn backend.app.main:app --reload --port 8000
-```
-
-打开 `http://127.0.0.1:8000/docs` 查看 OpenAPI。资产审计和真实闭环检查：
+在仓库根目录执行。本机已有 `.env`、Python 环境、模型数据及独立 MySQL 配置：
 
 ```powershell
-uv sync --extra model --extra report --group dev
-uv run python scripts/audit_registry.py
-uv run python scripts/smoke_backend.py
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_mysql.ps1
+uv run --no-sync alembic upgrade head
+uv run --no-sync python scripts/check_mysql.py
+uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
-当前 `.env` 已在本机 RTX 4060、CUDA PyTorch 和真实 STATE 推理通过后启用：
+打开 [接口调试页](http://127.0.0.1:8000/docs)。根路径 `/` 没有网页，返回 404 是当前行为。新环境先按 [运行文档](docs/OPERATIONS.md) 配置。
 
-```dotenv
-CELLLENS_WORKER_ENABLED=true
-CELLLENS_GPU_AVAILABLE=true
-```
-
-## 目录职责
+## 目录导航
 
 ```text
-backend/app/api/       HTTP 接口与模式分流
-backend/app/core/      注册表、哈希、状态机、MySQL 存储与任务队列
-backend/app/db/        SQLAlchemy 模型与 Alembic 迁移
-backend/app/engines/   STATE、AnnData、scCellFie、证据指标适配层
-backend/app/services/  端到端管线与科学分析编排
-configs/               冻结分析阈值和模型配置
-data/registry/         模型、数据与 scCellFie 资产清单
-data/derived/          不可变运行产物
-frontend/              前端工程边界与共享类型
-docs/                  API、数据卡、模型卡、审计和验收记录
+backend/app/       API、任务管理、模型适配、科学分析与结果发布
+backend/tests/     后端测试
+frontend/          前端共享类型与对接入口
+configs/           模型配置、数据拆分及分析配置
+data/registry/     资产清单、SHA-256、基因面板与冻结代谢数据库
+data/raw/          本机输入 H5AD，不纳入 Git
+data/demo/         合成演示包，不纳入 Git
+data/derived/runs/ 运行结果，不纳入 Git
+models/            本机模型权重，不纳入 Git
+scripts/           数据处理、资产审计、演示生成与运行检查
+ops/               本机 MySQL 配置
+docs/              当前文档与 OpenAPI
 ```
 
-后端实现路径见 `docs/BACKEND_MODEL_IMPLEMENTATION.md`，数据库见 `docs/DATABASE.md`，本轮修复证据见 `docs/BACKEND_FIX_REPORT_2026-09-20.md`。
+源码与大型运行资产分开管理。复制仓库不能自动获得模型权重、原始数据、本机 `.env` 或数据库。

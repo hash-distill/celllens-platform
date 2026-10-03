@@ -1,15 +1,5 @@
-# 前端实现边界
+# 前端目录
 
-前端负责人使用 Vue 3 + TypeScript + Vite + Pinia + ECharts。第一阶段只依赖后端 OpenAPI，不读取 H5AD，也不在浏览器中重复计算指标。
+前端成品尚未收到，本目录只有 `src/types/run.ts` 的部分共享类型，没有可启动页面工程。
 
-实现顺序：
-
-1. 根据 `src/types/run.ts` 和 `/openapi.json` 完成请求层；
-2. 实现实验参数面板、任务轮询、失败态和预计算模式；
-3. 实现共享 2D 投影、基因响应、代谢任务和预测验证四个标签页；
-4. 固定右侧证据栏，始终显示数据来源、模型/数据哈希、覆盖率和警告；
-5. 完成基因—反应—任务联动和候选托盘；
-6. 最后评估 3D 视图，不能影响 2D 主流程和答辩稳定性。
-
-详细验收标准见 `../docs/TEAM_EXECUTION.md`。
-
+集成与验收见 [前端对接](../docs/FRONTEND.md)，完整字段以 [OpenAPI](../docs/openapi.json) 和 backend/app/schemas.py 为准。现有 TypeScript 类型未覆盖全部响应字段，接入时需补全。
