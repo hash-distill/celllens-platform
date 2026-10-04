@@ -209,7 +209,7 @@ async function submit(): Promise<void> {
       ? '已接收：复用已有结果（cache_hit），未重新计算'
       : '已接收：任务进入队列，等待执行',
   )
-  await router.push({ path: `/runs/${encodeURIComponent(res.run_id)}`, query: { tab: 'cell' } })
+  await router.push({ path: `/runs/${encodeURIComponent(res.run_id)}`, query: { tab: 'structure' } })
 }
 
 function useAlternative(alt: string): void {
@@ -245,8 +245,7 @@ async function copySubmitDiagnostics(): Promise<void> {
 <template>
   <div class="param-panel">
     <section class="card" aria-label="实验参数">
-      <h2 class="card-title">实验参数</h2>
-      <p class="card-sub">提交后本表单作为下一次实验草稿，不会改变已打开运行的结果。</p>
+      <h2 class="card-title">实验设置 <span class="micro" style="float:right">SETUP</span></h2>
 
       <!-- catalog 加载失败 -->
       <div v-if="catalog.error" class="notice notice-danger">
@@ -301,7 +300,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               :aria-expanded="dropdownOpen"
               aria-controls="perturbation-listbox"
               aria-autocomplete="list"
-              placeholder="输入以筛选，再从列表中选择"
+              placeholder="搜索扰动基因…"
               autocomplete="off"
               :disabled="perturbationState?.loading"
               @focus="openDropdown"
@@ -318,7 +317,7 @@ async function copySubmitDiagnostics(): Promise<void> {
             >
               <p v-if="perturbationState?.loading" class="dropdown-note">正在加载扰动列表…</p>
               <p v-else-if="filteredPerturbations.length === 0" class="dropdown-note">
-                无匹配项；首版仅支持列表内的扰动基因，不支持任意文本
+                无匹配的可用扰动
               </p>
               <template v-else>
                 <button
@@ -395,7 +394,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               </p>
             </template>
             <template v-else>
-              <label class="label" for="n-cells-input">n_cells（请求采样细胞数）</label>
+              <label class="label" for="n-cells-input">采样细胞数</label>
               <input
                 id="n-cells-input"
                 v-model="draft.nCells"
@@ -407,9 +406,9 @@ async function copySubmitDiagnostics(): Promise<void> {
                 inputmode="numeric"
               />
               <p v-if="nCellsError" class="field-error">{{ nCellsError }}</p>
-              <p class="field-hint">整数 64–4096；首次联调建议 64（后端默认 512）。</p>
+              <p class="field-hint">可选范围 64–4096。</p>
 
-              <label class="label" for="seed-input" style="margin-top: 10px">seed（随机种子）</label>
+              <label class="label" for="seed-input" style="margin-top: 10px">随机种子</label>
               <input
                 id="seed-input"
                 v-model="draft.seed"
@@ -421,7 +420,7 @@ async function copySubmitDiagnostics(): Promise<void> {
                 inputmode="numeric"
               />
               <p v-if="seedError" class="field-error">{{ seedError }}</p>
-              <p class="field-hint">默认 42，不随页面刷新变化。</p>
+              <p class="field-hint">固定种子便于重现。</p>
             </template>
           </div>
         </div>

@@ -8,6 +8,7 @@ export const router = createRouter({
     // tab 通过查询参数记录：/runs/:runId?tab=cell|genes|metabolism|validation
     { path: '/runs/:runId', name: 'run-detail', component: () => import('../views/RunDetailView.vue') },
     { path: '/compare', name: 'compare', component: () => import('../views/CompareView.vue') },
+    { path: '/demo', name: 'demo', component: () => import('../views/DemoView.vue') },
     { path: '/about', name: 'about', component: () => import('../views/AboutView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/workbench' },
   ],

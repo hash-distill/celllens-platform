@@ -19,7 +19,7 @@ function loadFromStorage(): CandidateItem[] {
 export const useCandidatesStore = defineStore('candidates', {
   state: () => ({
     items: loadFromStorage(),
-    expanded: true,
+    expanded: false,
   }),
   getters: {
     isFull(state): boolean {

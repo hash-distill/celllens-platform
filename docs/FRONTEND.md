@@ -1,6 +1,22 @@
 # 前端工作台
 
-前端源码统一位于 frontend/，采用 Vue 3、TypeScript、Pinia、Vue Router 和 ECharts。启动与构建见 [部署与启动](DEPLOYMENT.md)，检查与排错见 [运行文档](OPERATIONS.md)，接口语义见 [API](API.md)。
+前端源码统一位于 frontend/，采用 Vue 3、TypeScript、Pinia、Vue Router、ECharts 和 Three.js。启动与构建见 [部署与启动](DEPLOYMENT.md)，检查与排错见 [运行文档](OPERATIONS.md)，接口语义见 [API](API.md)。
+
+## 三维科研工作台（2026-10-04）
+
+界面采用浅色停靠面板和深色三维视窗。左侧设置实验、管理场景对象，右侧检查选中细胞器；下方读取本次结果摘要。桌面端面板独立滚动，窄屏按结构视窗、实验设置、对象属性排列。原项目 logo 保留。
+
+`/workbench` 默认打开结构示意；`/runs/:runId?tab=structure` 在同一布局中读取运行。原 `tab=cell|genes|metabolism|validation` 链接继续有效，表达空间保留后端二维随机投影。基因条形和表格选择联动，数值检查器展示实际平均表达；缺少观测时标“未提供”。
+
+`src/scene/cellModel.ts` 以确定性几何构建膜、核与核仁、内质网、线粒体嵴和高尔基体；`CellViewport.vue` 使用真实 WebGL 渲染、OrbitControls、射线拾取、膜剖切和标签。支持图层显隐、不透明度、自动旋转、复位、全屏和当前渲染 PNG 导出。场景状态独立于科学结果；没有细胞器到代谢任务的可靠映射时，检查器明确显示“待映射”。
+
+隐藏页面和离开视窗时停止连续渲染，减少动态偏好关闭自动旋转及镜头过渡。卸载释放 GPU 资源；WebGL 不可用时显示可选择对象的二维 SVG 示意。结构并非设计 PNG 贴图，也不表示实测显微影像或模型预测形态。效果图中的写实细节不等于当前程序化模型的精度。
+
+`/demo?run=<run_id>&step=0` 展示细胞结构、基因扰动、代谢响应、验证与证据四章；`step` 范围 0–3，刷新保留章节与运行。自动播放每章 22 秒，可暂停、回退；页面隐藏后停止自动推进。方向键切章、空格播放/暂停（输入框及原生按钮操作除外）、Esc 返回该运行。未指定运行时只展示结构和结果空态，不创建任务、不替换 Mock 数据。结果页的“演示本次实验”自动绑定该运行。
+
+三维代码和演示路由懒加载。三维 chunk 含 Three.js，当前约 590 kB（gzip 约 151 kB），构建会报告大 chunk 提示；不为压低警告阈值改变渲染功能。当前不增加三维表达坐标、分布图、形态预测或区室因果关系。
+
+验证：在后端与 Vite 启动后执行 `python scripts/check_frontend.py`（原 9 项回归）和 `python scripts/check_3d_frontend.py`（真实 API/WebGL 检查，自动寻找本机已完成在线运行，也可传 `--run-id`）。浏览器脚本需安装 Playwright。实际截图和检查结果保存于 [actual](design/2026-10-04-celllens/actual/README.md)。生产直达和刷新 `/demo` 由后端 SPA 路由支持。
 
 ## 页面与数据流
 

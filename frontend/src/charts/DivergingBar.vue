@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { EChartsOption } from 'echarts'
 import { useEChart, CHART_COLORS } from './useEChart'
 
@@ -21,7 +21,9 @@ const props = defineProps<{
   /** 数值含义说明，显示在图表上方 */
   valueLabel: string
   height?: number
+  selectedName?: string | null
 }>()
+const emit = defineEmits<{ select: [name: string] }>()
 
 const el = ref<HTMLElement | null>(null)
 
@@ -29,6 +31,7 @@ function buildOption(): EChartsOption {
   // 从小到大排列，最大值显示在最上方
   const sorted = [...props.items].sort((a, b) => a.value - b.value)
   const maxAbs = Math.max(1e-9, ...sorted.map((i) => Math.abs(i.value)))
+  const hasSelection = sorted.some(i => i.name === props.selectedName)
   return {
     grid: { left: 8, right: 60, top: 30, bottom: 28, containLabel: true },
     xAxis: {
@@ -62,7 +65,7 @@ function buildOption(): EChartsOption {
         data: sorted.map((i) => ({
           value: i.value,
           extra: i.extra,
-          itemStyle: { color: i.value >= 0 ? CHART_COLORS.deltaUp : CHART_COLORS.deltaDown },
+          itemStyle: { color: i.value >= 0 ? CHART_COLORS.deltaUp : CHART_COLORS.deltaDown, opacity: hasSelection && props.selectedName !== i.name ? 0.35 : 1 },
         })),
         barMaxWidth: 16,
         markLine: {
@@ -90,7 +93,10 @@ function buildOption(): EChartsOption {
   }
 }
 
-useEChart(el, buildOption, [() => props.items])
+const { getChart } = useEChart(el, buildOption, [() => props.items, () => props.selectedName])
+onMounted(() => {
+  getChart()?.on('click', params => { if (typeof params.name === 'string') emit('select', params.name) })
+})
 </script>
 
 <template>

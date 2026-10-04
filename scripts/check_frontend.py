@@ -116,7 +116,7 @@ def main() -> int:
                 for(let i=0;i<8;i++) await mock.getRun(run.run_id);
                 useCandidatesStore().clear(); useCandidatesStore().add(run.run_id, request);
             }""")
-            page.get_by_role("link", name="候选比较", exact=True).click()
+            page.get_by_role("link", name="实验比较", exact=True).click()
             page.get_by_text("已加载", exact=True).wait_for()
             row = page.get_by_role("row").filter(has=page.get_by_role("rowheader", name="来源", exact=True))
             text = row.inner_text()

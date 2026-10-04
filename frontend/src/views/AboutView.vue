@@ -42,11 +42,11 @@ function checkLabel(value: boolean | undefined): string {
           网络异常自动退避重试且不改写任务状态；刷新后按 URL 恢复。
         </li>
         <li>
-          <strong>阅读结果：</strong>细胞状态（二维随机投影）、基因响应（平均归一化表达差，不是 log2FC）、
+          <strong>阅读结果：</strong>细胞结构（可旋转剖切的三维示意）、表达空间（二维随机投影）、基因响应（平均归一化表达差，不是 log2FC）、
           代谢功能（scCellFie 任务分数变化，不是实测通量）与预测验证。
         </li>
         <li>
-          <strong>核对证据：</strong>右侧证据栏常驻参数、注册模型、覆盖率、警告与错误码；
+          <strong>核对证据：</strong>点击「来源记录」查看参数、注册模型、覆盖率、警告与错误码；
           覆盖率偏低时按证据等级解读代谢结论。
         </li>
         <li>
@@ -125,6 +125,8 @@ function checkLabel(value: boolean | undefined): string {
             <tr><th scope="col">术语</th><th scope="col">含义</th></tr>
           </thead>
           <tbody>
+            <tr><td>三维细胞结构</td><td>Three.js 程序化细胞器示意；不是实测显微影像、形态预测或扰动后的结构重建</td></tr>
+            <tr><td>演示模式</td><td>四章讲解复用指定运行的真实接口；与显式开启的 Mock 样例数据模式分开</td></tr>
             <tr><td>二维随机投影</td><td> seeded-random-projection 的共享二维坐标；不是 UMAP / t-SNE，也不是真实细胞空间</td></tr>
             <tr><td>预测变化</td><td>预测减对照的平均归一化表达差；不标 log2FC</td></tr>
             <tr><td>代谢任务分数变化</td><td>scCellFie 任务分数变化；不是实测代谢通量</td></tr>

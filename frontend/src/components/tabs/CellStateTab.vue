@@ -104,6 +104,7 @@ function retry(): void {
     </div>
 
     <ProjectionScatter
+      :dark="true"
       :points="block?.data?.points ?? []"
       :visible-sources="visibleSources"
     />
