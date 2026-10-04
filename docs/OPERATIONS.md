@@ -1,106 +1,121 @@
 # 运行与检查
 
-所有命令在仓库根目录执行。配置来自 `.env`，字段定义在 `backend/app/config.py`；不要用示例覆盖已有本机配置。
+环境准备、数据库初始化、开发/构建模式、Windows 脚本及服务器部署统一见 [部署与启动](DEPLOYMENT.md)。本文用于启动后的检查、维护与故障排查，命令均在仓库根目录执行。
 
-## 环境准备
+## 日常启动与停止
 
-项目要求 Python `>=3.11,<3.13`，使用 uv 和 `uv.lock` 管理依赖。运行元数据依赖 MySQL；完整科学链路还需已登记的模型、H5AD 和代谢数据库。
-
-```powershell
-if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
-uv sync --locked --extra model --extra report --group dev
-uv pip check
-```
-
-仅做接口/预计算开发时可用 `uv sync --locked --group dev`，并在 `.env` 设置 `CELLLENS_WORKER_ENABLED=false`、`CELLLENS_GPU_AVAILABLE=false`。示例默认开启这两个开关，开关不等于真实 GPU 与资产已经就绪。
-
-## 启动数据库
-
-本机独立 MySQL 9.2 监听 `127.0.0.1:3307`。脚本内程序及数据路径是 `D:\Mysql\mysql-9.2.0-winx64\bin\mysqld.exe`、`D:\Mysql\celllens-data`，换电脑需自行配置。
+已配置的 Windows 本机，前端构建最新时：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_mysql.ps1
-uv run --no-sync alembic upgrade head
-uv run --no-sync python scripts/check_mysql.py
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -SkipBuild
 ```
 
-新环境也可使用 `docker-compose.yml`：先执行 `docker compose up -d mysql`，数据库健康后再迁移。Docker 和本机脚本是两种选择，都占用宿主机 3307，不能同时启动。连接由 `CELLLENS_DATABASE_URL` 配置；示例凭据用于本地开发。
+前端修改后去掉 `-SkipBuild`。使用 Docker 或外部数据库时省略 `-StartLocalMysql`，并提前启动实际数据库。首次空数据库必须先迁移，详见部署文档。
 
-表结构统一由 Alembic 管理，保持 `CELLLENS_CREATE_DATABASE_SCHEMA=false`。停止 API 不会停止独立 MySQL。
+生产页面为 `http://127.0.0.1:8000/workbench`，开发页面默认端口为 `5173`。Ctrl+C 停止应用服务；独立 MySQL 继续运行。当前本机独立实例没有开机自动启动，重启电脑后需再运行数据库或系统脚本。
 
-## 启动与访问
+## 服务与模式检查
 
-前端需要 Node.js 与 npm；安装按照交付的 package-lock.json 固定依赖：
-
-```powershell
-npm.cmd --prefix frontend ci
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_system.ps1
-```
-
-脚本先检查数据库并迁移，构建前端后启动 API。生产页面和 API 同源位于 8000，详情 URL 刷新可用。加 `-StartLocalMysql` 可先启动本机数据库；已有最新构建可加 `-SkipBuild`。
-
-```powershell
-# 页面热更新与可配置代理，后端仍监听 8000
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_system.ps1 -Mode Development
-```
-
-开发页面为 http://127.0.0.1:5173。可指定 -ApiPort 与 -FrontendPort；局域网加 -HostAddress 0.0.0.0。开发脚本启动的 Vite 在脚本正常退出时关闭。
-
-若只运行后端，使用 `uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000`；缺少 frontend/dist 时页面返回 503 并提示构建，API 仍可用。
-
-| 地址 | 用途 |
+| 地址 | 检查内容 |
 |---|---|
-| `http://127.0.0.1:8000/workbench` | 完整工作台 |
-| `http://127.0.0.1:8000/docs` | 调试请求及查看接口结构 |
-| `http://127.0.0.1:8000/openapi.json` | 实时接口契约 |
-| `http://127.0.0.1:8000/api/v1/health` | 服务与数据库状态 |
-| `http://127.0.0.1:8000/api/v1/ready` | 数据库、worker/GPU 开关就绪状态 |
-| `http://127.0.0.1:8000/api/v1/catalog/contexts` | 各细胞系的模式可用状态 |
+| `/api/v1/health` | 响应应包含 `status=ok`、`database=ok` |
+| `/api/v1/ready` | 数据库与 worker/GPU 开关就绪状态 |
+| `/api/v1/catalog/contexts` | 细胞系的在线、预计算及验证资产状态 |
+| `/api/v1/catalog/perturbations?cell_line=K562&mode=precomputed` | 当前通过清单/哈希校验的预计算组合 |
+| `/docs`、`/openapi.json` | 实时接口契约与请求调试 |
 
-`health` 在数据库故障时仍可能返回 HTTP 200，要检查响应字段。`ready` 不做完整 GPU 推理或资产审计；资产由 `audit_registry.py` 核验，细胞系状态查 catalog。根路径 `/` 和工作台、比较、使用说明、运行详情路径都返回前端入口；未知 API 和缺失静态文件仍返回 404。局域网对接时用 `--host 0.0.0.0`，提供本机局域网地址。
-
-## 无 GPU 演示
-
-关闭 worker/GPU 后数据库仍须可用。若演示包不存在，可生成合成样例：
-
-```powershell
-uv run --no-sync python scripts/build_demo_bundle.py --cell-line K562 --perturbation MYC
-```
-
-通过 `/docs` 提交 `mode="precomputed"` 的 K562/MYC 请求，JSON 见 [接口说明](API.md)。生成脚本会写入对应演示目录，只用于合成样例。当前样例缺少投影、反应和报告，对应接口返回 404。
+`health` 在数据库故障时仍可能返回 HTTP 200，要读取响应字段。`ready` 未满足全部开关时返回 503；关闭 GPU/worker 的演示环境可正常使用预计算，不能把该 503 直接判成演示不可用。在线资产状态以 catalog 与资产审计为准，硬件/依赖调用仍需真实推理验证。
 
 ## 检查命令
 
-```powershell
+基础工程检查需要 `dev` 依赖组：
+
+```bash
 uv pip check
 uv run --no-sync pytest -q
 uv run --no-sync ruff check backend scripts
 uv run --no-sync basedpyright
+npm --prefix frontend run build
+```
+
+数据库、资产与接口检查：
+
+```bash
+uv run --no-sync python scripts/check_mysql.py
 uv run --no-sync alembic check
 uv run --no-sync python scripts/audit_registry.py
 uv run --no-sync python scripts/export_openapi.py
+```
+
+`check_mysql.py` 检查迁移表、命名锁与临时运行记录，结束时清理自身记录。`alembic check` 比较数据库与模型，需要数据库可用；`audit_registry.py` 检查启用资产的文件与哈希，刚克隆且未准备科学资产时不应宣称该审计已通过。`export_openapi.py` 会更新 `docs/openapi.json`，接口变更后将快照一并提交。
+
+### 真实在线冒烟
+
+在具有完整 `model`、`report` 依赖、GPU、资产和数据库的环境中：
+
+```bash
 uv run --no-sync python scripts/smoke_backend.py
 ```
 
-`smoke_backend.py` 使用真实 MySQL 和应用生命周期，提交 K562/MYC、64 细胞、种子 42 的在线请求，再检查六类结果接口。看到 `cache_hit=true` 表示读取已有真实结果，不能记为本次重新完成 GPU 推理。首次或缓存变化后可能实际调用模型。
+脚本使用真实 MySQL 和应用生命周期，提交 K562/MYC、64 细胞、seed=42 的在线请求，检查六类结果接口。它可能调用 GPU、创建持久运行与磁盘产物，不属于纯静态检查。`cache_hit=true` 表示读取已有结果，不能记为本次新推理。
 
-2026-10-04 本机复查：38 项后端测试通过，Ruff 和 basedpyright 通过；生产构建无大包警告，9 项浏览器缺陷回归通过。生产入口新建 K562/MYC、64 细胞、种子 42 的在线运行 run_5fff9141331b469d，cache_hit=false，STATE 与代谢分析实际完成，warnings 为空。详情刷新、2000 行 CSV、141 项已生成任务分数、HTML 报告及 1366/1100/768 宽度检查通过。测试有两条上游弃用警告，匹配验证协议仍待确认。
+### 前端回归
+
+先启动开发服务，再执行：
+
+```bash
+uv run --no-sync python scripts/check_frontend.py --url http://127.0.0.1:5173
+```
+
+此检查需要执行命令的 Python 环境另外安装 Playwright 与 Chromium；它们尚未纳入仓库依赖组。检查覆盖响应正文超时/取消/中断、串行轮询、Mock 来源与刷新、来源隔离和基因分页，使用独立浏览器上下文，不修改用户浏览器。
+
+Windows 构建入口使用 `frontend/.cache/build-tmp` 隔离临时文件，避免共享临时目录中的 esbuild 访问错误；缓存不纳入 Git。
+
+## 已有验收记录
+
+2026-10-04 本机联调记录：
+
+- 38 项后端测试、Ruff、basedpyright 通过；测试有两条上游弃用警告。
+- 前端生产构建通过，无大包警告；9 项浏览器缺陷回归通过。
+- 新建 K562/MYC、64 细胞、seed=42 在线运行 `run_5fff9141331b469d`，`cache_hit=false`，STATE 与代谢分析实际完成，warnings 为空。
+- 详情刷新、2000 行基因 CSV、141 项已生成有效任务、HTML 报告及 1366/1100/768 宽度检查通过。
+
+这是历史验收状态，不能代替更新代码、更换依赖、迁移数据库或更换资产后的重新检查。当前匹配验证协议仍待确认，也没有完成目标 Linux 服务器和 Docker MySQL 的部署验收。
+
+## 数据持久化与维护
+
+MySQL 保存六张表：`runs`、`run_attempts`、`run_events`、`run_artifacts`、`run_cache`、`alembic_version`。模型、输入与结果文件保存在磁盘；文件清单与数据库产物记录需要一致。
+
+备份至少包含数据库、`.env`、`data/registry/`、`configs/`、所引用的模型/输入文件及 `data/derived/runs/`，同时记录 Git 提交和迁移版本。预计算包需要复现演示时也应备份。仅复制数据库不能恢复文件产物；仅复制结果文件也不会重建运行记录。
+
+更新前等待分析完成，备份后执行部署文档中的更新流程。不要从文件系统单独删除运行目录来做清理：当前没有已实现的自动保留策略或运行删除接口，需同时考虑产物、缓存和数据库记录。`configs/app.yaml` 的保留天数不是已执行的清理任务。
 
 ## 常见问题
 
-| 现象 | 检查方向 |
+| 现象 | 原因与处理 |
 |---|---|
-| 页面返回 503 | 先构建 frontend/dist；使用 start_system.ps1 自动构建 |
-| 数据库不可用 | 3307 监听、`.env` 连接信息、数据库迁移 |
-| online 返回 503 | worker/GPU 开关、资产审计、catalog 就绪原因 |
-| 请求返回 422 | 扰动支持列表、细胞数/种子范围、额外字段 |
-| validation 接受后失败 | 观测是否包含所请求扰动；整体就绪不保证每个扰动有观测 |
-| completed 但无代谢结果 | warnings、覆盖等级、数据库及非负表达要求 |
-| 单个结果返回 404 | 产物是否生成；演示和降级任务可缺少文件 |
-| 前端请求跨域失败 | 后端无 CORS，按 [前端对接](FRONTEND.md) 使用开发代理或同源部署 |
+| 数据库报 2003 / 10061、连接被拒绝 | 先检查 `3307` 是否监听，启动实际数据库，再核对主机与端口 |
+| Navicat 报 1045 / Access denied | 检查账号与密码；本机使用 `celllens` / `celllens_dev`，不是未验证的 root 凭据 |
+| 1044 指向 `performance_schema` | 账号已认证，但没有监控库权限；默认数据库选 `celllens`，项目不依赖性能库 |
+| 一键脚本提示 Missing MySQL tables | 新数据库先执行 `alembic upgrade head`；脚本检查在其内部迁移之前 |
+| 页面返回 503 | 缺少 `frontend/dist/index.html`；构建前端或去掉 `-SkipBuild` |
+| 页面显示旧版本 | 重建前端；确认实际服务使用的仓库与构建目录 |
+| 8000 / 5173 已被占用 | 检查已运行的项目进程；选择其他端口并同步开发代理，避免重复启动 |
+| PowerShell 拦截 npm.ps1 | 使用同一命令的 `npm.cmd` 入口 |
+| online 返回 503 | 检查 worker/GPU、注册资产、catalog 原因；开关不代表真实 GPU 检测成功 |
+| 预计算列表为空 | 生成或恢复相应包，核对 manifest 与文件哈希；目录存在不等于包有效 |
+| 请求返回 422 | 扰动支持列表、细胞数/seed 范围或额外字段不符合契约 |
+| validation 接受后失败 | 匹配观测可能没有该扰动；前端当前不开放提交，协议仍待确认 |
+| completed 但无代谢结果 | 查看 warnings、覆盖等级、冻结数据库与表达要求 |
+| 单个结果返回 404 | 该运行没有生成对应产物；演示及降级结果可缺少投影/反应/报告 |
+| 浏览器跨域失败 | 当前后端无 CORS；开发用 Vite 代理，构建运行用后端同源页面 |
+| Compose 修改密码后连接仍失败 | 初始化变量不更新已有数据卷账户，需核对实际账户与 `.env` |
 
-## 前端回归
+Windows 端口检查：
 
-`npm.cmd --prefix frontend run build` 同时检查 TypeScript 与生产构建。启动 Development 模式后，用安装了 Playwright 和 Chromium 的 Python 执行 `python scripts/check_frontend.py`，覆盖响应正文超时/取消/中断、串行轮询、Mock 来源与刷新持久化、记录隔离和长表分页。测试使用独立浏览器上下文，不修改用户浏览器配置。
+```powershell
+Get-NetTCPConnection -LocalPort 3307 -State Listen
+Get-NetTCPConnection -LocalPort 8000 -State Listen
+```
 
-Windows 构建使用 frontend/.cache/build-tmp 独立临时目录，避免共享临时目录中已复现的 esbuild 文件访问错误；缓存不纳入 Git。
+本机数据库错误日志为 `D:\Mysql\celllens-data\celllens-mysql.err`；容器数据库查看 `docker compose logs --tail 100 mysql`。科学计算错误详情先查运行接口，再查对应结果目录中的 `failure.json`、STATE 标准输出和错误日志。

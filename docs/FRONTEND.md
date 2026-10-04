@@ -1,6 +1,6 @@
 # 前端工作台
 
-前端源码统一位于 frontend/，采用 Vue 3、TypeScript、Pinia、Vue Router 和 ECharts。启动与构建见 [运行文档](OPERATIONS.md)，接口语义见 [API](API.md)。
+前端源码统一位于 frontend/，采用 Vue 3、TypeScript、Pinia、Vue Router 和 ECharts。启动与构建见 [部署与启动](DEPLOYMENT.md)，检查与排错见 [运行文档](OPERATIONS.md)，接口语义见 [API](API.md)。
 
 ## 页面与数据流
 
