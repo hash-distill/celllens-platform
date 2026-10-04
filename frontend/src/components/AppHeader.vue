@@ -41,7 +41,7 @@ function isActive(path: string): boolean {
   <header class="app-header">
     <div class="header-inner">
       <RouterLink to="/workbench" class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
+        <img class="brand-mark" src="/favicon.png" width="32" height="32" alt="" aria-hidden="true" />
         <span class="brand-name">细胞知镜</span>
         <span class="brand-sub">CellLens</span>
       </RouterLink>
@@ -98,11 +98,11 @@ function isActive(path: string): boolean {
   text-decoration: none;
 }
 .brand-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
-  display: inline-block;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: block;
 }
 .brand-name {
   font-size: 17px;

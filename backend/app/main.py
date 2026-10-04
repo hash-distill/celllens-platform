@@ -64,6 +64,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Register after API routes; only known SPA paths receive the HTML fallback.
     dist = (resolved.project_root / "frontend" / "dist").resolve()
 
+    @application.get("/favicon.png", include_in_schema=False)
+    @application.get("/favicon.ico", include_in_schema=False)
+    def frontend_icon() -> FileResponse:
+        path = dist / "favicon.png"
+        if not path.is_file():
+            raise HTTPException(status_code=404)
+        return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-cache"})
+
     @application.get("/assets/{asset_path:path}", include_in_schema=False)
     def frontend_asset(asset_path: str) -> FileResponse:
         path = (dist / "assets" / asset_path).resolve()

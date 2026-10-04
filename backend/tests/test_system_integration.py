@@ -1,3 +1,4 @@
+import base64
 import json
 from pathlib import Path
 
@@ -55,6 +56,25 @@ def test_spa_routes_and_api_404_are_separate(tmp_path):
         assert client.get("/assets/missing.js").status_code == 404
         assert client.get("/api/v1/unknown").status_code == 404
         assert client.get("/api/v1/unknown").headers["content-type"].startswith("application/json")
+
+
+def test_favicon_png_and_default_ico_request_serve_the_same_icon(tmp_path):
+    _write_registry(tmp_path)
+    dist = tmp_path / "frontend/dist"
+    dist.mkdir(parents=True)
+    app = create_app(_settings(tmp_path))
+    with TestClient(app) as client:
+        assert client.get("/favicon.png").status_code == 404
+        icon = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII="
+        )
+        (dist / "favicon.png").write_bytes(icon)
+        for url in ("/favicon.png", "/favicon.ico"):
+            response = client.get(url)
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "image/png"
+            assert response.headers["cache-control"] == "no-cache"
+            assert response.content == icon
 
 
 def completed_run(app, root):

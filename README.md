@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="frontend/public/favicon.png" alt="细胞知镜 CellLens 图标" width="96" height="96" />
+</p>
+
 # 细胞知镜 · CellLens
 
 **单细胞扰动预测与代谢分析工作台。**
