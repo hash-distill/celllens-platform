@@ -8,7 +8,7 @@ from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "docs/design/2026-10-04-celllens/actual"
+OUT = ROOT / "reports" / "frontend" / "3d"
 
 
 def main():

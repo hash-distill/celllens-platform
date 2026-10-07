@@ -11,7 +11,7 @@ parser.add_argument("--url", default="http://127.0.0.1:5173")
 parser.add_argument("--smoke", action="store_true")
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
-out = root / "docs/design/2026-10-04-celllens/actual"
+out = root / "reports" / "frontend" / "production"
 out.mkdir(parents=True, exist_ok=True)
 errors = []
 with sync_playwright() as p:

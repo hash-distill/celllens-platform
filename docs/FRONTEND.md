@@ -16,7 +16,7 @@
 
 三维代码和演示路由懒加载。三维 chunk 含 Three.js，当前约 590 kB（gzip 约 151 kB），构建会报告大 chunk 提示；不为压低警告阈值改变渲染功能。当前不增加三维表达坐标、分布图、形态预测或区室因果关系。
 
-验证：在后端与 Vite 启动后执行 `python scripts/check_frontend.py`（原 9 项回归）和 `python scripts/check_3d_frontend.py`（真实 API/WebGL 检查，自动寻找本机已完成在线运行，也可传 `--run-id`）。浏览器脚本需安装 Playwright。实际截图和检查结果保存于 [actual](design/2026-10-04-celllens/actual/README.md)。生产直达和刷新 `/demo` 由后端 SPA 路由支持。
+验证：在后端与 Vite 启动后执行 `python scripts/check_frontend.py`（原 9 项回归）和 `python scripts/check_3d_frontend.py`（真实 API/WebGL 检查，自动寻找本机已完成在线运行，也可传 `--run-id`）。浏览器脚本需安装 Playwright。新截图和检查结果写入 `reports/frontend/`；精选 [页面截图](screenshots/README.md) 和 [历史检查记录](verification/2026-10-04/README.md) 单独维护。生产入口可使用 `python scripts/check_production_frontend.py --url http://127.0.0.1:8000 --smoke` 检查，生产直达和刷新 `/demo` 由后端 SPA 路由支持。
 
 ## 页面与数据流
 
