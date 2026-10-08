@@ -360,6 +360,10 @@ export const useRunStore = defineStore('run', {
     async loadReactions(runId: string): Promise<void> {
       const entry = this.ensureEntry(runId)
       if (entry.reactions.status === 'loading') return
+      if (entry.tasks.data?.reactions_available === false) {
+        entry.reactions = { status: 'ok', data: { items: [], limit: 1000, truncated: false }, error: null }
+        return
+      }
       const controller = this.blockController(entry, 'reactions')
       entry.reactions = { status: 'loading', data: entry.reactions.data, error: null }
       try {
@@ -414,8 +418,13 @@ export const useRunStore = defineStore('run', {
           if (entry.genes.status === 'idle') void this.loadGenes(runId)
           break
         case 'metabolism':
-          if (entry.tasks.status === 'idle') void this.loadTasks(runId)
-          if (entry.reactions.status === 'idle') void this.loadReactions(runId)
+          if (entry.tasks.status === 'idle') {
+            void this.loadTasks(runId).then(() => {
+              if (entry.tasks.status === 'ok' && entry.reactions.status === 'idle') void this.loadReactions(runId)
+            })
+          } else if (entry.tasks.status === 'ok' && entry.reactions.status === 'idle') {
+            void this.loadReactions(runId)
+          }
           break
         case 'validation':
           if (entry.validation.status === 'idle') void this.loadValidation(runId)

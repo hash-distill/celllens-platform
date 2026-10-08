@@ -82,8 +82,24 @@ def test_precomputed_request_does_not_require_gpu_or_model_assets(tmp_path):
         ),
         encoding="utf-8",
     )
+    projection_path = demo / "projection.json"
+    projection_path.write_text(
+        json.dumps(
+            {
+                "method": "seeded-random-projection",
+                "seed": 42,
+                "points": [
+                    {"x": 0.1, "y": 0.2, "source": "control", "cell_index": 0},
+                    {"x": 0.3, "y": 0.4, "source": "predicted", "cell_index": 0},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     (demo / "manifest.json").write_text(
-        json.dumps({"files": {"summary.json": sha256(summary_path)}}),
+        json.dumps(
+            {"files": {"summary.json": sha256(summary_path), "projection.json": sha256(projection_path)}}
+        ),
         encoding="utf-8",
     )
     app = create_app(settings(tmp_path, gpu_available=False, worker_enabled=False))
@@ -137,16 +153,32 @@ def test_completed_run_exposes_projection_tables_and_report(tmp_path):
                 "perturbation": "MYC",
                 "coverage": None,
                 "top_genes": [],
-                "metabolic_tasks": [],
+                "metabolic_tasks": [
+                    {
+                        "id": "task_a",
+                        "label": "Task A",
+                        "predicted_delta": 0.5,
+                        "coverage": 1.0,
+                        "evidence_level": "supported",
+                    }
+                ],
                 "warnings": [],
                 "error_code": None,
             }
         ),
         "projection.json": json.dumps(
-            {"seed": 42, "points": [{"x": 0.1, "y": -0.2, "source": "predicted"}]}
+            {
+                "method": "seeded-random-projection",
+                "seed": 42,
+                "points": [
+                    {"x": 0.0, "y": 0.0, "source": "control", "cell_index": 0},
+                    {"x": 0.1, "y": -0.2, "source": "predicted", "cell_index": 0},
+                ],
+            }
         ),
         "gene_deltas.csv": "gene,predicted_delta\nMYC,1.0\n",
-        "metabolic_task_scores.csv": "cell,task_a\nc1,0.5\n",
+        "metabolic_task_scores.csv": "task,source,score\ntask_a,control,0\ntask_a,predicted,0.5\n",
+        "metabolic_coverage.csv": "task,gene_fraction,evidence_level\nTask A,1,supported\n",
         "reaction_scores.csv": "cell,rxn_a\nc1,0.25\n",
         "report.html": "<html><body>CellLens report</body></html>",
     }
@@ -168,6 +200,11 @@ def test_completed_run_exposes_projection_tables_and_report(tmp_path):
         tasks = client.get(f"/api/v1/runs/{run_id}/metabolic-tasks")
         reactions = client.get(f"/api/v1/runs/{run_id}/reactions")
         assert tasks.status_code == 200
+        all_tasks = client.get(f"/api/v1/runs/{run_id}/metabolic-tasks?scope=all")
+        assert all_tasks.status_code == 200
+        assert all_tasks.json()["scope"] == "top"
+        assert all_tasks.json()["items"][0]["id"] == "task_a"
+        assert all_tasks.json()["items"][0]["predicted_delta"] == 0.5
         assert reactions.status_code == 200
         assert len(tasks.content) < 200_000
         assert len(reactions.content) < 200_000

@@ -16,6 +16,7 @@ import type { CellLine, RunMode } from '../types/run'
  */
 
 const router = useRouter()
+const props = withDefaults(defineProps<{ destination?: 'workbench' | 'detail'; horizontal?: boolean }>(), { destination: 'workbench', horizontal: false })
 const catalog = useCatalogStore()
 const draft = useDraftStore()
 const runs = useRunStore()
@@ -51,6 +52,7 @@ const cellOptions = computed(() =>
 
 // ---------- 扰动：可搜索下拉，禁止任意文本 ----------
 const perturbationQuery = ref(draft.perturbation)
+watch(() => draft.perturbation, value => { perturbationQuery.value = value })
 const dropdownOpen = ref(false)
 const highlightIndex = ref(-1)
 
@@ -209,7 +211,9 @@ async function submit(): Promise<void> {
       ? '已接收：复用已有结果（cache_hit），未重新计算'
       : '已接收：任务进入队列，等待执行',
   )
-  await router.push({ path: `/runs/${encodeURIComponent(res.run_id)}`, query: { tab: 'structure' } })
+  await router.push(props.destination === 'workbench'
+    ? { path: '/workbench', query: { run: res.run_id } }
+    : { path: `/runs/${encodeURIComponent(res.run_id)}`, query: { tab: 'response' } })
 }
 
 function useAlternative(alt: string): void {
@@ -243,9 +247,9 @@ async function copySubmitDiagnostics(): Promise<void> {
 </script>
 
 <template>
-  <div class="param-panel">
+  <div class="param-panel" :class="{horizontal}">
     <section class="card" aria-label="实验参数">
-      <h2 class="card-title">实验设置 <span class="micro" style="float:right">SETUP</span></h2>
+      <h2 v-if="!horizontal" class="card-title">实验设置 <span class="micro" style="float:right">SETUP</span></h2>
 
       <!-- catalog 加载失败 -->
       <div v-if="catalog.error" class="notice notice-danger">
@@ -279,7 +283,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               />
               <span>
                 <span class="choice-name">{{ opt.value }}</span>
-                <span v-if="opt.disabled && opt.reason" class="choice-reason">
+                <span v-if="opt.disabled && opt.reason && !horizontal" class="choice-reason">
                   <br />{{ opt.reason }}
                 </span>
               </span>
@@ -367,7 +371,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               />
               <span>
                 <span class="choice-name">{{ opt.label }}</span>
-                <span v-if="opt.reason" class="choice-reason"><br />{{ opt.reason }}</span>
+                <span v-if="opt.reason && (!horizontal || draft.mode === opt.value)" class="choice-reason"><br />{{ opt.reason }}</span>
               </span>
             </label>
           </div>
@@ -377,7 +381,7 @@ async function copySubmitDiagnostics(): Promise<void> {
         </div>
 
         <!-- 高级参数 -->
-        <div class="field">
+        <div class="field advanced-field">
           <button
             class="btn btn-ghost btn-sm"
             type="button"
@@ -394,6 +398,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               </p>
             </template>
             <template v-else>
+              <div>
               <label class="label" for="n-cells-input">采样细胞数</label>
               <input
                 id="n-cells-input"
@@ -407,7 +412,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               />
               <p v-if="nCellsError" class="field-error">{{ nCellsError }}</p>
               <p class="field-hint">可选范围 64–4096。</p>
-
+              </div><div>
               <label class="label" for="seed-input" style="margin-top: 10px">随机种子</label>
               <input
                 id="seed-input"
@@ -421,6 +426,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               />
               <p v-if="seedError" class="field-error">{{ seedError }}</p>
               <p class="field-hint">固定种子便于重现。</p>
+              </div>
             </template>
           </div>
         </div>
@@ -439,7 +445,7 @@ async function copySubmitDiagnostics(): Promise<void> {
         <!-- 提交结果 -->
         <div v-if="runs.submitTimeoutPending" class="notice notice-warn" style="margin-top: 12px">
           <strong>提交结果待确认：</strong>创建请求超时，服务端可能已接收该任务。
-          为避免重复提交，不会自动重发；请稍后通过「输入运行编号」或最近运行确认。
+          为避免重复提交，不会自动重发；请稍后在「实验记录」中确认。
           参数已保留在表单中。
           <div class="btn-row" style="margin-top: 8px">
             <button class="btn btn-sm" @click="copySubmitDiagnostics">复制诊断信息</button>
@@ -493,6 +499,7 @@ async function copySubmitDiagnostics(): Promise<void> {
 </template>
 
 <style scoped>
+.horizontal>.card{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:22px 28px;padding:24px}.horizontal .card-title{grid-column:1/-1;font-size:15px}.horizontal .field{margin:0;min-width:0}.horizontal .choice-group{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px}.horizontal .choice{flex:1;padding:10px;font-size:11px}.horizontal .choice-name{font-size:12px}.horizontal .choice-reason{font-size:10px;line-height:1.6}.horizontal .advanced-field,.horizontal .submit-btn,.horizontal .notice,.horizontal .skeleton-wrap{grid-column:1/-1}.horizontal .submit-btn{width:fit-content;min-width:170px;justify-self:end;font-size:13px;padding:11px 22px}.horizontal .advanced{max-width:500px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}.horizontal .advanced label{margin-top:0!important}.horizontal .advanced .notice{grid-column:1/-1}@media(max-width:900px){.horizontal>.card{grid-template-columns:1fr 1fr}.horizontal>.card>.field:nth-of-type(3){grid-column:1/-1}}@media(max-width:600px){.horizontal>.card{grid-template-columns:1fr;padding:18px;gap:20px}.horizontal .submit-btn{width:100%}.horizontal .advanced{display:block}.horizontal .advanced label{margin-top:12px!important}.horizontal .choice{flex:1 1 100px}}
 .param-panel {
   display: flex;
   flex-direction: column;

@@ -6,14 +6,18 @@
 
 | 资产 | 登记位置 | 内容 |
 |---|---|---|
-| STATE | `data/registry/models.json` | K562 fewshot 启用，arc-state 0.11.1，2024 个登记扰动 |
-| 基因面板 | `data/registry/state_k562_genes.txt` | 2000 个按模型预测列顺序排列的基因 |
-| 输入数据 | `data/registry/datasets.json` | K562 对照/观测 H5AD，模型面板位于 obsm['X_hvg'] |
+| STATE | `data/registry/models.json` | K562、RPE1、Jurkat、HepG2 的官方 ST-HVG fewshot 权重；arc-state 0.11.1，各 2024 个登记扰动 |
+| 基因面板 | `data/registry/state_*_genes.txt` | 各背景独立从官方 var_dims 提取；2000 个有序基因，当前四份顺序一致 |
+| 输入数据 | `data/registry/datasets.json` | 每种背景绑定自己的实测对照 H5AD，模型面板位于 obsm['X_hvg']；仅 K562 另有观测输入 |
 | 拆分记录 | `configs/splits/replogle-v1.json` | 按扰动拆分，存在下述一致性问题 |
 | scCellFie 数据库 | `data/registry/sccellfie/human/manifest.json` | 0.6.2 human Recon2，六个数据文件及固定阈值列的 SHA-256 |
 | 演示包 | `data/demo/K562/MYC/` | 固定种子合成数据，供页面及接口开发 |
 
-K562 来源记录为 `arcinstitute/State-Replogle-Filtered` 的 replogle_concat.h5ad。本机对照为 3000×6546、观测为 1465×6546；模型使用其中的 2000 基因面板。验证分支按请求扰动筛选观测。RPE1 缺少核验完成的 checkpoint 与兼容数据，保持禁用。
+K562 来源记录为 `arcinstitute/State-Replogle-Filtered` 的 replogle_concat.h5ad。本机对照为 3000×6546、观测为 1465×6546；模型使用其中的 2000 基因面板。验证分支按请求扰动筛选观测。
+
+2026-10-08 新增 RPE1、Jurkat、HepG2，各准备 1024×6546 的真实 non-targeting 对照，保留 source_row、原始条形码、批次与来源 revision。数据来自固定 revision `d790193bb2c93726541a75ca3fa873a92ed44da5`，表达未再次归一化；X_hvg 只按模型顺序选列。模型来自 `ST-HVG-Replogle` revision `bb6a9562cbbf1fd152df14cc53b4cc7517c77175`，每背景六个推理文件通过官方来源哈希校验。新增背景仅开放在线推演，没有登记实测扰动观测，也没有合成预计算包。
+
+新背景的 `configs/splits/replogle-*-fewshot-v1.json` 保留对应官方完整 test 名单与原始 TOML 哈希；它们是来源记录，尚未批准准确性评价协议。权重来源与每次真实输出的核验见 [多背景接入记录](verification/2026-10-08-context-integration.md)。
 
 2026-10-03 已重新核验 K562 模型、配置、面板、对照/观测、拆分文件和六个代谢数据库文件的哈希。许可记录见 [第三方说明](THIRD_PARTY_NOTICES.md)。
 

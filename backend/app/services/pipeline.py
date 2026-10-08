@@ -9,7 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from backend.app.core.cache import code_fingerprint
-from backend.app.core.errors import CellLensError, JobAlreadyClaimedError
+from backend.app.core.errors import CellLensError, JobAlreadyClaimedError, ScientificContractError
+from backend.app.core.projection import validate_projection
 from backend.app.core.registry import AssetRegistry
 from backend.app.core.run_manifest import atomic_write_json, file_sha256
 from backend.app.core.storage import RunStore
@@ -109,6 +110,15 @@ class AnalysisPipeline:
                     partial,
                 )
                 validated_summary = RunSummary.model_validate(analysis.summary)
+                projection_path = partial / "projection.json"
+                try:
+                    validate_projection(projection_path)
+                    if projection_path not in analysis.artifacts:
+                        raise ValueError("Projection must be included in published analysis artifacts")
+                except (OSError, ValueError) as exc:
+                    raise ScientificContractError(
+                        f"Required single-cell projection is invalid: {exc}"
+                    ) from exc
             warnings.extend(analysis.summary.get("warnings", []))
             self.store.transition(run_id, RunStatus.VALIDATING, 85, warnings=warnings)
             atomic_write_json(partial / "summary.json", validated_summary.model_dump(mode="json"))
@@ -191,6 +201,7 @@ def _artifact_kind(path: Path) -> str:
         "metabolic_coverage.csv": "metabolic_coverage",
         "metabolic_task_scores.csv": "metabolic_tasks",
         "reaction_scores.csv": "reaction_scores",
+        "task_trace.json": "task_trace",
         "validation_metrics.json": "validation_metrics",
         "projection.json": "projection",
         "report.html": "report",

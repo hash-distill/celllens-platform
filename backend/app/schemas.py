@@ -20,7 +20,7 @@ class RunStatus(StrEnum):
 
 
 class CreateRunRequest(StrictModel):
-    cell_line: Literal["K562", "RPE1"]
+    cell_line: Literal["K562", "RPE1", "Jurkat", "HepG2"]
     perturbation: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
     mode: Literal["online", "precomputed", "validation"] = "online"
     n_cells: int = Field(default=512, ge=64, le=4096)
@@ -44,6 +44,10 @@ class CoverageSummary(StrictModel):
 class EvidenceItem(StrictModel):
     id: str
     label: str
+    category: str | None = None
+    subcategory: str | None = None
+    control: float | None = None
+    predicted: float | None = None
     predicted_delta: float
     observed_delta: float | None = None
     coverage: float = Field(ge=0, le=1)
@@ -69,6 +73,13 @@ class CreateRunResponse(StrictModel):
     cache_hit: bool
 
 
+class RunListResponse(StrictModel):
+    items: list[RunRecord]
+    total: int
+    limit: int
+    offset: int
+
+
 class RunSummary(StrictModel):
     run_id: str
     status: RunStatus
@@ -90,3 +101,49 @@ class ContextItem(StrictModel):
     model_id: str | None
     disabled_reason: str | None = None
     readiness_reasons: list[str] = Field(default_factory=list)
+
+
+class TraceScores(StrictModel):
+    id: str
+    label: str
+    control: float | None = None
+    predicted: float | None = None
+    predicted_delta: float | None = None
+    observed_delta: float | None = None
+
+
+class TraceTask(TraceScores):
+    category: str | None = None
+    subcategory: str | None = None
+    coverage: float = Field(ge=0, le=1)
+    evidence_level: Literal["supported", "exploratory", "insufficient"]
+
+
+class TraceReaction(TraceScores):
+    gene_rule: str | None = None
+    genes: list[TraceScores]
+    total_genes: int = Field(ge=0)
+    truncated: bool
+
+
+class DatabaseProvenance(StrictModel):
+    manifest_sha256: str = Field(pattern=r"^[a-fA-F0-9]{64}$")
+    files: dict[str, str]
+    source: str | None = None
+    organism: str | None = None
+
+
+class TaskTraceResponse(StrictModel):
+    schema_version: Literal[1]
+    run_id: str
+    database_version: str
+    database_provenance: DatabaseProvenance
+    task: TraceTask
+    reactions: list[TraceReaction]
+    relationship_kind: Literal["knowledge_association"]
+    determinant_status: Literal["unavailable"]
+    determinant_genes: list[str]
+    score_units: dict[str, str]
+    total_reactions: int = Field(ge=0)
+    truncated: bool
+    warnings: list[str]

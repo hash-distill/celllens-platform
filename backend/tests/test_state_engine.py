@@ -84,6 +84,30 @@ def test_state_output_contract_records_provenance(tmp_path: Path):
     assert output.uns["celllens_provenance"]["model_id"] == "state-v1"
 
 
+def test_state_output_rejects_a_different_cell_background(tmp_path: Path):
+    model = RegistryEntry(
+        {"id": "rpe1", "perturbation_column": "target_gene", "cell_type_column": "cell_line"}, tmp_path
+    )
+    request = StateRunInput("RPE1", "MYC", tmp_path / "control.h5ad", 1, 42)
+    output = FakeAnnData()
+    output.obs["cell_line"] = ["k562"]
+    with pytest.raises(StateInferenceError, match="background"):
+        validate_state_output(output, request, model)
+
+
+def test_cli_perturbation_preserves_official_mixed_case_vocabulary(tmp_path: Path):
+    import torch
+
+    engine = StateCliEngine()
+    assert hasattr(engine, "perturbation_label"), "official vocabulary resolution is missing"
+    torch.save({"C1orf43": torch.ones(2), "AAMP": torch.zeros(2)}, tmp_path / "pert_onehot_map.pt")
+    model = RegistryEntry({"model_dir": "."}, tmp_path)
+    assert engine.perturbation_label("C1ORF43", model) == "C1orf43"
+    assert engine.perturbation_label("AAMP", model) == "AAMP"
+    with pytest.raises(StateInferenceError, match="vocabulary"):
+        engine.perturbation_label("UNKNOWN", model)
+
+
 def test_embed_key_model_validates_prediction_panel_not_var_names(tmp_path: Path):
     """The registered gene list describes obsm[embed_key], not the full var_names axis.
 

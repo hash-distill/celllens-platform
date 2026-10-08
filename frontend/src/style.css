@@ -44,6 +44,18 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html,
 body {
   margin: 0;
@@ -432,10 +444,15 @@ table.table {
 
 /* ---------- 主布局 ---------- */
 .page {
-  padding: 20px 24px 110px;
-  max-width: 1680px;
+  padding: 32px 32px 60px;
+  max-width: 1360px;
   margin: 0 auto;
 }
+.eyebrow{font-size:10px;letter-spacing:.14em;color:var(--primary)}
+.page-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:28px}
+.page-heading h1{font-size:29px;font-weight:500;margin-top:10px}
+.page-heading p{font-size:12px;line-height:1.9;color:var(--muted);margin:10px 0 0}
+@media(max-width:760px){.page{padding:24px 16px 40px}.page-heading{align-items:start;gap:18px;flex-wrap:wrap}.page-heading h1{font-size:25px}}
 .layout-3col {
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr) 300px;
@@ -619,87 +636,7 @@ table.table {
 
 /* ---------- 尊重减少动画设置 ---------- */
 
-/* Instrument workspace: docked panels and a dedicated scientific viewport. */
 .micro{font-size:10px;color:var(--muted);letter-spacing:.08em;font-weight:400}
-.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.panel-heading h2{font-size:12px;font-weight:600;letter-spacing:.02em}
-.instrument-page{padding-bottom:34px}
-.context-bar{height:61px;display:flex;align-items:center;justify-content:space-between;padding:0 24px 0 76px;border-bottom:1px solid var(--border);background:#f8f8f4;gap:18px}
-.context-bar>div{display:flex;align-items:center;gap:22px;min-width:0}
-.context-bar h1{font-size:15px;font-weight:500;letter-spacing:.03em;white-space:nowrap}
-.context-slash{color:#a4b0a9;margin:0 10px}
-.context-note{font-size:10px;color:var(--muted);white-space:nowrap}
-.instrument-grid{display:grid;grid-template-columns:56px 248px minmax(0,1fr)260px;align-items:stretch;min-height:calc(100vh - 145px)}
-.instrument-rail{background:#f1f2ec;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:stretch;padding-top:8px;min-height:100%}
-.rail-tool{appearance:none;border:0;background:transparent;padding:15px 0 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#7a8985;font-family:inherit;font-size:9px;cursor:pointer;border-left:2px solid transparent;text-decoration:none}
-.rail-tool:hover,.rail-tool[aria-pressed=true],.rail-tool.router-link-active{background:#e5ede6;color:var(--primary);border-left-color:var(--primary);text-decoration:none}
-.rail-help{margin-top:auto}
-.experiment-panel{border-right:1px solid var(--border);background:var(--card);min-width:0}
-.experiment-panel .param-panel>.card{border:0;border-radius:0;padding:22px 18px 18px;background:transparent;margin:0}
-.experiment-panel .card-title{font-size:12px;margin:0 0 20px}
-.experiment-panel .card-sub{display:none}
-.experiment-panel .field{margin-bottom:13px}
-.experiment-panel .label{font-size:11px;margin-bottom:7px;color:#64756e;font-weight:400}
-.experiment-panel .choice-group{display:flex;gap:6px;flex-wrap:wrap}
-.experiment-panel .choice-group[aria-labelledby=cell-line-label]{flex-direction:row}
-.experiment-panel .choice{padding:7px 9px;min-width:0;border-radius:3px;flex:1;gap:6px}
-.experiment-panel .choice-name{font-size:11px;font-weight:400}
-.experiment-panel .choice-reason{display:none}
-.experiment-panel .choice input{width:11px;height:11px}
-.experiment-panel .input{padding:8px 9px;font-size:12px}
-.experiment-panel .field-hint{font-size:10px}
-.experiment-panel .submit-btn{font-size:12px;padding:10px}
-.experiment-panel .field-error,.experiment-panel .notice{font-size:10px;line-height:1.7}
-.experiment-panel .dropdown{max-height:230px}
-.recent-dock{border-top:1px solid var(--border);padding:18px}
-.recent-dock .recent-title{font-size:12px}
-.recent-dock .recent .pill{display:none}
-.recent-dock .recent-desc{display:none}
-.recent-dock .manual-open{gap:4px;margin-top:12px}
-.recent-dock .manual-open .input{font-size:10px;padding:6px;min-width:0}
-.recent-dock .manual-open .btn{font-size:10px;padding:5px}
-.recent-dock .recent-list{gap:0}
-.recent-dock .recent-item{border:0;border-bottom:1px solid var(--border);border-radius:0;padding:8px 0;background:transparent}
-.recent-dock .recent-id{font-size:10px;color:#65766e}
-.recent-dock .recent-meta{font-size:10px;line-height:1.6}
-.workspace-center{padding:16px;min-width:0;background:#f1f2ec;display:flex;flex-direction:column}
-.instrument-page .workspace-center>.cell-viewport{height:clamp(420px,calc(100vh - 355px),760px);min-height:420px;flex:none}
-.instrument-page .structure-result>.cell-viewport{height:clamp(420px,calc(100vh - 480px),680px);min-height:420px}
-.cell-viewport:fullscreen{height:100vh!important}
-@media(min-width:1200px){.instrument-grid{height:calc(100vh - 186px);min-height:600px;grid-template-rows:minmax(0,1fr)}.experiment-panel,.instrument-grid>.object-inspector,.evidence-dock{overflow-y:auto}.result-workspace .workspace-center{overflow-y:auto}}
-.instrument-status{height:27px;display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 76px;font-size:9px;color:#7c8a83;border-top:1px solid var(--border);background:var(--card);letter-spacing:.04em}
-.result-workspace .run-header{padding:18px 20px;border:1px solid var(--border);margin-bottom:12px}
-.result-workspace .run-title{font-size:19px;font-weight:500}
-.result-workspace .run-badges{margin-top:8px}
-.result-workspace .results-card{border-radius:0}
-.result-workspace .center-col{gap:12px}
-.result-workspace .stage-steps{gap:8px}
-.result-workspace .evidence{background:var(--card);border-left:1px solid var(--border)}
-.result-workspace .evidence>.card{border:0;border-radius:0;padding:22px 18px}
-.result-workspace .evidence-list{font-size:10px}
-.result-workspace .evidence-section{font-size:11px}
-.instrument-action{display:flex;gap:8px;align-items:center}
-button,input,select{accent-color:var(--primary)}
-.card-title{font-weight:500}
-.table th{background:#f3f5ef}
-.table td,.table th{font-size:11px}
-.table td:not(:first-child){font-variant-numeric:tabular-nums}
-.pill{border-radius:3px;font-weight:400;font-size:10px}
-.pill-info{color:#28695f;background:#e8f1eb;border-color:#cbded2}
-.pill-neutral{background:#f0f1eb;border-color:#dcdfd6;color:#6d7a73}
-.pill-synthetic{background:#f8efdc;border-color:#e5d6b5;color:#93742f}
-.notice-info{background:#edf3ec;border-color:#d9e5d7;color:#446b51}
-.progress-fill{background:var(--primary)}
-.tabs{gap:14px}
-.tab{font-size:12px;padding:10px 8px}
-.btn{font-size:12px}
-.page{padding-top:24px}
-.table-wrap{border-radius:2px}
-@media(max-width:1399px){.instrument-grid{grid-template-columns:52px 228px minmax(0,1fr)230px}.workspace-center{padding:12px}.object-inspector{padding:20px 15px!important}.context-bar{padding-left:70px}}
-@media(max-width:1199px){.instrument-grid{grid-template-columns:48px 218px minmax(0,1fr)}.instrument-grid>.object-inspector,.instrument-grid>.evidence-dock{grid-column:2/-1;border-left:0;border-top:1px solid var(--border)}.instrument-grid>.object-inspector{display:grid;grid-template-columns:170px 1fr 1fr;gap:12px 24px}.instrument-grid>.object-inspector>.panel-heading{grid-column:1/-1}.instrument-grid>.object-inspector .object-specimen{grid-row:2/6;margin:0;height:160px}.instrument-grid>.object-inspector .inspector-section{margin-top:0;padding-top:10px}.instrument-grid>.object-inspector .inspector-footnote{grid-column:2/-1;margin-top:0}}
-@media(max-width:940px){.context-bar .micro{display:none}.context-bar{padding-left:60px}.instrument-grid{grid-template-columns:44px 200px minmax(0,1fr)}.workspace-center{padding:10px}.context-note{font-size:9px}.instrument-status{padding-left:55px}}
-@media(max-width:767px){.context-bar{padding:0 16px;height:52px}.context-note{display:none}.instrument-grid{grid-template-columns:40px minmax(0,1fr)}.experiment-panel{grid-column:2;grid-row:2;border-top:1px solid var(--border)}.workspace-center{grid-column:2;grid-row:1;padding:8px}.instrument-rail{grid-row:1/4}.instrument-grid>.object-inspector,.instrument-grid>.evidence-dock{grid-column:2;display:block}.instrument-grid>.object-inspector .object-specimen{height:120px}.instrument-grid>.object-inspector .inspector-section{margin-top:20px}.instrument-status{padding:0 12px}.instrument-status>span:nth-child(2){display:none}.experiment-panel .param-panel>.card{padding:18px}.experiment-panel .choice-group{flex-wrap:nowrap}.result-workspace .run-header{padding:12px}.result-workspace .run-title{font-size:16px}}
-
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;

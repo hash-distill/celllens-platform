@@ -9,6 +9,7 @@ import { useEChart, CHART_COLORS } from './useEChart'
  */
 
 export interface DivergingBarItem {
+  id?: string
   name: string
   value: number
   extra?: string
@@ -48,6 +49,7 @@ function buildOption(): EChartsOption {
     },
     yAxis: {
       type: 'category',
+      triggerEvent: true,
       data: sorted.map((i) => i.name),
       name: props.categoryName,
       nameTextStyle: { color: '#64748b', fontSize: 12 },
@@ -63,6 +65,7 @@ function buildOption(): EChartsOption {
       {
         type: 'bar',
         data: sorted.map((i) => ({
+          id: i.id ?? i.name,
           value: i.value,
           extra: i.extra,
           itemStyle: { color: i.value >= 0 ? CHART_COLORS.deltaUp : CHART_COLORS.deltaDown, opacity: hasSelection && props.selectedName !== i.name ? 0.35 : 1 },
@@ -95,7 +98,14 @@ function buildOption(): EChartsOption {
 
 const { getChart } = useEChart(el, buildOption, [() => props.items, () => props.selectedName])
 onMounted(() => {
-  getChart()?.on('click', params => { if (typeof params.name === 'string') emit('select', params.name) })
+  getChart()?.on('click', params => {
+    const data = params.data as { id?: string } | undefined
+    if (typeof data?.id === 'string') emit('select', data.id)
+    else if (params.componentType === 'yAxis') {
+      const item = props.items.find(row => row.name === params.value)
+      if (item) emit('select', item.id ?? item.name)
+    } else if (typeof params.name === 'string') emit('select', params.name)
+  })
 })
 </script>
 

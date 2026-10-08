@@ -22,6 +22,8 @@ import type {
   ReactionRow,
   ReadyResponse,
   RunRecord,
+  RunListQuery,
+  RunListResponse,
   RunStatus,
   RunSummary,
 } from '../types/run'
@@ -173,15 +175,32 @@ export async function createRun(payload: CreateRunRequest): Promise<CreateRunRes
   }
 }
 
+export async function listRuns(query: RunListQuery = {}): Promise<RunListResponse> {
+  await delay()
+  const term = (query.q ?? '').trim().toUpperCase()
+  const records = [...mockRuns].map(([id, run]) => snapshotRecord(id, run)).filter(record =>
+    (!term || [record.run_id, record.request.cell_line, record.request.perturbation].some(text => text.toUpperCase().includes(term))) &&
+    (!query.mode || record.request.mode === query.mode) &&
+    (!query.status || query.status === 'all' || (query.status === 'active'
+      ? record.status !== 'completed' && record.status !== 'failed' : record.status === query.status)),
+  ).sort((a, b) => b.created_at.localeCompare(a.created_at) || b.run_id.localeCompare(a.run_id))
+  const limit = query.limit ?? 20, offset = query.offset ?? 0
+  return {items: records.slice(offset, offset + limit), total: records.length, limit, offset}
+}
+
 export async function getRun(runId: string): Promise<RunRecord> {
   await delay(80)
   const run = requireRun(runId)
   run.polls += 1
   persistRuns()
+  return snapshotRecord(runId, run)
+}
+
+function snapshotRecord(runId: string, run: MockRun): RunRecord {
   const stage =
     run.request.mode === 'precomputed'
       ? STAGE_PLAN[STAGE_PLAN.length - 1]
-      : STAGE_PLAN[Math.min(run.polls - 1, STAGE_PLAN.length - 1)]
+      : STAGE_PLAN[Math.max(0, Math.min(run.polls - 1, STAGE_PLAN.length - 1))]
   const now = new Date().toISOString()
   return {
     run_id: runId,

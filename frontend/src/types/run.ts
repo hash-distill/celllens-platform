@@ -4,7 +4,7 @@
  * 请求层统一转换为 number | null 后，组件只使用这里的已转换类型。
  */
 
-export type CellLine = 'K562' | 'RPE1'
+export type CellLine = 'K562' | 'RPE1' | 'Jurkat' | 'HepG2'
 
 export type RunMode = 'online' | 'precomputed' | 'validation'
 
@@ -64,6 +64,9 @@ export interface EvidenceItem {
   coverage: number
   evidence_level: EvidenceLevel
   determinant_genes: string[]
+  control?: number | null
+  predicted?: number | null
+  trace_available?: boolean | null
 }
 
 export interface RunSummary {
@@ -122,6 +125,32 @@ export interface ProjectionResponse {
   method: string
   seed: number
   points: ProjectionPoint[]
+  data_kind?: 'synthetic_demo'
+  input_sha256?: string
+  generator?: string
+  original_manifest_sha256?: string | null
+  population_selection?: {
+    version: number
+    status: string
+    perturbation: string
+    input_prediction_cells: number
+    selected_prediction_cells: number
+    excluded_prediction_cells: number
+  }
+}
+
+export interface RunListResponse {
+  items: RunRecord[]
+  total: number
+  limit: number
+  offset: number
+}
+export interface RunListQuery {
+  limit?: number
+  offset?: number
+  q?: string
+  status?: 'all' | 'active' | 'completed' | 'failed'
+  mode?: RunMode
 }
 
 /** genes 接口行（请求层已完成字符串 → 数值转换；空串/null/非有限为 null） */
@@ -147,6 +176,7 @@ export interface MetabolicTasksResponse {
   scope?: 'top' | 'all'
   total?: number
   excluded_count?: number
+  reactions_available?: boolean
 }
 
 export interface RunProvenance {

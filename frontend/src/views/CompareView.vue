@@ -6,7 +6,6 @@ import { api } from '../api/client'
 import { ApiError } from '../api/http'
 import { runSourceLabel } from '../utils/source'
 import { EVIDENCE_LABEL, fmtDelta, fmtPercent, MODE_LABEL, shortRunId } from '../utils/format'
-import CandidateTray from '../components/CandidateTray.vue'
 import type { EvidenceItem, RunRecord, RunSummary } from '../types/run'
 
 /**
@@ -91,7 +90,7 @@ function sourceLabel(runId: string): string {
     <div class="card">
       <div class="flex-between">
         <div>
-          <h1 class="page-title">候选比较</h1>
+          <h1 class="page-title">实验比较</h1>
           <p class="muted small" style="margin: 6px 0 0">
             <span class="pill pill-neutral">本浏览器记录</span>
             已加入的运行并排展示（最多 4 个，以 run_id 去重）。
@@ -104,7 +103,7 @@ function sourceLabel(runId: string): string {
     </div>
 
     <div v-if="items.length === 0" class="card empty-card">
-      <p class="empty-title">候选托盘为空</p>
+      <p class="empty-title">尚未选择比较实验</p>
       <p class="muted small">
         打开某个运行详情，点击「加入候选」后回到本页查看并排比较。记录仅保存在本浏览器。
       </p>
@@ -266,7 +265,6 @@ function sourceLabel(runId: string): string {
       </div>
     </template>
 
-    <CandidateTray />
   </div>
 </template>
 

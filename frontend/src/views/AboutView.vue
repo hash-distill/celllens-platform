@@ -34,7 +34,7 @@ function checkLabel(value: boolean | undefined): string {
       <h1 class="page-title">使用说明</h1>
       <ol class="guide-list">
         <li>
-          <strong>新建实验：</strong>工作台左侧选择细胞背景、扰动基因（从接口列表选择，不支持任意文本）
+          <strong>新建实验：</strong>工作台上方选择细胞背景、扰动基因（从接口列表选择，不支持任意文本）
           与运行模式；可用性每次从接口读取，不写死。
         </li>
         <li>
@@ -42,7 +42,7 @@ function checkLabel(value: boolean | undefined): string {
           网络异常自动退避重试且不改写任务状态；刷新后按 URL 恢复。
         </li>
         <li>
-          <strong>阅读结果：</strong>细胞结构（可旋转剖切的三维示意）、表达空间（二维随机投影）、基因响应（平均归一化表达差，不是 log2FC）、
+          <strong>阅读结果：</strong>单细胞状态（二维随机投影）、基因响应（平均归一化表达差，不是 log2FC）、
           代谢功能（scCellFie 任务分数变化，不是实测通量）与预测验证。
         </li>
         <li>
@@ -125,7 +125,7 @@ function checkLabel(value: boolean | undefined): string {
             <tr><th scope="col">术语</th><th scope="col">含义</th></tr>
           </thead>
           <tbody>
-            <tr><td>三维细胞结构</td><td>Three.js 程序化细胞器示意；不是实测显微影像、形态预测或扰动后的结构重建</td></tr>
+            <tr><td>功能关联图</td><td>读取本次冻结的任务—反应—基因知识关联；空间布局不表示细胞结构或因果贡献</td></tr>
             <tr><td>演示模式</td><td>四章讲解复用指定运行的真实接口；与显式开启的 Mock 样例数据模式分开</td></tr>
             <tr><td>二维随机投影</td><td> seeded-random-projection 的共享二维坐标；不是 UMAP / t-SNE，也不是真实细胞空间</td></tr>
             <tr><td>预测变化</td><td>预测减对照的平均归一化表达差；不标 log2FC</td></tr>
@@ -171,7 +171,7 @@ function checkLabel(value: boolean | undefined): string {
 
 <style scoped>
 .about-page {
-  max-width: 960px;
+  max-width: 1360px;
 }
 .page-title {
   font-size: 21px;

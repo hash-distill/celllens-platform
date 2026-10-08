@@ -7,6 +7,7 @@ import {
 } from './http'
 import { isMockEnabled } from './mockFlag'
 import { toFiniteNumber } from '../utils/number'
+import type { TaskTraceResponse } from '../types/trace'
 import type {
   ContextItem,
   CreateRunRequest,
@@ -23,6 +24,8 @@ import type {
   ReactionsResponse,
   ReadyResponse,
   RunRecord,
+  RunListResponse,
+  RunListQuery,
   RunMode,
   RunProvenance,
   RunValidation,
@@ -40,6 +43,14 @@ import type {
 const loadMock = () => import('../fixtures/mockApi')
 
 export const api = {
+  async listRuns(query: RunListQuery = {}, signal?: AbortSignal): Promise<RunListResponse> {
+    if (isMockEnabled()) return (await loadMock()).listRuns(query)
+    return apiFetch<RunListResponse>('/runs', { query: { ...query }, signal })
+  },
+  async getTaskTrace(runId: string, taskId: string, signal?: AbortSignal): Promise<TaskTraceResponse> {
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: 'Mock 样例不提供真实知识库追溯。', endpoint: '/task-trace' })
+    return apiFetch<TaskTraceResponse>(`/runs/${encodeURIComponent(runId)}/task-trace`, { query: { task_id: taskId, reaction_limit: 30, gene_limit: 30 }, signal })
+  },
   async health(signal?: AbortSignal): Promise<HealthResponse> {
     if (isMockEnabled()) return (await loadMock()).health()
     return apiFetch<HealthResponse>('/health', { signal, timeoutMs: 10000 })
@@ -118,6 +129,11 @@ export const api = {
       method?: string
       seed?: number
       points?: Array<Record<string, unknown>>
+      population_selection?: ProjectionResponse['population_selection']
+      data_kind?: ProjectionResponse['data_kind']
+      input_sha256?: string
+      generator?: string
+      original_manifest_sha256?: string | null
     }>(`/runs/${encodeURIComponent(runId)}/projection`, { signal })
     const points: ProjectionPoint[] = (raw.points ?? [])
       .map((p) => ({
@@ -133,7 +149,10 @@ export const api = {
           p.cell_index !== null &&
           (p.source === 'control' || p.source === 'predicted' || p.source === 'observed'),
       )
-    return { method: raw.method ?? 'seeded-random-projection', seed: raw.seed ?? 0, points }
+    return { method: raw.method ?? 'seeded-random-projection', seed: raw.seed ?? 0, points,
+      population_selection: raw.population_selection, data_kind: raw.data_kind,
+      input_sha256: raw.input_sha256, generator: raw.generator,
+      original_manifest_sha256: raw.original_manifest_sha256 }
   },
 
   /** genes：CSV 转 JSON，数字是字符串，统一转换为 number | null */
@@ -160,12 +179,12 @@ export const api = {
     signal?: AbortSignal,
   ): Promise<MetabolicTasksResponse> {
     if (isMockEnabled()) return (await loadMock()).getMetabolicTasks(runId, limit)
-    const raw = await apiFetch<{ items?: Array<Record<string, unknown>>; limit: number; truncated: boolean; scope?: 'top' | 'all'; total?: number; excluded_count?: number }>(
+    const raw = await apiFetch<{ items?: Array<Record<string, unknown>>; limit: number; truncated: boolean; scope?: 'top' | 'all'; total?: number; excluded_count?: number; reactions_available?: boolean }>(
       `/runs/${encodeURIComponent(runId)}/metabolic-tasks`,
       { query: { limit, scope: 'all' }, signal },
     )
     const items: EvidenceItem[] = (raw.items ?? []).map((row) => normalizeEvidence(row))
-    return { items, limit: raw.limit, truncated: Boolean(raw.truncated), scope: raw.scope, total: raw.total, excluded_count: raw.excluded_count }
+    return { items, limit: raw.limit, truncated: Boolean(raw.truncated), scope: raw.scope, total: raw.total, excluded_count: raw.excluded_count, reactions_available: raw.reactions_available }
   },
 
   /** reactions：旧运行可能是宽表结构（后端返回 500 INVALID_ARTIFACT）或 404，由调用方降级展示 */
@@ -230,6 +249,9 @@ function normalizeEvidence(row: Record<string, unknown>): EvidenceItem {
     determinant_genes: Array.isArray(row.determinant_genes)
       ? row.determinant_genes.map((g) => String(g))
       : [],
+    control: toFiniteNumber(row.control),
+    predicted: toFiniteNumber(row.predicted),
+    trace_available: typeof row.trace_available === 'boolean' ? row.trace_available : null,
   }
 }
 

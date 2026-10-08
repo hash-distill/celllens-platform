@@ -21,8 +21,24 @@ def write_bundle(root: Path, name: str = "MYC") -> Path:
         "perturbation": name,
     }
     (source / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+    (source / "projection.json").write_text(
+        json.dumps(
+            {
+                "method": "seeded-random-projection",
+                "seed": 42,
+                "points": [
+                    {"x": 0.1, "y": 0.2, "source": "control", "cell_index": 0},
+                    {"x": 0.3, "y": 0.4, "source": "predicted", "cell_index": 0},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     (source / "manifest.json").write_text(
-        json.dumps({"files": {"summary.json": file_sha256(source / "summary.json")}}), encoding="utf-8"
+        json.dumps(
+            {"files": {name: file_sha256(source / name) for name in ["summary.json", "projection.json"]}}
+        ),
+        encoding="utf-8",
     )
     return source
 
@@ -50,7 +66,7 @@ def test_spa_routes_and_api_404_are_separate(tmp_path):
     (dist / "assets/main.js").write_text("console.log('ok')", encoding="utf-8")
     app = create_app(_settings(tmp_path))
     with TestClient(app) as client:
-        for url in ("/", "/workbench", "/compare", "/demo", "/about", "/runs/run_example"):
+        for url in ("/", "/workbench", "/records", "/compare", "/demo", "/about", "/runs/run_example"):
             assert "CellLens SPA" in client.get(url).text
         assert client.get("/assets/main.js").status_code == 200
         assert client.get("/assets/missing.js").status_code == 404

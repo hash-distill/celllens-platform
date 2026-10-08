@@ -8,14 +8,39 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
+from pydantic import ValidationError
 
 from backend.app.core.cache import build_cache_key, code_fingerprint
 from backend.app.core.errors import AssetNotReadyError, RegistryError
 from backend.app.core.precomputed import load_bundle
+from backend.app.core.projection import validate_projection
 from backend.app.core.run_manifest import atomic_write_json, file_sha256
-from backend.app.schemas import CreateRunRequest, CreateRunResponse, RunRecord, RunStatus, RunSummary
+from backend.app.schemas import (
+    CreateRunRequest,
+    CreateRunResponse,
+    RunListResponse,
+    RunRecord,
+    RunStatus,
+    RunSummary,
+    TaskTraceResponse,
+)
 
 router = APIRouter(prefix="/runs", tags=["runs"])
+
+
+@router.get("", response_model=RunListResponse)
+def list_runs(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    q: str = Query(default="", max_length=128),
+    status: Literal["all", "active", "completed", "failed"] = "all",
+    mode: Literal["online", "precomputed", "validation"] | None = None,
+) -> RunListResponse:
+    items, total = request.app.state.container.store.list_runs(
+        limit=limit, offset=offset, query=q, status=status, mode=mode
+    )
+    return RunListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.post("", response_model=CreateRunResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -81,7 +106,12 @@ async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunRe
     )
     if cached_run_id := container.store.get_cached_run(cache_key):
         cached = container.store.get(cached_run_id)
-        return CreateRunResponse(run_id=cached.run_id, status=cached.status, cache_hit=True)
+        try:
+            validate_projection(container.settings.derived_root / cached_run_id / "projection.json")
+        except (OSError, ValueError):
+            pass  # An incomplete cached run must not bypass the completion contract.
+        else:
+            return CreateRunResponse(run_id=cached.run_id, status=cached.status, cache_hit=True)
 
     run_id = container.pipeline.allocate_run_id()
     record = container.store.create(run_id, payload, cache_key=cache_key)
@@ -130,14 +160,12 @@ def _create_precomputed_run(payload: CreateRunRequest, container: Any) -> Create
             "bundle_files": manifest["files"],
         },
     )
-    record = container.store.transition(
-        run_id,
-        RunStatus.COMPLETED,
-        100,
-        warnings=summary.warnings,
-        message="precomputed result materialized",
-    )
-    for kind, filename in (("summary", "summary.json"), ("manifest", "manifest.json")):
+    validate_projection(destination / "projection.json")
+    for kind, filename in (
+        ("summary", "summary.json"),
+        ("manifest", "manifest.json"),
+        ("projection", "projection.json"),
+    ):
         path = destination / filename
         container.store.register_artifact(
             run_id,
@@ -147,6 +175,13 @@ def _create_precomputed_run(payload: CreateRunRequest, container: Any) -> Create
             path.stat().st_size,
             "application/json",
         )
+    record = container.store.transition(
+        run_id,
+        RunStatus.COMPLETED,
+        100,
+        warnings=summary.warnings,
+        message="precomputed result with required single-cell projection materialized",
+    )
     return CreateRunResponse(run_id=run_id, status=record.status, cache_hit=False)
 
 
@@ -218,9 +253,18 @@ def get_metabolic_tasks(
 
                 scores = pd.read_csv(scores_path, index_col=0)
                 coverage = pd.read_csv(coverage_path, index_col=0)
+                # Legacy demo CSVs use task/source/score rows and separate labels;
+                # their validated summary is the supported display contract.
+                if (
+                    scores.index.name == "task"
+                    and {"source", "score"}.issubset(scores.columns)
+                    and get_run(run_id, request).request.mode == "precomputed"
+                ):
+                    return _top_metabolic_tasks(run_id, request, limit)
                 numeric = scores.drop(columns=["source"]).apply(pd.to_numeric, errors="coerce")
                 grouped = numeric.groupby(scores["source"], observed=True).mean()
                 delta = grouped.loc["predicted"] - grouped.loc["control"]
+                trace_tasks = _optional_trace_tasks(run_id, request)
                 items = []
                 for task in delta.abs().sort_values(ascending=False).index:
                     value = float(delta[task])
@@ -235,7 +279,12 @@ def get_metabolic_tasks(
                     items.append(
                         {
                             "id": str(task),
-                            "label": str(task),
+                            "label": (trace_tasks or {}).get(str(task), {}).get("label", str(task)),
+                            "category": (trace_tasks or {}).get(str(task), {}).get("category"),
+                            "subcategory": (trace_tasks or {}).get(str(task), {}).get("subcategory"),
+                            "trace_available": str(task) in trace_tasks if trace_tasks is not None else None,
+                            "control": float(grouped.loc["control", task]),
+                            "predicted": float(grouped.loc["predicted", task]),
                             "predicted_delta": value,
                             "observed_delta": observed
                             if observed is not None and math.isfinite(observed)
@@ -254,16 +303,112 @@ def get_metabolic_tasks(
                 "total": len(items),
                 "scope": "all",
                 "excluded_count": len(delta) - len(items),
+                "reactions_available": (root / "reaction_scores.csv").is_file(),
             }
+    return _top_metabolic_tasks(run_id, request, limit)
+
+
+def _top_metabolic_tasks(run_id: str, request: Request, limit: int) -> dict[str, Any]:
     summary = get_summary(run_id, request)
     items = [item.model_dump(mode="json") for item in summary.metabolic_tasks[:limit]]
+    trace_tasks = _optional_trace_tasks(run_id, request)
+    for item in items:
+        item["trace_available"] = item["id"] in trace_tasks if trace_tasks is not None else None
+    root = request.app.state.container.settings.derived_root / run_id
     return {
         "items": items,
         "limit": limit,
         "truncated": len(summary.metabolic_tasks) > limit,
         "total": len(summary.metabolic_tasks),
         "scope": "top",
+        "reactions_available": (root / "reaction_scores.csv").is_file(),
     }
+
+
+def _optional_trace_tasks(run_id: str, request: Request) -> dict[str, Any] | None:
+    """Missing traces are known unavailable; invalid traces retain an explicit error path."""
+    try:
+        return _load_task_trace(run_id, request)["tasks"]
+    except HTTPException as exc:
+        if isinstance(exc.detail, dict) and exc.detail.get("code") == "TASK_TRACE_UNAVAILABLE":
+            return {}
+        # Optional labels must not hide independently valid score files. None tells
+        # clients to try the trace endpoint, which still rejects untrusted artifacts.
+        return None
+
+
+def _load_task_trace(run_id: str, request: Request) -> dict[str, Any]:
+    try:
+        path = _artifact_path(run_id, "task_trace.json", request)
+    except HTTPException as exc:
+        if (
+            exc.status_code == 404
+            and isinstance(exc.detail, dict)
+            and exc.detail.get("code") == "ARTIFACT_NOT_FOUND"
+        ):
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "code": "TASK_TRACE_UNAVAILABLE",
+                    "message": "This run has no frozen task trace; a new analysis is required.",
+                },
+            ) from exc
+        raise
+    container = request.app.state.container
+    root = (container.settings.derived_root / run_id).resolve()
+    registered = [item for item in container.store.artifacts(run_id) if item.kind == "task_trace"]
+    if not path.is_relative_to(root) or len(registered) != 1 or registered[0].sha256 != file_sha256(path):
+        raise HTTPException(status_code=500, detail={"code": "INVALID_TASK_TRACE"})
+    document = _json_artifact(path)
+    if (
+        document.get("run_id") != run_id
+        or document.get("schema_version") != 1
+        or not isinstance(document.get("tasks"), dict)
+        or not isinstance(document.get("reactions"), dict)
+        or not isinstance(document.get("genes"), dict)
+    ):
+        raise HTTPException(status_code=500, detail={"code": "INVALID_TASK_TRACE"})
+    return document
+
+
+@router.get("/{run_id}/task-trace", response_model=TaskTraceResponse)
+def get_task_trace(
+    run_id: str,
+    request: Request,
+    task_id: str = Query(min_length=1, max_length=512),
+    reaction_limit: int = Query(default=30, ge=1, le=100),
+    gene_limit: int = Query(default=30, ge=1, le=100),
+) -> TaskTraceResponse:
+    document = _load_task_trace(run_id, request)
+    if task_id not in document["tasks"]:
+        raise HTTPException(status_code=404, detail={"code": "TASK_NOT_FOUND"})
+    try:
+        task = dict(document["tasks"][task_id])
+        reaction_ids = task.pop("reaction_ids")
+        reactions = []
+        for reaction_id in reaction_ids[:reaction_limit]:
+            reaction = dict(document["reactions"][reaction_id])
+            gene_ids = reaction.pop("gene_ids")
+            reaction.update(
+                {
+                    "genes": [document["genes"][gene] for gene in gene_ids[:gene_limit]],
+                    "total_genes": len(gene_ids),
+                    "truncated": len(gene_ids) > gene_limit,
+                }
+            )
+            reactions.append(reaction)
+        result = {key: value for key, value in document.items() if key not in {"tasks", "reactions", "genes"}}
+        result.update(
+            {
+                "task": task,
+                "reactions": reactions,
+                "total_reactions": len(reaction_ids),
+                "truncated": len(reaction_ids) > reaction_limit,
+            }
+        )
+        return TaskTraceResponse.model_validate(result)
+    except (KeyError, TypeError, ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=500, detail={"code": "INVALID_TASK_TRACE"}) from exc
 
 
 @router.get("/{run_id}/reactions")

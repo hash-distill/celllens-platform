@@ -18,7 +18,7 @@
 
 | 字段 | 约束 |
 |---|---|
-| `cell_line` | K562 或 RPE1；后者当前禁用 |
+| `cell_line` | K562、RPE1、Jurkat 或 HepG2；实际可用性由 catalog 与已校验资产决定 |
 | `perturbation` | 1–64 字符，字母/数字/下划线/点/连字符；自动转大写，在线请求须在支持列表 |
 | `mode` | online、validation、precomputed；默认 online |
 | `n_cells` | 64–4096，默认 512；请求推理细胞数，不是质量指标 |
@@ -34,6 +34,10 @@
 
 运行查询返回请求、状态、`stage_progress`、时间、warnings 和错误信息。状态枚举为 queued、state_running、adapting、metabolic_running、validating、completed、failed。进度来自后端节点；completed/failed 为终态。
 
+## 历史实验检索
+
+`GET /api/v1/runs?limit=20&offset=0&q=AAMP&status=completed&mode=online` 从服务器数据库读取历史记录。`limit` 为 1–100（默认 20），`offset` 非负；`q` 最长 128 字符，对运行编号、背景、扰动进行不区分大小写的包含检索，百分号等作为普通字符。`status` 为 all/active/completed/failed，active 包含所有非终态；`mode` 可省略或指定 online/precomputed/validation。`total` 是筛选后的完整数量。浏览器存储不决定此列表，接口不提供删除操作。
+
 ## 接口列表
 
 路径均相对 `/api/v1`。
@@ -44,24 +48,30 @@
 | GET | `/ready` | 数据库与 worker/GPU 开关；未全部满足返回 503 |
 | GET | `/catalog/contexts` | 三种模式就绪状态、模型 ID 及原因 |
 | GET | `/catalog/perturbations?cell_line=K562&mode=online` | `{cell_line, mode, items}`；online 为模型支持扰动，precomputed 为通过清单及哈希校验的组合，validation 当前为空 |
+| GET | `/runs` | 服务器历史实验；按创建时间及编号倒序，返回 items/total/limit/offset，支持分页及检索筛选 |
 | POST | `/runs` | 创建运行，成功返回 202 |
 | GET | `/runs/{run_id}` | 请求、运行阶段与错误 |
 | GET | `/runs/{run_id}/summary` | 汇总；未完成时可返回状态和空结果 |
-| GET | `/runs/{run_id}/projection` | `{method, seed, points}`；点含 x/y/source/cell_index，默认最多 12000 点 |
+| GET | `/runs/{run_id}/projection` | `{method, seed, points}`；合成单细胞演示另含 data_kind、input_sha256、generator 和可选的历史补充来源；点含 x/y/source/cell_index，默认最多 12000 点；新版在线分析另含 `population_selection`，记录目标扰动筛选的输入、保留与排除细胞数 |
 | GET | `/runs/{run_id}/genes?limit=2000` | CSV 行转 JSON；gene/control/predicted/predicted_delta 与可选观测列，数值可能是字符串 |
-| GET | `/runs/{run_id}/metabolic-tasks?limit=1000` | 默认 scope=top 返回 Top 20；scope=all 从本次任务矩阵和覆盖表读取完整有效结果，缺少产物时明确退回 scope=top |
+| GET | `/runs/{run_id}/metabolic-tasks?limit=1000` | 默认 scope=top 返回 Top 20；scope=all 从本次任务矩阵和覆盖表读取完整有效结果，缺少产物或旧 precomputed 长表格式时明确返回 scope=top 已保存摘要 |
 | GET | `/runs/{run_id}/reactions?limit=1000` | 真实矩阵按来源取均值，再按绝对差异排序；其他 CSV 格式可能有不同列 |
+| GET | `/runs/{run_id}/task-trace?task_id=...` | 读取本次冻结的任务—反应—基因知识关联及对照/预测/差值；reaction_limit、gene_limit 默认 30，范围 1–100 |
 | GET | `/runs/{run_id}/provenance` | 本次 manifest 的历史模型/数据 ID、资产/代码/清单哈希及时间；不返回本机路径 |
 | GET | `/runs/{run_id}/validation` | 已生成的验证指标，缺失返回 404；protocol_status=unconfirmed，不能视为正式验收 |
 | GET | `/runs/{run_id}/report` | HTML 下载；包含基因、任务及警告 |
 
 三类表格返回 `{items, limit, truncated}`，limit 均允许 1–10000。truncated=false 只表示接口未因 limit 截断，不证明摘要包含全部任务。真实基因表保持输出顺序，接口不会按效应大小排序。
 
-precomputed_ready 要求至少一个组合通过同一创建契约校验。validation_ready 仍只反映资产整体就绪，不保证具体扰动有匹配观测或实验拆分已批准；前端保持验证提交关闭。
+precomputed_ready 要求至少一个组合通过同一创建契约校验，包必须包含已登记哈希且有效的 projection.json，至少有对照与扰动后群体的有限坐标、来源和细胞序号。在线/验证运行在发布前同样校验投影，并要求纳入产物清单；不完整缓存不得复用。validation_ready 仍只反映资产整体就绪，不保证具体扰动有匹配观测或实验拆分已批准；前端保持验证提交关闭。
 
 metabolic-tasks 另返回 scope、total；全量分支返回 excluded_count，排除预测变化为非有限数值的任务，绝不将其替换为零。scope=all 表示完整有效变化集合，覆盖摘要的任务计数仍包含证据不足或不可计算任务。
 
+任务列表还返回 `reactions_available`，各任务返回 `trace_available`：`false` 表示对应保存结果缺失，前端直接展示缺失说明，不请求不存在的可选接口；`true` 表示冻结追溯中包含该任务；`null` 表示追溯无法确认（例如哈希损坏），前端仍允许请求并展示真实错误，不将损坏伪装为缺失。Top 摘要与全量结果均提供这些字段，分类筛选只作用于已加载任务。
+
 ## 摘要语义
+
+任务追溯响应包含数据库版本、源文件哈希、任务分类、反应列表及关联基因。`relationship_kind=knowledge_association` 不代表因果贡献；`determinant_status=unavailable` 明确表示未提供评分决定基因归因。缺少数值返回 null；反应和基因列表各自返回 total/truncated。缺少历史追溯产物返回 `404 TASK_TRACE_UNAVAILABLE`，任务不在产物中返回 `404 TASK_NOT_FOUND`；产物哈希或身份错误返回 500，不用当前数据库代替历史版本。
 
 摘要包含运行编号、状态、背景、扰动、coverage、top_genes、metabolic_tasks、warnings 和 error_code。
 

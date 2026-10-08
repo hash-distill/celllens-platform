@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRunStore } from '../../stores/run'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
 import CoverageCards from '../CoverageCards.vue'
@@ -8,6 +8,7 @@ import { EVIDENCE_LABEL, fmtDelta, fmtNumber, fmtPercent } from '../../utils/for
 import type { EvidenceLevel, EvidenceItem } from '../../types/run'
 import TablePager from '../TablePager.vue'
 import { usePagedRows } from '../../utils/pagination'
+import TaskTrace from '../response/TaskTrace.vue'
 
 /**
  * 代谢功能：覆盖摘要卡 + Top 任务差异图与表格 + 反应聚合表。
@@ -34,14 +35,14 @@ const levelCounts = computed(() => {
   return counts
 })
 
-/** 默认显示覆盖支持 + 探索性；证据不足可切换 */
-const showLevels = ref<Record<EvidenceLevel, boolean>>({
-  supported: true,
-  exploratory: true,
-  insufficient: false,
-})
-
-const visibleTasks = computed(() => allTasks.value.filter((t) => showLevels.value[t.evidence_level]))
+type TaskFilter = 'all' | EvidenceLevel
+const evidenceFilter = ref<TaskFilter>('all')
+const filterLevels: TaskFilter[] = ['all', 'supported', 'exploratory', 'insufficient']
+const filterLabel = (level: TaskFilter) => level === 'all' ? '全部' : EVIDENCE_LABEL[level]
+const visibleTasks = computed(() => allTasks.value.filter(
+  (t) => evidenceFilter.value === 'all' || t.evidence_level === evidenceFilter.value,
+))
+const selectedTaskId = ref('')
 
 const taskSearch = ref('')
 const searchedTasks = computed(() => {
@@ -60,6 +61,7 @@ const barItems = computed<DivergingBarItem[]>(() =>
     .sort((a, b) => Math.abs(b.predicted_delta) - Math.abs(a.predicted_delta))
     .slice(0, 15)
     .map((t) => ({
+      id: t.id,
       name: t.label,
       value: t.predicted_delta,
       extra: `证据等级：${EVIDENCE_LABEL[t.evidence_level]}；覆盖 ${(t.coverage * 100).toFixed(1)}%`,
@@ -67,6 +69,13 @@ const barItems = computed<DivergingBarItem[]>(() =>
 )
 
 const { page: taskPage, pages: taskPages, visible: taskRows } = usePagedRows(searchedTasks)
+const selectedTask = computed(() => searchedTasks.value.find(task => task.id === selectedTaskId.value))
+watch(searchedTasks, rows => {
+  if (!rows.some(task => task.id === selectedTaskId.value)) selectedTaskId.value = ''
+})
+watch(() => props.runId, () => {
+  evidenceFilter.value = 'all'; taskSearch.value = ''; selectedTaskId.value = ''
+})
 
 const summaryDisplay = computed<BlockDisplay>(() => {
   const b = summaryBlock.value
@@ -83,6 +92,7 @@ const tasksDisplay = computed<BlockDisplay>(() => {
 })
 
 const reactionsDisplay = computed<BlockDisplay>(() => {
+  if (tasksBlock.value?.data?.reactions_available === false) return 'unavailable'
   const b = reactionsBlock.value
   if (!b || b.status === 'idle' || b.status === 'loading') return 'loading'
   if (b.status === 'error') {
@@ -154,7 +164,7 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
       </div>
       <p class="muted small" style="margin: 0 0 10px">
         任务分数变化不是实测代谢通量。筛选仅覆盖已生成并加载的评分记录，图表取其中绝对变化最大的 15 项。覆盖摘要还可包含未生成分数的任务，未返回不能补零。
-        <template v-if="tasksBlock?.data?.scope !== 'all'">该运行缺少全量任务及覆盖产物，当前降级为 Top 摘要。</template>
+        <template v-if="tasksBlock?.data?.scope !== 'all'">当前读取本次运行保存的 Top 摘要，未展示全量任务矩阵。</template>
         <template v-if="tasksBlock?.data?.truncated">服务端已按 limit 截断。</template>
         <template v-if="tasksBlock?.data?.excluded_count">有 {{ tasksBlock.data.excluded_count }} 项预测变化无有效数值，已排除；不能按零变化解释。</template>
       </p>
@@ -166,12 +176,14 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
         unavailable-text="本次结果未提供代谢任务"
         @retry="runs.retryBlock(props.runId, 'tasks')"
       >
-        <div class="filter-row" aria-label="证据等级筛选">
-          <label v-for="level in (['supported', 'exploratory', 'insufficient'] as EvidenceLevel[])" :key="level" class="filter-check">
-            <input v-model="showLevels[level]" type="checkbox" />
-            <span class="pill" :class="`pill-ev-${level}`">{{ EVIDENCE_LABEL[level] }}</span>
-            <span class="small muted">（{{ levelCounts[level] }}）</span>
-          </label>
+        <div class="filter-row">
+          <div class="task-level-filter" role="radiogroup" aria-label="任务覆盖等级筛选">
+            <label v-for="level in filterLevels" :key="level" class="filter-check" :class="{active: evidenceFilter === level}">
+              <input v-model="evidenceFilter" :name="'task-evidence-'+runId" :value="level" type="radio" />
+              <span class="pill" :class="level === 'all' ? 'pill-neutral' : `pill-ev-${level}`">{{ filterLabel(level) }}</span>
+              <span class="small muted">（{{ level === 'all' ? allTasks.length : levelCounts[level] }}）</span>
+            </label>
+          </div>
           <span class="spacer"></span>
           <label class="sr-only" for="task-search">搜索任务</label>
           <input
@@ -182,6 +194,7 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
             placeholder="搜索任务名或关联基因"
           />
         </div>
+        <p class="task-filter-status muted small" role="status">当前：{{ filterLabel(evidenceFilter) }} · 匹配 {{ searchedTasks.length }} 项。点击条形或任务名查看详情。</p>
 
         <template v-if="searchedTasks.length > 0">
           <DivergingBar
@@ -190,7 +203,16 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
             category-name="代谢任务"
             value-label="任务分数变化"
             :height="Math.min(120 + barItems.length * 26, 460)"
+            :selected-name="selectedTask?.label"
+            @select="selectedTaskId = $event"
           />
+          <section v-if="selectedTask" class="task-detail" aria-label="选中代谢任务详情">
+            <h4>{{ selectedTask.label }}</h4>
+            <p class="muted small">{{ EVIDENCE_LABEL[selectedTask.evidence_level] }} · 基因覆盖 {{ fmtPercent(selectedTask.coverage, 1) }} · {{ selectedTask.id }}</p>
+            <dl><div><dt>对照分数</dt><dd>{{ fmtNumber(selectedTask.control ?? null) }}</dd></div><div><dt>预测分数</dt><dd>{{ fmtNumber(selectedTask.predicted ?? null) }}</dd></div><div><dt>预测变化</dt><dd>{{ fmtDelta(selectedTask.predicted_delta) }}</dd></div></dl>
+            <p v-if="selectedTask.control == null || selectedTask.predicted == null" class="muted small">保存的摘要尚未提供对照或预测分数，不能根据差值补算。</p>
+            <p class="muted small">关联基因：{{ selectedTask.determinant_genes.join(', ') || '尚未提供；完整关联请查看下方追溯。' }}</p>
+          </section>
           <div class="table-wrap" style="margin-top: 12px">
             <table class="table">
               <thead>
@@ -204,9 +226,9 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="task in taskRows" :key="task.id">
+                <tr v-for="task in taskRows" :key="task.id" :class="{'selected-task-row': selectedTaskId === task.id}">
                   <td>
-                    <div>{{ task.label }}</div>
+                    <button class="task-name-button" :aria-label="'查看任务：'+task.label" :aria-pressed="selectedTaskId === task.id" @click="selectedTaskId = task.id">{{ task.label }}</button>
                     <div class="small faint mono">{{ task.id }}</div>
                   </td>
                   <td>{{ fmtDelta(task.predicted_delta) }}</td>
@@ -233,12 +255,11 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
           </div>
           <TablePager v-model:page="taskPage" :pages="taskPages" :total="searchedTasks.length" />
         </template>
-        <div v-else class="notice notice-info" style="margin-top: 10px">
-          已加载任务中没有满足当前等级的项目。
-          <template v-if="!showLevels.insufficient && levelCounts.insufficient > 0">
-            有 {{ levelCounts.insufficient }} 条证据不足任务被隐藏，可勾选上方「证据不足」查看。
-          </template>
+        <div v-else class="task-empty notice notice-info" role="status" style="margin-top: 10px">
+          当前已加载的{{ tasksBlock?.data?.scope === 'all' ? '任务结果' : ' Top 摘要' }}中没有{{ evidenceFilter === 'all' ? '' : '「'+filterLabel(evidenceFilter)+'」' }}{{ taskSearch.trim() ? '匹配「'+taskSearch.trim()+'」的' : '' }}任务。切换「全部」或清空搜索可查看其他已加载任务。
+          <span v-if="tasksBlock?.data?.scope !== 'all'">摘要未包含该等级，不代表全量任务中没有该等级。</span>
         </div>
+        <TaskTrace v-if="selectedTask" :run-id="runId" :task-id="selectedTask.id" :task-label="selectedTask.label" :available="selectedTask.trace_available" />
       </BlockState>
     </section>
 
@@ -257,7 +278,7 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
       </div>
       <BlockState
         :display="reactionsDisplay"
-        :error="reactionsBlock?.error"
+        :error="reactionsDisplay === 'unavailable' ? null : reactionsBlock?.error"
         loading-text="正在加载反应聚合…"
         empty-text="本次结果没有反应聚合记录"
         :unavailable-text="reactionsUnavailableText"
@@ -332,6 +353,17 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
   cursor: pointer;
   font-size: 13px;
 }
+.task-level-filter { display: flex; flex-wrap: wrap; gap: 12px; }
+.filter-check { padding: 5px 7px; border: 1px solid transparent; border-radius: 5px; }
+.filter-check.active { border-color: var(--border-strong); background: #edf3ec; }
+.task-filter-status { margin: 0 0 12px; }
+.task-detail { padding: 16px; margin: 14px 0; border: 1px solid var(--border-strong); background: #f5f8f3; }
+.task-detail h4 { margin: 0 0 8px; font-size: 14px; }
+.task-detail dl { display: flex; flex-wrap: wrap; gap: 28px; }
+.task-detail dt { color: var(--muted); font-size: 11px; }
+.task-detail dd { margin: 5px 0 0; font-variant-numeric: tabular-nums; }
+.task-name-button { border: 0; background: transparent; color: var(--primary); text-align: left; cursor: pointer; font: inherit; padding: 3px 0; text-decoration: underline; text-underline-offset: 3px; }
+.selected-task-row { background: #edf3ec; }
 .spacer {
   flex: 1;
 }

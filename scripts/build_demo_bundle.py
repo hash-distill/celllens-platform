@@ -30,6 +30,8 @@ import random
 from datetime import UTC, datetime
 from pathlib import Path
 
+from backend.app.services.demo_projection import write_demo_projection
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 SEED = 20260920
@@ -264,6 +266,7 @@ def build(cell_line: str, perturbation: str, top_k: int) -> Path:
         json.dumps(provenance, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
 
+    write_demo_projection(target, seed=SEED)
     files = {}
     for item in sorted(target.iterdir()):
         if item.is_file() and item.name != "manifest.json":

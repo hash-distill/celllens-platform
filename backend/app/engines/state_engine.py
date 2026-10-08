@@ -32,6 +32,20 @@ class StateCliEngine:
         self.timeout_seconds = timeout_seconds
         self.device = device
 
+    def perturbation_label(self, perturbation: str, model: RegistryEntry) -> str:
+        import torch
+
+        mapping_path = model.path("model_dir") / "pert_onehot_map.pt"
+        if not mapping_path.is_file():
+            raise AssetNotReadyError(f"STATE perturbation vocabulary does not exist: {mapping_path}")
+        mapping = torch.load(mapping_path, map_location="cpu", weights_only=False)
+        matches = {str(key) for key in mapping if str(key).strip().upper() == perturbation.strip().upper()}
+        if len(matches) != 1:
+            raise StateInferenceError(
+                "Requested perturbation is missing or ambiguous in the model vocabulary"
+            )
+        return matches.pop()
+
     def build_command(
         self,
         request: StateRunInput,
@@ -82,8 +96,9 @@ class StateCliEngine:
                 raise AssetNotReadyError(f"STATE input asset does not exist: {path}")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         perturbation_tsv = output_path.with_suffix(".perturbations.tsv")
+        perturbation_label = self.perturbation_label(request.perturbation, model)
         perturbation_tsv.write_text(
-            f"perturbation\tnum_cells\n{request.perturbation}\t{request.n_cells}\n",
+            f"perturbation\tnum_cells\n{perturbation_label}\t{request.n_cells}\n",
             encoding="utf-8",
         )
         command = self.build_command(request, model, output_path, perturbation_tsv)
@@ -103,6 +118,8 @@ class StateCliEngine:
         output_path.with_suffix(".stderr.log").write_text(completed.stderr[-20_000:], encoding="utf-8")
         if completed.returncode != 0:
             raise StateInferenceError(completed.stderr[-4000:] or f"STATE exited with {completed.returncode}")
+        if "using control fallback one-hot" in completed.stdout:
+            raise StateInferenceError("STATE used a control fallback for an unmapped perturbation")
         if not output_path.is_file() or output_path.stat().st_size == 0:
             raise StateInferenceError("STATE finished without a non-empty output H5AD")
         try:
@@ -128,6 +145,14 @@ def validate_state_output(output: Any, request: StateRunInput, model: RegistryEn
         raise StateInferenceError("STATE output contains non-finite expression values")
     if matrix.shape != (output.n_obs, output.n_vars):
         raise StateInferenceError("STATE output expression dimensions do not match AnnData shape")
+
+    cell_type_column = model.payload.get("cell_type_column")
+    if cell_type_column:
+        if cell_type_column not in output.obs:
+            raise StateInferenceError("STATE output is missing the registered cell background column")
+        backgrounds = {str(value).strip().lower() for value in output.obs[cell_type_column]}
+        if backgrounds != {request.cell_line.lower()}:
+            raise StateInferenceError("STATE output cell background differs from the requested background")
 
     perturbation_column = model.payload.get("perturbation_column")
     if perturbation_column:

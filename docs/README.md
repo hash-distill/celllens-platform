@@ -1,6 +1,6 @@
 # CellLens 文档目录
 
-更新日期：2026-10-07。项目概览和快速启动见 [项目 README](../README.md)。
+更新日期：2026-10-08。项目概览和快速启动见 [项目 README](../README.md)。
 
 ## 先了解和使用系统
 
@@ -8,6 +8,7 @@
 |---|---|
 | [使用指南](guide/USER_GUIDE.md) | 面向非生物专业用户：参数、运行流程、结果阅读 |
 | [模型说明](guide/MODELS.md) | STATE、scCellFie 的原始任务、输入输出与项目边界 |
+| [响应工作台说明](guide/RESPONSE_WORKBENCH.md) | 2026-10-08 改造：双视图、冻结任务追溯、三维功能网络与科学边界 |
 | [演示讲稿](guide/DEMO_SCRIPT.md) | 四章演示的讲解参考 |
 
 ## 开发、部署与科学解释
@@ -26,7 +27,10 @@
 
 ## 截图与检查记录
 
-- [页面截图](screenshots/README.md)：仅保留三张实际页面截图。
+- [页面截图](screenshots/README.md)：实际页面截图，含 2026-10-08 响应工作台。
+- [二维投影修复](verification/2026-10-08-required-projection.md)：投影完成契约、历史演示补齐及新旧实验显示检查。
+- [2026-10-08 页面与导航验收](verification/2026-10-08-navigation.md)：独立首页、统一工作台、服务器历史记录与响应式检查。
+- [2026-10-08 验收记录](verification/2026-10-08-response-workbench.md)：响应工作台接口、浏览器检查与未复现范围。
 - [2026-10-04 工程检查记录](verification/2026-10-04/README.md)：历史检查结果与适用边界。
 
 新生成的截图、CSV、日志和检查 JSON 写入 `reports/`，不再混入项目说明或历史记录目录。`reports/` 不纳入 Git。

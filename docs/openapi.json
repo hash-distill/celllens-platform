@@ -135,6 +135,108 @@
       }
     },
     "/api/v1/runs": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "List Runs",
+        "operationId": "list_runs_api_v1_runs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "active",
+                "completed",
+                "failed"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "online",
+                    "precomputed",
+                    "validation"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "runs"
@@ -142,14 +244,14 @@
         "summary": "Create Run",
         "operationId": "create_run_api_v1_runs_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateRunRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -412,6 +514,83 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Get Metabolic Tasks Api V1 Runs  Run Id  Metabolic Tasks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/task-trace": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Get Task Trace",
+        "operationId": "get_task_trace_api_v1_runs__run_id__task_trace_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "reaction_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Reaction Limit"
+            }
+          },
+          {
+            "name": "gene_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Gene Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskTraceResponse"
                 }
               }
             }
@@ -724,7 +903,9 @@
             "type": "string",
             "enum": [
               "K562",
-              "RPE1"
+              "RPE1",
+              "Jurkat",
+              "HepG2"
             ],
             "title": "Cell Line"
           },
@@ -791,6 +972,51 @@
         ],
         "title": "CreateRunResponse"
       },
+      "DatabaseProvenance": {
+        "properties": {
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "title": "Manifest Sha256"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Files"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "organism": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organism"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "manifest_sha256",
+          "files"
+        ],
+        "title": "DatabaseProvenance"
+      },
       "EvidenceItem": {
         "properties": {
           "id": {
@@ -800,6 +1026,50 @@
           "label": {
             "type": "string",
             "title": "Label"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control"
+          },
+          "predicted": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted"
           },
           "predicted_delta": {
             "type": "number",
@@ -862,6 +1132,38 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "RunListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunRecord"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "RunListResponse"
       },
       "RunRecord": {
         "properties": {
@@ -1022,6 +1324,352 @@
           "perturbation"
         ],
         "title": "RunSummary"
+      },
+      "TaskTraceResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "database_version": {
+            "type": "string",
+            "title": "Database Version"
+          },
+          "database_provenance": {
+            "$ref": "#/components/schemas/DatabaseProvenance"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TraceTask"
+          },
+          "reactions": {
+            "items": {
+              "$ref": "#/components/schemas/TraceReaction"
+            },
+            "type": "array",
+            "title": "Reactions"
+          },
+          "relationship_kind": {
+            "type": "string",
+            "const": "knowledge_association",
+            "title": "Relationship Kind"
+          },
+          "determinant_status": {
+            "type": "string",
+            "const": "unavailable",
+            "title": "Determinant Status"
+          },
+          "determinant_genes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Determinant Genes"
+          },
+          "score_units": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Score Units"
+          },
+          "total_reactions": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Reactions"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "run_id",
+          "database_version",
+          "database_provenance",
+          "task",
+          "reactions",
+          "relationship_kind",
+          "determinant_status",
+          "determinant_genes",
+          "score_units",
+          "total_reactions",
+          "truncated",
+          "warnings"
+        ],
+        "title": "TaskTraceResponse"
+      },
+      "TraceReaction": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control"
+          },
+          "predicted": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted"
+          },
+          "predicted_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted Delta"
+          },
+          "observed_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Delta"
+          },
+          "gene_rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gene Rule"
+          },
+          "genes": {
+            "items": {
+              "$ref": "#/components/schemas/TraceScores"
+            },
+            "type": "array",
+            "title": "Genes"
+          },
+          "total_genes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Genes"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "genes",
+          "total_genes",
+          "truncated"
+        ],
+        "title": "TraceReaction"
+      },
+      "TraceScores": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control"
+          },
+          "predicted": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted"
+          },
+          "predicted_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted Delta"
+          },
+          "observed_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Delta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "TraceScores"
+      },
+      "TraceTask": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control"
+          },
+          "predicted": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted"
+          },
+          "predicted_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted Delta"
+          },
+          "observed_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Delta"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory"
+          },
+          "coverage": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage"
+          },
+          "evidence_level": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "exploratory",
+              "insufficient"
+            ],
+            "title": "Evidence Level"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "coverage",
+          "evidence_level"
+        ],
+        "title": "TraceTask"
       },
       "ValidationError": {
         "properties": {

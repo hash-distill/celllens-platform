@@ -12,6 +12,7 @@ from backend.app.core.run_manifest import atomic_write_json, file_sha256
 from backend.app.engines.evidence_engine import compare_task_deltas
 from backend.app.engines.metabolic_engine import ScCellFieEngine
 from backend.app.schemas import CreateRunRequest
+from backend.app.services.task_trace import build_task_trace, task_metadata
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,9 @@ class ScientificAnalysisService:
 
         control = ad.read_h5ad(dataset.path("control_path"))
         predicted = ad.read_h5ad(predicted_path)
+        predicted, population_selection = _select_prediction_population(
+            predicted, model.payload.get("perturbation_column"), request.perturbation
+        )
         observed = None
         if request.mode == "validation":
             observed = ad.read_h5ad(dataset.path("observed_path"))
@@ -114,14 +118,11 @@ class ScientificAnalysisService:
         ]
         if observed is not None:
             projection_sources.append(("observed", _dense_matrix(observed.X)))
-        atomic_write_json(
-            projection_path,
-            _projection_document(
-                projection_sources,
-                seed=request.seed,
-                max_points=self.max_projection_points,
-            ),
+        projection = _projection_document(
+            projection_sources, seed=request.seed, max_points=self.max_projection_points
         )
+        projection["population_selection"] = population_selection
+        atomic_write_json(projection_path, projection)
 
         warnings: list[str] = []
         artifacts = [gene_path, projection_path]
@@ -148,12 +149,24 @@ class ScientificAnalysisService:
             task_scores.to_csv(task_path)
             reaction_path = output_dir / "reaction_scores.csv"
             reaction_scores = result.reaction_scores.copy()
-            reaction_scores["source"] = combined.obs.loc[
-                reaction_scores.index, "celllens_source"
-            ].astype(str)
+            reaction_scores["source"] = combined.obs.loc[reaction_scores.index, "celllens_source"].astype(str)
             reaction_scores.to_csv(reaction_path)
             artifacts.extend([task_path, reaction_path])
-            metabolic_tasks = _summarize_tasks(task_scores, completeness, observed is not None)
+            metabolic_tasks = _summarize_tasks(task_scores, completeness, observed is not None, database)
+            trace_path = output_dir / "task_trace.json"
+            atomic_write_json(
+                trace_path,
+                build_task_trace(
+                    run_id,
+                    database,
+                    database_version,
+                    task_scores,
+                    reaction_scores,
+                    gene_table,
+                    completeness,
+                ),
+            )
+            artifacts.append(trace_path)
             coverage_summary = _coverage_summary(
                 len(genes) / original_control_gene_count,
                 database,
@@ -183,6 +196,32 @@ class ScientificAnalysisService:
         return AnalysisResult(summary=summary, artifacts=artifacts)
 
 
+def _select_prediction_population(
+    predicted: Any, perturbation_column: str | None, perturbation: str
+) -> tuple[Any, dict[str, Any]]:
+    """STATE may emit simulated controls alongside targets; analyse only the requested target."""
+    input_count = predicted.n_obs
+    metadata: dict[str, Any] = {
+        "version": 1,
+        "status": "unconfigured",
+        "perturbation_column": perturbation_column,
+        "perturbation": perturbation,
+        "input_prediction_cells": input_count,
+    }
+    if perturbation_column:
+        if perturbation_column not in predicted.obs:
+            raise ScientificContractError("Prediction is missing the registered perturbation column")
+        labels = predicted.obs[perturbation_column].astype(str).str.strip().str.upper()
+        mask = labels == perturbation.strip().upper()
+        if not mask.any():
+            raise ScientificContractError("Prediction has no cells for the requested perturbation")
+        predicted = predicted[mask].copy()
+        metadata["status"] = "matched"
+    metadata["selected_prediction_cells"] = predicted.n_obs
+    metadata["excluded_prediction_cells"] = input_count - predicted.n_obs
+    return predicted, metadata
+
+
 def _expression_view(
     adata: Any | None,
     embed_key: str | None,
@@ -207,8 +246,7 @@ def _expression_view(
     if len(positions) != len(expected_genes):
         missing = [gene for gene in expected_genes if gene not in canonical]
         raise ScientificContractError(
-            f"Expression source is missing {len(missing)} registered genes, "
-            f"e.g. {missing[:5]}"
+            f"Expression source is missing {len(missing)} registered genes, e.g. {missing[:5]}"
         )
     if matrix.shape[1] != len(expected_genes):
         raise ScientificContractError(
@@ -294,7 +332,8 @@ def _combine_sources(ad: Any, control: Any, predicted: Any, observed: Any | None
 
 def _load_frozen_database(root: Path) -> tuple[dict[str, Any], str]:
     manifest_path = root / "manifest.json"
-    document = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_bytes = manifest_path.read_bytes()
+    document = json.loads(manifest_bytes)
     if not document.get("enabled"):
         raise FileNotFoundError("frozen scCellFie database is not enabled")
     files = document.get("files")
@@ -306,6 +345,16 @@ def _load_frozen_database(root: Path) -> tuple[dict[str, Any], str]:
             raise FileNotFoundError(f"missing scCellFie database file: {filename}")
         if file_sha256(path).lower() != str(expected).lower():
             raise ValueError(f"scCellFie database hash mismatch: {filename}")
+    required_files = {
+        "Rxn-Info-Recon2-2.json",
+        "Task-Info.csv",
+        "Task_by_Rxn.csv",
+        "Task_by_Gene.csv",
+        "Rxn_by_Gene.csv",
+        "Thresholds.csv",
+    }
+    if not required_files.issubset(files):
+        raise ValueError("scCellFie manifest must pin all six human database files")
     try:
         from sccellfie.datasets.database import load_sccellfie_database
     except ImportError as exc:
@@ -314,6 +363,17 @@ def _load_frozen_database(root: Path) -> tuple[dict[str, Any], str]:
     required = {"rxn_info", "task_info", "task_by_rxn", "task_by_gene", "rxn_by_gene", "thresholds"}
     if any(database.get(key) is None for key in required):
         raise ValueError("scCellFie database could not be loaded completely")
+    # Detect changes between verification and parsing; never attest a different DB snapshot.
+    if manifest_path.read_bytes() != manifest_bytes or any(
+        file_sha256(root / filename).lower() != str(expected).lower() for filename, expected in files.items()
+    ):
+        raise ValueError("scCellFie database changed while loading")
+    database["_celllens_provenance"] = {
+        "manifest_sha256": file_sha256(manifest_path),
+        "files": dict(files),
+        "source": document.get("source"),
+        "organism": document.get("organism", "human"),
+    }
     return database, str(document.get("version", "unknown"))
 
 
@@ -363,7 +423,10 @@ def _coverage_summary(
 
 
 def _summarize_tasks(
-    scores: pd.DataFrame, completeness: pd.DataFrame, has_observed: bool
+    scores: pd.DataFrame,
+    completeness: pd.DataFrame,
+    has_observed: bool,
+    database: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     numeric = scores.drop(columns=["source"]).apply(pd.to_numeric, errors="coerce")
     grouped = numeric.groupby(scores["source"], observed=True).mean()
@@ -387,7 +450,9 @@ def _summarize_tasks(
         output.append(
             {
                 "id": str(task),
-                "label": str(task),
+                **(task_metadata(database, str(task)) if database is not None else {"label": str(task)}),
+                "control": _optional_float(grouped.loc["control", task]),
+                "predicted": _optional_float(grouped.loc["predicted", task]),
                 "predicted_delta": float(delta[task]),
                 "observed_delta": observed_delta,
                 "coverage": coverage,
@@ -443,9 +508,7 @@ def _projection_document(
         index = max(range(len(quotas)), key=lambda item: quotas[item])
         quotas[index] -= 1
     while sum(quotas) < budget:
-        candidates = [
-            index for index, (_, matrix) in enumerate(nonempty) if quotas[index] < len(matrix)
-        ]
+        candidates = [index for index, (_, matrix) in enumerate(nonempty) if quotas[index] < len(matrix)]
         index = max(candidates, key=lambda item: raw[item] - quotas[item])
         quotas[index] += 1
 

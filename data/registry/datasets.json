@@ -12,6 +12,36 @@
       "split_sha256": "b3e2c9c2d53ce488a2ebd42b4132333e4b5b0947bbb6680d81d8abdc50de01b2",
       "license": "Replogle et al. 2022 (CC-BY-4.0)",
       "enabled": true
+    },
+    {
+      "id": "replogle-rpe1-control-v1",
+      "cell_line": "RPE1",
+      "control_path": "data/raw/replogle-rpe1/control.h5ad",
+      "control_sha256": "9ccfa83242fefd6521c6b16eb06580b3d0ae5a931a281781b446d736815d1df4",
+      "split_path": "configs/splits/replogle-rpe1-fewshot-v1.json",
+      "split_sha256": "5907ce45056ca4f48e0a1f36d1c04b29807dd3eee1bf6b34cba297d1e398f1ec",
+      "license": "See pinned State-Replogle-Filtered source and original Replogle/Nadig datasets",
+      "enabled": true
+    },
+    {
+      "id": "replogle-jurkat-control-v1",
+      "cell_line": "Jurkat",
+      "control_path": "data/raw/replogle-jurkat/control.h5ad",
+      "control_sha256": "23d0323ff3807783e3e6ae2da22e187e67c6165c7d59162b501693ece82674a9",
+      "split_path": "configs/splits/replogle-jurkat-fewshot-v1.json",
+      "split_sha256": "a1d73c4e37f4ce4c3ed0414564b5d32a1dbc426b295fe39a4324e632268fb6b0",
+      "license": "See pinned State-Replogle-Filtered source and original Replogle/Nadig datasets",
+      "enabled": true
+    },
+    {
+      "id": "replogle-hepg2-control-v1",
+      "cell_line": "HepG2",
+      "control_path": "data/raw/replogle-hepg2/control.h5ad",
+      "control_sha256": "6d01a78986f7590def5be39a188ecb7063d01bff315e2a94633ab57ef829d5a8",
+      "split_path": "configs/splits/replogle-hepg2-fewshot-v1.json",
+      "split_sha256": "bdc91c8b7b39574b5b306d492a74060d1bd49c57e90cab74cdddbd3b4be85f76",
+      "license": "See pinned State-Replogle-Filtered source and original Replogle/Nadig datasets",
+      "enabled": true
     }
   ]
 }
