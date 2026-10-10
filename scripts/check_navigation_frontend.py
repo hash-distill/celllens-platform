@@ -7,6 +7,14 @@ from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 
+def expand_projection(page):
+    """Projection is an auxiliary view, opened explicitly before checking it."""
+    preview = page.locator(".projection-preview")
+    if preview.count() and preview.get_attribute("open") is None:
+        preview.locator(":scope > summary").click()
+        page.wait_for_load_state("networkidle")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8000")
@@ -26,7 +34,7 @@ def main() -> None:
         expect(page.locator(".home-page")).to_be_visible()
         expect(page.locator(".param-panel, aside, canvas")).to_have_count(0)
         nav = page.locator(".app-header nav")
-        for name in ["首页", "实验工作台", "实验记录", "实验比较", "演示模式", "使用说明"]:
+        for name in ["首页", "实验工作台", "实验记录", "实验比较", "结果解读", "使用说明"]:
             expect(nav.get_by_role("link", name=name, exact=True)).to_be_visible()
         page.screenshot(path=str(out / "home.png"), full_page=True)
         checks.append("independent homepage and six top navigation entries; no experiment form")
@@ -72,6 +80,7 @@ def main() -> None:
         page.locator("#manual-run-id").fill(run_id)
         page.get_by_role("button", name="打开", exact=True).click()
         expect(page).to_have_url(base + "/workbench?run=" + run_id)
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_contain_text("64 个显示点")
         expect(page.locator(".workspace-configuration")).not_to_have_attribute("open", "")
         expect(page.locator(".cell-viewport, .instrument-rail, .experiment-dock")).to_have_count(0)
@@ -84,19 +93,20 @@ def main() -> None:
         page.locator(".app-header nav").get_by_role("link", name="实验比较").click()
         expect(page.get_by_text("已加载", exact=True)).to_be_visible()
         page.goto(base + "/workbench?run=" + run_id, wait_until="networkidle")
-        page.locator(".app-header nav").get_by_role("link", name="演示模式", exact=True).click()
+        page.locator(".app-header nav").get_by_role("link", name="结果解读", exact=True).click()
         expect(page).to_have_url(base + "/demo?run=" + run_id)
         checks.append("workbench binds real results; parameter reuse, comparison and demo keep run identity")
 
         page.goto(base + "/runs/" + run_id + "?tab=structure", wait_until="networkidle")
         expect(page).to_have_url(base + "/workbench?run=" + run_id)
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_be_visible()
         expect(page.locator(".cell-viewport")).to_have_count(0)
         checks.append("legacy result and structure links redirect to unified workbench")
 
         page.goto(base + "/workbench", wait_until="networkidle")
         page.locator("input[type=radio][value=precomputed]").check()
-        page.locator("#perturbation-input").fill("MYC")
+        page.locator("#perturbation-input").fill("ALDOA")
         page.locator("#perturbation-input").press("Enter")
         page.screenshot(path=str(out / "setup.png"), full_page=True)
         with page.expect_response(
@@ -105,16 +115,13 @@ def main() -> None:
             page.get_by_role("button", name="开始实验", exact=True).click()
         created = created_response.value.json()
         expect(page).to_have_url(base + "/workbench?run=" + created["run_id"])
-        expect(page.locator(".active-experiment")).to_contain_text("合成")
+        expect(page.locator(".active-experiment")).to_contain_text("真实结果回放")
         expect(page.locator(".active-experiment")).to_contain_text("分析完成", timeout=30000)
         expect(page.locator(".task-row").first).to_be_visible()
-        expect(page.locator(".response-workspace")).to_contain_text("Top 摘要")
-        expect(page.locator(".state-population")).to_have_count(2)
-        expect(page.locator(".state-overview")).to_contain_text("合成单细胞表达矩阵")
-        expect(page.locator(".state-overview")).to_contain_text("512 个显示点")
+        expect(page.locator(".active-experiment")).not_to_contain_text("合成")
         page.goto(base + "/records?q=" + created["run_id"], wait_until="networkidle")
         expect(page.locator(".records-table tbody tr")).to_have_count(1)
-        checks.append("actual precomputed MYC submission opens analysis and persists in server history")
+        checks.append("actual ALDOA real-result replay opens analysis and persists in server history")
 
         failed_context = browser.new_context()
         failed_context.route(

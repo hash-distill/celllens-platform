@@ -341,6 +341,7 @@ def register_contexts(contexts: list[str]) -> None:
             "supported_perturbations": sorted(str(k).upper() for k in mapping),
             "license": "Arc State Model Non-Commercial License",
             "enabled": True,
+            "expression_scale": "log1p_cp10k",
         }
         dataset = {
             "id": f"replogle-{slug}-control-v1",
@@ -351,6 +352,7 @@ def register_contexts(contexts: list[str]) -> None:
             "split_sha256": sha256_of(split),
             "license": "See pinned State-Replogle-Filtered source and original Replogle/Nadig datasets",
             "enabled": True,
+            "expression_scale": "log1p_cp10k",
         }
         _patch(ROOT / "data/registry/models.json", "models", model)
         _patch(ROOT / "data/registry/datasets.json", "datasets", dataset)

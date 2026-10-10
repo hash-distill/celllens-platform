@@ -2043,7 +2043,8 @@
         "ZWINT"
       ],
       "license": "Arc State Model Non-Commercial License",
-      "enabled": true
+      "enabled": true,
+      "expression_scale": "log1p_cp10k"
     },
     {
       "id": "state-replogle-rpe1-fewshot-v1",
@@ -4087,7 +4088,8 @@
         "ZWINT"
       ],
       "license": "Arc State Model Non-Commercial License",
-      "enabled": true
+      "enabled": true,
+      "expression_scale": "log1p_cp10k"
     },
     {
       "id": "state-replogle-jurkat-fewshot-v1",
@@ -6131,7 +6133,8 @@
         "ZWINT"
       ],
       "license": "Arc State Model Non-Commercial License",
-      "enabled": true
+      "enabled": true,
+      "expression_scale": "log1p_cp10k"
     },
     {
       "id": "state-replogle-hepg2-fewshot-v1",
@@ -8175,7 +8178,8 @@
         "ZWINT"
       ],
       "license": "Arc State Model Non-Commercial License",
-      "enabled": true
+      "enabled": true,
+      "expression_scale": "log1p_cp10k"
     }
   ]
 }

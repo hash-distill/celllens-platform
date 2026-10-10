@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.config import Settings
 from backend.app.main import create_app
+from backend.app.schemas import CreateRunRequest, RunSummary
 
 
 def _write_registry(root: Path) -> None:
@@ -62,3 +63,25 @@ def test_create_run_rejects_unregistered_perturbation(tmp_path: Path):
         )
         assert response.status_code == 422
         assert response.json()["detail"]["code"] == "UNSUPPORTED_PERTURBATION"
+
+
+def test_old_expression_summary_warning_does_not_rewrite_the_artifact(tmp_path: Path):
+    _write_registry(tmp_path)
+    app = create_app(_settings(tmp_path, worker_enabled=False))
+    app.state.container.store.create("run_old", CreateRunRequest(cell_line="K562", perturbation="MYC"))
+    root = app.state.container.settings.derived_root / "run_old"
+    root.mkdir(parents=True)
+    path = root / "summary.json"
+    path.write_text(
+        RunSummary(
+            run_id="run_old", cell_line="K562", perturbation="MYC", status="completed", stage_progress=100
+        ).model_dump_json(),
+        encoding="utf-8",
+    )
+    original = path.read_bytes()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/runs/run_old/summary")
+        assert "expression-cp10k-v2" in response.json()["warnings"][-1]
+        assert path.read_bytes() == original
+        (root / "expression_contract.json").write_text("{}")
+        assert client.get("/api/v1/runs/run_old/summary").json()["warnings"] == []

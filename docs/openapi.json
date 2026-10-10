@@ -134,6 +134,155 @@
         }
       }
     },
+    "/api/v1/runs/{run_id}/cell-state": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Get Cell State",
+        "operationId": "get_cell_state_api_v1_runs__run_id__cell_state_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "feature_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "gene",
+                "task"
+              ],
+              "type": "string",
+              "default": "gene",
+              "title": "Feature Kind"
+            }
+          },
+          {
+            "name": "feature_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "default": "",
+              "title": "Feature Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Cell State Api V1 Runs  Run Id  Cell State Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/cell-state/figure": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Get Cell State Figure",
+        "operationId": "get_cell_state_figure_api_v1_runs__run_id__cell_state_figure_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "feature_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "gene",
+                "task"
+              ],
+              "type": "string",
+              "default": "gene",
+              "title": "Feature Kind"
+            }
+          },
+          {
+            "name": "feature_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "default": "",
+              "title": "Feature Id"
+            }
+          },
+          {
+            "name": "file_format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "svg",
+                "pdf",
+                "png"
+              ],
+              "type": "string",
+              "default": "svg",
+              "title": "File Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/runs": {
       "get": {
         "tags": [
@@ -461,6 +610,48 @@
         }
       }
     },
+    "/api/v1/runs/{run_id}/completeness": {
+      "get": {
+        "tags": [
+          "runs"
+        ],
+        "summary": "Get Completeness",
+        "operationId": "get_completeness_api_v1_runs__run_id__completeness_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletenessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/runs/{run_id}/metabolic-tasks": {
       "get": {
         "tags": [
@@ -581,6 +772,20 @@
               "minimum": 1,
               "default": 30,
               "title": "Gene Limit"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "top",
+                "all"
+              ],
+              "type": "string",
+              "default": "top",
+              "title": "Scope"
             }
           }
         ],
@@ -790,6 +995,218 @@
   },
   "components": {
     "schemas": {
+      "CompletenessResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "source_gene_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Source Gene Sha256"
+          },
+          "method": {
+            "type": "string",
+            "const": "sccellfie.reports.compute_dataset_completeness",
+            "title": "Method"
+          },
+          "package_version": {
+            "type": "string",
+            "title": "Package Version"
+          },
+          "implementation_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Implementation Sha256"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Parameters"
+          },
+          "database_version": {
+            "type": "string",
+            "title": "Database Version"
+          },
+          "database_provenance": {
+            "$ref": "#/components/schemas/DatabaseProvenance"
+          },
+          "panel_gene_count": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Panel Gene Count"
+          },
+          "overall_summary": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Overall Summary"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/CompletenessRow"
+            },
+            "type": "array",
+            "title": "Tasks"
+          },
+          "reactions": {
+            "items": {
+              "$ref": "#/components/schemas/CompletenessRow"
+            },
+            "type": "array",
+            "title": "Reactions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "run_id",
+          "source_gene_sha256",
+          "method",
+          "package_version",
+          "implementation_sha256",
+          "parameters",
+          "database_version",
+          "database_provenance",
+          "panel_gene_count",
+          "overall_summary",
+          "tasks",
+          "reactions",
+          "warnings"
+        ],
+        "title": "CompletenessResponse"
+      },
+      "CompletenessRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "n_genes_all": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Genes All"
+          },
+          "n_present_all": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Present All"
+          },
+          "n_missing_all": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Missing All"
+          },
+          "fraction_present_all": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Fraction Present All"
+          },
+          "impact_weighted_completeness_all": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Impact Weighted Completeness All"
+          },
+          "total_impact_missing_all": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Total Impact Missing All"
+          },
+          "missing_genes_all": {
+            "type": "string",
+            "title": "Missing Genes All"
+          },
+          "n_genes_essential": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Genes Essential"
+          },
+          "n_present_essential": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Present Essential"
+          },
+          "n_missing_essential": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Missing Essential"
+          },
+          "fraction_present_essential": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Fraction Present Essential"
+          },
+          "impact_weighted_completeness_essential": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Impact Weighted Completeness Essential"
+          },
+          "total_impact_missing_essential": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Total Impact Missing Essential"
+          },
+          "missing_genes_essential": {
+            "type": "string",
+            "title": "Missing Genes Essential"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "n_genes_all",
+          "n_present_all",
+          "n_missing_all",
+          "fraction_present_all",
+          "impact_weighted_completeness_all",
+          "total_impact_missing_all",
+          "missing_genes_all",
+          "n_genes_essential",
+          "n_present_essential",
+          "n_missing_essential",
+          "fraction_present_essential",
+          "impact_weighted_completeness_essential",
+          "total_impact_missing_essential",
+          "missing_genes_essential"
+        ],
+        "title": "CompletenessRow"
+      },
       "ContextItem": {
         "properties": {
           "cell_line": {
@@ -1221,6 +1638,21 @@
               }
             ],
             "title": "Error Message"
+          },
+          "result_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "synthetic_demo",
+                  "frozen_model_result"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Kind"
           }
         },
         "additionalProperties": false,
@@ -1312,6 +1744,21 @@
               }
             ],
             "title": "Error Code"
+          },
+          "result_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "synthetic_demo",
+                  "frozen_model_result"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Kind"
           }
         },
         "additionalProperties": false,
@@ -1331,6 +1778,15 @@
             "type": "integer",
             "const": 1,
             "title": "Schema Version"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "top",
+              "all"
+            ],
+            "title": "Scope",
+            "default": "top"
           },
           "run_id": {
             "type": "string",

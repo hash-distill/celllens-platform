@@ -120,7 +120,7 @@ def main() -> int:
             page.get_by_text("已加载", exact=True).wait_for()
             row = page.get_by_role("row").filter(has=page.get_by_role("rowheader", name="来源", exact=True))
             text = row.inner_text()
-            assert "Mock" in text and "真实计算" not in text, text
+            assert "合成数据" in text and "真实计算" not in text, text
 
         check("Mock source is explicit in comparison", mock_source)
 

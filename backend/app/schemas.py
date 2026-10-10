@@ -65,6 +65,7 @@ class RunRecord(StrictModel):
     warnings: list[str] = Field(default_factory=list)
     error_code: str | None = None
     error_message: str | None = None
+    result_kind: Literal["synthetic_demo", "frozen_model_result"] | None = None
 
 
 class CreateRunResponse(StrictModel):
@@ -91,6 +92,7 @@ class RunSummary(StrictModel):
     metabolic_tasks: list[EvidenceItem] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     error_code: str | None = None
+    result_kind: Literal["synthetic_demo", "frozen_model_result"] | None = None
 
 
 class ContextItem(StrictModel):
@@ -133,8 +135,44 @@ class DatabaseProvenance(StrictModel):
     organism: str | None = None
 
 
+class CompletenessRow(StrictModel):
+    id: str
+    n_genes_all: int = Field(ge=0)
+    n_present_all: int = Field(ge=0)
+    n_missing_all: int = Field(ge=0)
+    fraction_present_all: float = Field(ge=0, le=1, allow_inf_nan=False)
+    impact_weighted_completeness_all: float = Field(ge=0, le=1, allow_inf_nan=False)
+    total_impact_missing_all: float = Field(ge=0, allow_inf_nan=False)
+    missing_genes_all: str
+    n_genes_essential: int = Field(ge=0)
+    n_present_essential: int = Field(ge=0)
+    n_missing_essential: int = Field(ge=0)
+    fraction_present_essential: float = Field(ge=0, le=1, allow_inf_nan=False)
+    impact_weighted_completeness_essential: float = Field(ge=0, le=1, allow_inf_nan=False)
+    total_impact_missing_essential: float = Field(ge=0, allow_inf_nan=False)
+    missing_genes_essential: str
+
+
+class CompletenessResponse(StrictModel):
+    schema_version: Literal[1]
+    run_id: str
+    source_gene_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    method: Literal["sccellfie.reports.compute_dataset_completeness"]
+    package_version: str
+    implementation_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    parameters: dict[str, str | float]
+    database_version: str
+    database_provenance: DatabaseProvenance
+    panel_gene_count: int = Field(gt=0)
+    overall_summary: dict[str, int | float]
+    tasks: list[CompletenessRow]
+    reactions: list[CompletenessRow]
+    warnings: list[str]
+
+
 class TaskTraceResponse(StrictModel):
     schema_version: Literal[1]
+    scope: Literal["top", "all"] = "top"
     run_id: str
     database_version: str
     database_provenance: DatabaseProvenance

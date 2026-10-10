@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -17,6 +17,8 @@ class _RegistryRow(BaseModel):
     enabled: bool = False
     disabled_reason: str | None = None
     license: str | None = None
+    expression_scale: Literal["raw_counts", "cp10k", "log1p_cp10k"] | None = None
+    total_counts_key: str | None = None
 
 
 class _ModelRow(_RegistryRow):
@@ -29,6 +31,7 @@ class _ModelRow(_RegistryRow):
     gene_list_path: str | None = None
     gene_list_sha256: str | None = Field(default=None, pattern=r"^[0-9a-fA-F]{64}$")
     embed_key: str | None = None
+    expression_key: str | None = Field(default=None, min_length=1)
     perturbation_column: str | None = None
     cell_type_column: str | None = None
     control_perturbation: str | None = None
@@ -36,6 +39,9 @@ class _ModelRow(_RegistryRow):
 
 
 class _DatasetRow(_RegistryRow):
+    validation_batch_key: str | None = None
+    validation_protocol_path: str | None = None
+    validation_protocol_sha256: str | None = Field(default=None, pattern=r"^[0-9a-fA-F]{64}$")
     control_path: str | None = None
     control_sha256: str | None = Field(default=None, pattern=r"^[0-9a-fA-F]{64}$")
     observed_path: str | None = None

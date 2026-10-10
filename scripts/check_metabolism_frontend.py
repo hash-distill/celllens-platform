@@ -82,14 +82,18 @@ def main():
         page.goto(f"{args.url}/workbench?run={args.real_run_id}&tab=metabolism", wait_until="networkidle")
         data = page.request.get(f"{args.url}/api/v1/runs/{args.real_run_id}/metabolic-tasks?scope=all").json()
         filters = page.get_by_role("radiogroup", name="任务覆盖等级筛选")
-        for level, key in [
-            ("覆盖支持", "supported"),
-            ("探索性", "exploratory"),
-            ("证据不足", "insufficient"),
-        ]:
-            filters.get_by_role("radio", name=level, exact=False).check()
-            expected = sum(t["evidence_level"] == key for t in data["items"])
-            expect(page.locator(".task-filter-status")).to_contain_text(f"{expected} 项")
+        if data.get("completeness_available"):
+            expect(filters).to_have_count(0)
+            expect(page.locator(".official-cards")).to_contain_text("131 / 931")
+        else:
+            for level, key in [
+                ("覆盖支持", "supported"),
+                ("探索性", "exploratory"),
+                ("证据不足", "insufficient"),
+            ]:
+                filters.get_by_role("radio", name=level, exact=False).check()
+                expected = sum(t["evidence_level"] == key for t in data["items"])
+                expect(page.locator(".task-filter-status")).to_contain_text(f"{expected} 项")
         task = next(
             t for t in data["items"] if t["trace_available"] and t["evidence_level"] == "insufficient"
         )
@@ -97,13 +101,18 @@ def main():
         page.get_by_role("button", name="查看任务：" + task["label"], exact=True).click()
         expect(page.locator(".trace-network")).to_be_visible()
         expect(page.locator(".trace-task .mono")).to_have_text(task["id"])
-        checks.append("real coverage categories and matching frozen trace are selectable")
+        checks.append(
+            "real official completeness or legacy categories and matching frozen trace are selectable"
+        )
         page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(out / "real-after.png"), full_page=True)
         page.set_viewport_size({"width": 390, "height": 844})
-        expect(filters.get_by_role("radio")).to_have_count(4)
+        expect(filters.get_by_role("radio")).to_have_count(0 if data.get("completeness_available") else 4)
+        page.wait_for_function("document.documentElement.scrollWidth <= innerWidth + 2")
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2")
-        checks.append("390px metabolism layout keeps the single-select controls without page overflow")
+        checks.append(
+            "390px metabolism layout preserves the applicable completeness view without page overflow"
+        )
         page.set_viewport_size({"width": 1440, "height": 1000})
         page.goto(f"{args.url}/workbench?run={args.demo_run_id}", wait_until="networkidle")
         expect(page.locator(".task-trace")).to_contain_text("本次运行尚无关联追溯记录")

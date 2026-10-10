@@ -2,6 +2,8 @@ from typing import Literal
 
 from fastapi import APIRouter, Request
 
+from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
+from backend.app.core.errors import RegistryError
 from backend.app.core.precomputed import available_bundles
 from backend.app.schemas import ContextItem
 
@@ -35,11 +37,11 @@ def contexts(request: Request) -> list[ContextItem]:
             )
             if dataset.get("split_path"):
                 dataset_ready = dataset_ready and dataset_entry.asset_is_valid("split_path", "split_sha256")
-            validation_ready = (
-                model_ready
-                and dataset_ready
-                and dataset_entry.asset_is_valid("observed_path", "observed_sha256")
-            )
+            try:
+                load_diagnostic_protocol(dataset_entry, model_entry)
+                validation_ready = model_ready and dataset_ready
+            except (OSError, ValueError, RegistryError):
+                validation_ready = False
         online_ready = (
             model_ready
             and dataset_ready
@@ -47,7 +49,13 @@ def contexts(request: Request) -> list[ContextItem]:
             and container.settings.gpu_available
         )
         validation_ready = validation_ready and online_ready
-        precomputed_ready = bool(available_bundles(container.settings.demo_root, row["cell_line"]))
+        precomputed_ready = bool(
+            available_bundles(
+                container.settings.demo_root,
+                row["cell_line"],
+                allow_synthetic=container.settings.allow_synthetic_results,
+            )
+        )
         reasons = []
         if not model_ready:
             reasons.append("model assets are disabled, missing, or have invalid hashes")
@@ -79,10 +87,19 @@ def perturbations(
 ) -> dict[str, object]:
     container = request.app.state.container
     if mode == "precomputed":
-        items = available_bundles(container.settings.demo_root, cell_line)
+        items = available_bundles(
+            container.settings.demo_root,
+            cell_line,
+            allow_synthetic=container.settings.allow_synthetic_results,
+        )
     elif mode == "validation":
-        # No approved development validation protocol/list is registered yet.
-        items = []
+        try:
+            protocol = load_diagnostic_protocol(
+                container.registry.dataset_for(cell_line), container.registry.model_for(cell_line)
+            )
+            items = protocol["perturbations"]
+        except (OSError, ValueError, RegistryError):
+            items = []
     else:
         items = container.registry.supported_perturbations(cell_line)
     return {"cell_line": cell_line, "mode": mode, "items": items}

@@ -432,7 +432,9 @@ model = [
 ]
 report = [
     { name = "jinja2" },
+    { name = "matplotlib" },
     { name = "pyarrow" },
+    { name = "scikit-learn" },
 ]
 
 [package.dev-dependencies]
@@ -451,6 +453,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.116,<1" },
     { name = "httpx", specifier = ">=0.28,<1" },
     { name = "jinja2", marker = "extra == 'report'", specifier = ">=3.1,<4" },
+    { name = "matplotlib", marker = "extra == 'report'", specifier = ">=3.10,<4" },
     { name = "numpy", specifier = ">=2.2,<3" },
     { name = "pandas", specifier = ">=2.2,<3" },
     { name = "pyarrow", marker = "extra == 'report'", specifier = ">=20,<24" },
@@ -460,6 +463,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "scanpy", marker = "extra == 'model'", specifier = ">=1.11.2,<2" },
     { name = "sccellfie", marker = "extra == 'model'", specifier = "==0.6.2" },
+    { name = "scikit-learn", marker = "extra == 'report'", specifier = ">=1.6,<2" },
     { name = "sqlalchemy", specifier = ">=2.0.43,<3" },
     { name = "torch", marker = "extra == 'model'", specifier = "==2.14.0", index = "https://download.pytorch.org/whl/cu132" },
     { name = "transformers", marker = "extra == 'model'", specifier = ">=4.52.3,<5" },

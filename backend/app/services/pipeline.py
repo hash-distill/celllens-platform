@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from backend.app.core.cache import code_fingerprint
+from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
 from backend.app.core.errors import CellLensError, JobAlreadyClaimedError, ScientificContractError
 from backend.app.core.projection import validate_projection
 from backend.app.core.registry import AssetRegistry
@@ -80,7 +81,14 @@ class AnalysisPipeline:
             if dataset.payload.get("split_path"):
                 split_hash = self.registry.verify_entry(dataset, "split_path", "split_sha256")
             observed_hash = None
+            protocol_hash = None
             if request.mode == "validation":
+                protocol = load_diagnostic_protocol(dataset, model)
+                if request.perturbation not in protocol["perturbations"]:
+                    raise ScientificContractError("Perturbation has no registered measured diagnostic")
+                protocol_hash = self.registry.verify_entry(
+                    dataset, "validation_protocol_path", "validation_protocol_sha256"
+                )
                 observed_hash = self.registry.verify_entry(dataset, "observed_path", "observed_sha256")
 
             with _lease_heartbeat(self.store, attempt.id, self.lease_seconds):
@@ -132,12 +140,19 @@ class AnalysisPipeline:
                 "code_sha256": code_fingerprint(self.registry.project_root),
                 "assets": {
                     "model_id": model.payload.get("id"),
+                    "input_embed_key": model.payload.get("embed_key"),
+                    "expression_key": model.payload.get("expression_key")
+                    or model.payload.get("embed_key")
+                    or "X",
                     "checkpoint_sha256": checkpoint_hash,
                     "gene_list_sha256": gene_hash,
                     "config_sha256": config_hash,
                     "dataset_id": dataset.payload.get("id"),
+                    "model_expression_scale": model.payload.get("expression_scale"),
+                    "dataset_expression_scale": dataset.payload.get("expression_scale"),
                     "control_sha256": control_hash,
                     "observed_sha256": observed_hash,
+                    "validation_protocol_sha256": protocol_hash,
                     "split_sha256": split_hash,
                 },
                 "outputs": {},

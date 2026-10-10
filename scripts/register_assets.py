@@ -109,6 +109,7 @@ def main() -> int:
         "supported_perturbations": supported,
         "license": "Arc State Model Non-Commercial License",
         "enabled": True,
+        "expression_scale": "log1p_cp10k",
     }
     dataset_block = {
         "id": "replogle-k562-control-v1",
@@ -121,6 +122,7 @@ def main() -> int:
         "split_sha256": hashes.get("split_sha256"),
         "license": "Replogle et al. 2022 (CC-BY-4.0)",
         "enabled": True,
+        "expression_scale": "log1p_cp10k",
     }
 
     print("\n=== paste into data/registry/models.json -> models[0] ===")

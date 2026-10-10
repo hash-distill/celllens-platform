@@ -1,6 +1,7 @@
 {
   "name": "celllens-frontend",
   "private": true,
+  "license": "MIT",
   "version": "0.1.0",
   "type": "module",
   "description": "CellLens 细胞知镜前端：单细胞扰动预测与代谢分析工作台",

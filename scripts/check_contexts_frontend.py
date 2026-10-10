@@ -7,6 +7,14 @@ from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 
+def expand_projection(page):
+    """Projection is an auxiliary view, opened explicitly before checking it."""
+    preview = page.locator(".projection-preview")
+    if preview.count() and preview.get_attribute("open") is None:
+        preview.locator(":scope > summary").click()
+        page.wait_for_load_state("networkidle")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8000")
@@ -43,6 +51,7 @@ def main() -> None:
                 expect(page.locator(".run-identity")).to_have_text(run_id)
                 expect(page.locator(".gene-row").first).to_be_visible()
                 expect(page.locator(".task-row").first).to_be_visible()
+                expand_projection(page)
                 expect(page.locator(".state-population")).to_have_count(2)
                 expect(page.locator(".trace-provenance")).to_contain_text("scCellFie")
                 page.screenshot(path=str(output / f"{line}-real.png"), full_page=True)

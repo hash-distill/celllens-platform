@@ -15,8 +15,9 @@ data/derived/*
 !data/derived/.gitkeep
 data/demo/*
 !data/demo/.gitkeep
-models/
+/models/
 frontend/node_modules/
 frontend/dist/
 reports/
+output/
 torchinductor*/

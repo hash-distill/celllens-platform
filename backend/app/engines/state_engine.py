@@ -59,6 +59,14 @@ class StateCliEngine:
             if self.device == "cuda"
             else [self.executable]
         )
+        if payload.get("embed_key") == "X_state":
+            prefix = [
+                sys.executable,
+                "-m",
+                "backend.app.engines.state_se_runner",
+                "--celllens-device",
+                self.device,
+            ]
         command = [
             *prefix,
             "tx",
@@ -173,14 +181,14 @@ def validate_state_output(output: Any, request: StateRunInput, model: RegistryEn
             if line.strip()
         ]
         actual = [str(gene).strip().upper() for gene in output.var_names]
-        embed_key = model.payload.get("embed_key")
-        if embed_key:
+        expression_key = model.payload.get("expression_key") or model.payload.get("embed_key")
+        if expression_key and expression_key != "X":
             # The registered gene list describes the *predicted panel*. For embed_key
             # models STATE writes predictions into obsm[embed_key] and leaves the
             # original var_names untouched, so the panel cannot be compared against
             # var_names order. Verify the prediction width and that every panel gene
             # still exists in the output instead.
-            _validate_prediction_panel(output, embed_key, expected, actual)
+            _validate_prediction_panel(output, expression_key, expected, actual)
         elif actual != expected:
             raise StateInferenceError("STATE output gene order does not match the registered model gene list")
 

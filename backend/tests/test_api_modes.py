@@ -102,7 +102,9 @@ def test_precomputed_request_does_not_require_gpu_or_model_assets(tmp_path):
         ),
         encoding="utf-8",
     )
-    app = create_app(settings(tmp_path, gpu_available=False, worker_enabled=False))
+    app = create_app(settings(
+            tmp_path, gpu_available=False, worker_enabled=False, allow_synthetic_results=True
+        ))
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/runs",
@@ -188,7 +190,7 @@ def test_completed_run_exposes_projection_tables_and_report(tmp_path):
         json.dumps({"files": {name: sha256(demo / name) for name in files}}), encoding="utf-8"
     )
 
-    app = create_app(settings(tmp_path))
+    app = create_app(settings(tmp_path, allow_synthetic_results=True))
     with TestClient(app) as client:
         created = client.post(
             "/api/v1/runs",

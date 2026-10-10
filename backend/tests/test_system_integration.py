@@ -48,7 +48,7 @@ def test_demo_catalog_only_lists_verified_combinations(tmp_path):
     write_bundle(tmp_path)
     invalid = write_bundle(tmp_path, "AAAS")
     (invalid / "summary.json").write_text("{}", encoding="utf-8")
-    app = create_app(_settings(tmp_path))
+    app = create_app(_settings(tmp_path, allow_synthetic_results=True))
     with TestClient(app) as client:
         response = client.get("/api/v1/catalog/perturbations?cell_line=K562&mode=precomputed")
         assert response.json()["items"] == ["MYC"]

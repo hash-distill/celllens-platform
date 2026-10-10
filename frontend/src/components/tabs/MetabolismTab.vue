@@ -9,6 +9,8 @@ import type { EvidenceLevel, EvidenceItem } from '../../types/run'
 import TablePager from '../TablePager.vue'
 import { usePagedRows } from '../../utils/pagination'
 import TaskTrace from '../response/TaskTrace.vue'
+import OfficialCompleteness from '../OfficialCompleteness.vue'
+import type { CompletenessResponse } from '../../types/completeness'
 
 /**
  * 代谢功能：覆盖摘要卡 + Top 任务差异图与表格 + 反应聚合表。
@@ -25,6 +27,12 @@ const tasksBlock = computed(() => entry.value?.tasks ?? null)
 const reactionsBlock = computed(() => entry.value?.reactions ?? null)
 
 const coverage = computed(() => summaryBlock.value?.data?.coverage ?? null)
+const official = ref<CompletenessResponse | null>(null)
+const hasOfficial = computed(() => tasksBlock.value?.data?.completeness_available === true)
+function officialRow(id: string) { return official.value?.tasks.find(row => row.id === id) }
+function coverageLabel(task: EvidenceItem) {
+  return hasOfficial.value ? `官方全部基因覆盖 ${fmtPercent(officialRow(task.id)?.fraction_present_all, 1)} · 影响加权完整性 ${fmtPercent(officialRow(task.id)?.impact_weighted_completeness_all, 1)}` : `项目旧分档：${EVIDENCE_LABEL[task.evidence_level]} · 基因覆盖 ${fmtPercent(task.coverage, 1)}`
+}
 
 // ---------- 任务 ----------
 const allTasks = computed<EvidenceItem[]>(() => tasksBlock.value?.data?.items ?? [])
@@ -40,7 +48,7 @@ const evidenceFilter = ref<TaskFilter>('all')
 const filterLevels: TaskFilter[] = ['all', 'supported', 'exploratory', 'insufficient']
 const filterLabel = (level: TaskFilter) => level === 'all' ? '全部' : EVIDENCE_LABEL[level]
 const visibleTasks = computed(() => allTasks.value.filter(
-  (t) => evidenceFilter.value === 'all' || t.evidence_level === evidenceFilter.value,
+  (t) => hasOfficial.value || evidenceFilter.value === 'all' || t.evidence_level === evidenceFilter.value,
 ))
 const selectedTaskId = ref('')
 
@@ -64,7 +72,7 @@ const barItems = computed<DivergingBarItem[]>(() =>
       id: t.id,
       name: t.label,
       value: t.predicted_delta,
-      extra: `证据等级：${EVIDENCE_LABEL[t.evidence_level]}；覆盖 ${(t.coverage * 100).toFixed(1)}%`,
+      extra: coverageLabel(t),
     })),
 )
 
@@ -136,9 +144,10 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
 
 <template>
   <div class="metabolism">
+    <OfficialCompleteness :run-id="runId" :available="tasksBlock?.data?.completeness_available" :selected-task="selectedTaskId" @loaded="official = $event" />
     <!-- 覆盖摘要 -->
-    <section>
-      <h3 class="section-title">覆盖摘要</h3>
+    <section v-if="!hasOfficial">
+      <h3 class="section-title">项目旧覆盖分档（80%／60%，非官方置信度）</h3>
       <BlockState
         :display="summaryDisplay"
         :error="summaryBlock?.error"
@@ -177,7 +186,7 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
         @retry="runs.retryBlock(props.runId, 'tasks')"
       >
         <div class="filter-row">
-          <div class="task-level-filter" role="radiogroup" aria-label="任务覆盖等级筛选">
+          <div v-if="!hasOfficial" class="task-level-filter" role="radiogroup" aria-label="任务覆盖等级筛选">
             <label v-for="level in filterLevels" :key="level" class="filter-check" :class="{active: evidenceFilter === level}">
               <input v-model="evidenceFilter" :name="'task-evidence-'+runId" :value="level" type="radio" />
               <span class="pill" :class="level === 'all' ? 'pill-neutral' : `pill-ev-${level}`">{{ filterLabel(level) }}</span>
@@ -208,7 +217,7 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
           />
           <section v-if="selectedTask" class="task-detail" aria-label="选中代谢任务详情">
             <h4>{{ selectedTask.label }}</h4>
-            <p class="muted small">{{ EVIDENCE_LABEL[selectedTask.evidence_level] }} · 基因覆盖 {{ fmtPercent(selectedTask.coverage, 1) }} · {{ selectedTask.id }}</p>
+            <p class="muted small">{{ coverageLabel(selectedTask) }} · {{ selectedTask.id }}</p>
             <dl><div><dt>对照分数</dt><dd>{{ fmtNumber(selectedTask.control ?? null) }}</dd></div><div><dt>预测分数</dt><dd>{{ fmtNumber(selectedTask.predicted ?? null) }}</dd></div><div><dt>预测变化</dt><dd>{{ fmtDelta(selectedTask.predicted_delta) }}</dd></div></dl>
             <p v-if="selectedTask.control == null || selectedTask.predicted == null" class="muted small">保存的摘要尚未提供对照或预测分数，不能根据差值补算。</p>
             <p class="muted small">关联基因：{{ selectedTask.determinant_genes.join(', ') || '尚未提供；完整关联请查看下方追溯。' }}</p>
@@ -220,8 +229,8 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
                   <th scope="col">任务</th>
                   <th scope="col">预测变化</th>
                   <th scope="col">观测变化</th>
-                  <th scope="col">覆盖</th>
-                  <th scope="col">证据等级</th>
+                  <th scope="col">{{ hasOfficial ? '官方全部基因覆盖' : '项目覆盖' }}</th>
+                  <th scope="col">{{ hasOfficial ? '官方影响加权完整性' : '项目旧分档' }}</th>
                   <th scope="col">关联基因</th>
                 </tr>
               </thead>
@@ -237,9 +246,10 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
                       {{ fmtDelta(task.observed_delta) }}
                     </span>
                   </td>
-                  <td>{{ fmtPercent(task.coverage, 1) }}</td>
+                  <td>{{ fmtPercent(hasOfficial ? officialRow(task.id)?.fraction_present_all : task.coverage, 1) }}</td>
                   <td>
-                    <span class="pill" :class="`pill-ev-${task.evidence_level}`">
+                    <span v-if="hasOfficial">{{ fmtPercent(officialRow(task.id)?.impact_weighted_completeness_all, 1) }}</span>
+                    <span v-else class="pill" :class="`pill-ev-${task.evidence_level}`">
                       {{ EVIDENCE_LABEL[task.evidence_level] }}
                     </span>
                   </td>

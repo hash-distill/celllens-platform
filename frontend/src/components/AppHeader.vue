@@ -17,7 +17,7 @@ const demoTarget = computed(() => ({path:'/demo',query:runId.value ? {run:runId.
       <RouterLink :to="{path:'/workbench',query:runId?{run:runId}:{}}" :class="{active:route.path==='/workbench'}">实验工作台</RouterLink>
       <RouterLink to="/records" :class="{active:route.path==='/records'}">实验记录</RouterLink>
       <RouterLink to="/compare" :class="{active:route.path==='/compare'}">实验比较<span v-if="candidates.items.length" class="nav-count">{{ candidates.items.length }}</span></RouterLink>
-      <RouterLink :to="demoTarget" :class="{active:route.path==='/demo'}">演示模式</RouterLink>
+      <RouterLink :to="demoTarget" :class="{active:route.path==='/demo'}">结果解读</RouterLink>
       <RouterLink to="/about" :class="{active:route.path==='/about'}">使用说明</RouterLink>
     </nav>
     <RouterLink to="/about" class="service-indicator" :title="'服务状态：'+service.levelLabel"><i :style="{background:service.level==='ok'?'var(--ok)':service.level==='down'?'var(--danger)':service.level==='degraded'?'var(--warn)':'var(--faint)'}"></i><span>{{ service.levelLabel }}</span></RouterLink>

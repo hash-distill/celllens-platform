@@ -9,7 +9,7 @@ import { downloadCsv } from '../../utils/csv'
 import type { GeneRow } from '../../types/run'
 import TablePager from '../TablePager.vue'
 import { usePagedRows } from '../../utils/pagination'
-import { runSourceLabel } from '../../utils/source'
+import { isSyntheticResult, runSourceLabel } from '../../utils/source'
 
 /**
  * 基因响应：上方绝对变化最大基因水平条形图（以零为中心发散），
@@ -111,7 +111,7 @@ function retry(): void {
 function exportCsv(): void {
   const data = block.value?.data
   if (!data) return
-  const source = runSourceLabel(entry.value?.record?.request.mode, props.runId)
+  const source = runSourceLabel(entry.value?.record?.request.mode, props.runId, entry.value?.record?.result_kind)
   const filename = `celllens-genes-${source}-${props.runId}-${data.truncated ? 'partial' : 'full'}-limit${data.limit}.csv`
   downloadCsv(
     filename,
@@ -190,7 +190,8 @@ function exportCsv(): void {
           <span>{{ item.label }}</span><div class="expression-track"><i v-if="item.value!==null" :style="{width:Math.abs(item.value)/expressionScale*100+'%',background:item.color}"></i></div><strong>{{ fmtNumber(item.value) }}</strong>
         </div>
       </div>
-      <p class="micro">本次平均归一化表达 · 无单细胞分布数据</p>
+      <p class="micro">本页展示群体平均归一化表达</p>
+      <RouterLink v-if="!isSyntheticResult(entry?.record?.request.mode,runId,entry?.record?.result_kind)" class="btn btn-sm" :to="{path:'/workbench',query:{run:runId,tab:'cell',feature_kind:'gene',feature_id:selected.gene}}">查看该基因逐细胞分布</RouterLink>
       <dl class="evidence-list" style="margin-top: 8px">
         <dt>对照表达</dt>
         <dd>{{ fmtNumber(selected.control) }}</dd>

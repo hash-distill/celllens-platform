@@ -7,6 +7,14 @@ from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 
+def expand_projection(page):
+    """Projection is an auxiliary view, opened explicitly before checking it."""
+    preview = page.locator(".projection-preview")
+    if preview.count() and preview.get_attribute("open") is None:
+        preview.locator(":scope > summary").click()
+        page.wait_for_load_state("networkidle")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8000")
@@ -44,6 +52,7 @@ def main():
             checks.append({"run_id": record["run_id"], "mode": record["request"]["mode"], "counts": counts})
         historical = next(record["run_id"] for record in runs if record["request"]["mode"] == "precomputed")
         page.goto(base + "/workbench?run=" + historical + "&tab=cell", wait_until="networkidle")
+        expand_projection(page)
         expect(page.locator(".state-population")).to_have_count(2)
         expect(page.get_by_role("heading", name="合成对照群体", exact=False)).to_be_visible()
         expect(page.get_by_role("heading", name="合成扰动后群体", exact=False)).to_be_visible()
@@ -55,6 +64,7 @@ def main():
         expect(page.locator(".projection-chart")).to_have_count(1)
         page.get_by_role("button", name="并排比较", exact=True).click()
         page.reload(wait_until="networkidle")
+        expand_projection(page)
         expect(page.locator(".state-population")).to_have_count(2)
 
         created_response = page.request.post(
@@ -70,12 +80,15 @@ def main():
         assert created_response.status == 202, created_response.text()
         created = created_response.json()
         page.goto(base + "/workbench?run=" + created["run_id"], wait_until="networkidle")
+        expand_projection(page)
         expect(page.locator(".state-population")).to_have_count(2)
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_contain_text("512 个显示点")
         expect(page.get_by_text("本次结果未提供二维投影", exact=True)).to_have_count(0)
         page.screenshot(path=str(out / "new-demo.png"), full_page=True)
         page.set_viewport_size({"width": 390, "height": 900})
         page.reload(wait_until="networkidle")
+        expand_projection(page)
         expect(page.locator(".state-population")).to_have_count(2)
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
         page.screenshot(path=str(out / "demo-mobile.png"), full_page=True)

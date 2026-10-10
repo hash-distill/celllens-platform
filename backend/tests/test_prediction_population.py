@@ -64,8 +64,8 @@ def test_all_analysis_outputs_ignore_simulated_control_rows(tmp_path, monkeypatc
             )
 
     service = scientific_analysis.ScientificAnalysisService(tmp_path, Engine())
-    model = RegistryEntry({"perturbation_column": "gene"}, tmp_path)
-    dataset = RegistryEntry({"control_path": "control.h5ad"}, tmp_path)
+    model = RegistryEntry({"perturbation_column": "gene", "expression_scale": "log1p_cp10k"}, tmp_path)
+    dataset = RegistryEntry({"control_path": "control.h5ad", "expression_scale": "log1p_cp10k"}, tmp_path)
     request = CreateRunRequest(cell_line="K562", perturbation="MYC")
     for source in ["target", "mixed"]:
         output = tmp_path / source
@@ -80,3 +80,40 @@ def test_all_analysis_outputs_ignore_simulated_control_rows(tmp_path, monkeypatc
     projection = json.loads((tmp_path / "mixed/projection.json").read_text())
     assert sum(p["source"] == "predicted" for p in projection["points"]) == 2
     assert projection["population_selection"]["excluded_prediction_cells"] == 1
+
+
+def test_analysis_applies_identity_before_alignment_and_records_both_sources(tmp_path, monkeypatch):
+    from backend.app.services.gene_identity import GeneIdentityAdapter, build_identity_document
+
+    control = cells([[1, 1], [2, 2]], ["non-targeting", "non-targeting"])
+    target = cells([[9, 1], [8, 2]], ["MYC", "MYC"])
+    target.var_names = ["GENE1NEW", "GENE2"]
+    control.write_h5ad(tmp_path / "control.h5ad")
+    target.write_h5ad(tmp_path / "target.h5ad")
+    hgnc = pd.DataFrame(
+        [["HGNC:1", "GENE1NEW", "GENE1", ""]], columns=["hgnc_id", "symbol", "prev_symbol", "alias_symbol"]
+    )
+    rules = pd.DataFrame({"GPR": ["HGNC:1"], "GPR-symbol": ["GENE1"]})
+    adapter = GeneIdentityAdapter(build_identity_document(rules, hgnc), provenance={"fixture": True})
+    monkeypatch.setattr(GeneIdentityAdapter, "load", lambda *args: adapter)
+
+    def unavailable(root):
+        raise FileNotFoundError("test focuses on expression adaptation")
+
+    monkeypatch.setattr(scientific_analysis, "_load_frozen_database", unavailable)
+    output = tmp_path / "result"
+    output.mkdir()
+    result = scientific_analysis.ScientificAnalysisService(tmp_path, gene_identity_root=tmp_path).run(
+        "run_identity",
+        CreateRunRequest(cell_line="K562", perturbation="MYC"),
+        RegistryEntry({"perturbation_column": "gene", "expression_scale": "log1p_cp10k"}, tmp_path),
+        RegistryEntry({"control_path": "control.h5ad", "expression_scale": "log1p_cp10k"}, tmp_path),
+        tmp_path / "target.h5ad",
+        output,
+    )
+    genes = pd.read_csv(output / "gene_deltas.csv", index_col=0)
+    assert genes.index.tolist() == ["GENE1", "GENE2"]
+    assert genes.loc["GENE1", "predicted_delta"] > 0
+    report = json.loads((output / "gene_identity.json").read_text())
+    assert report["sources"]["predicted"]["columns"][0]["source_symbol"] == "GENE1NEW"
+    assert output / "gene_identity.json" in result.artifacts

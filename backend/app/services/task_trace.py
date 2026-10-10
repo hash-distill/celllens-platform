@@ -107,7 +107,7 @@ def build_task_trace(
         "determinant_status": "unavailable",
         "determinant_genes": [],
         "score_units": {
-            "gene": "log1p(mean_expression / sum(mean_expression) * 10000)",
+            "gene": "mean(log1p(CP10K))",
             "reaction": "scCellFie reaction activity score",
             "task": "scCellFie task activity score",
         },

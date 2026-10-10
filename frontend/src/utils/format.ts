@@ -41,8 +41,8 @@ export function fmtServerTime(raw: string | null | undefined): string {
 
 export const MODE_LABEL: Record<RunMode, string> = {
   online: '在线推演',
-  precomputed: '预计算演示',
-  validation: '匹配验证',
+  precomputed: '结果回放',
+  validation: '实测对照',
 }
 
 export const STATUS_LABEL: Record<RunStatus, string> = {

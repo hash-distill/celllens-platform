@@ -1,177 +1,87 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { api } from '../../api/client'
 import { useRunStore } from '../../stores/run'
-import BlockState, { type BlockDisplay } from '../BlockState.vue'
-import ProjectionScatter from '../../charts/ProjectionScatter.vue'
-import { CHART_COLORS } from '../../charts/useEChart'
+import { downloadBlob } from '../../utils/csv'
+import { fmtNumber, fmtDelta } from '../../utils/format'
+import { runSourceLabel } from '../../utils/source'
 import type { PointSource } from '../../types/run'
-
-/**
- * 细胞状态：二维随机投影散点。
- * 404 时显示「本次结果未提供二维投影」，其他标签页继续可用。
- * online 无 observed 时不补第三组点；实际点数以接口返回为准，不用 n_cells 推算。
- */
-
+import type { ScientificCellState } from '../../types/cellState'
 const props = defineProps<{ runId: string }>()
-
-const runs = useRunStore()
-const entry = computed(() => runs.entry(props.runId))
-const block = computed(() => entry.value?.projection ?? null)
-
-const enabledSources = ref<PointSource[]>(['control', 'predicted', 'observed'])
-const layout = ref<'compare' | 'overlay'>('compare')
-const synthetic = computed(() => entry.value?.record?.request.mode === 'precomputed' || props.runId.startsWith('mock_'))
-const sourceLabels = computed<Record<PointSource, string>>(() => ({
-  control: synthetic.value ? '合成对照群体' : '对照群体', predicted: synthetic.value ? '合成扰动后群体' : '扰动后预测群体', observed: synthetic.value ? '合成样例观测群体' : '扰动后观测群体',
-}))
-
-const sourceCounts = computed(() => {
-  const counts: Record<PointSource, number> = { control: 0, predicted: 0, observed: 0 }
-  for (const p of block.value?.data?.points ?? []) counts[p.source] += 1
-  return counts
-})
-
-const presentSources = computed<PointSource[]>(() =>
-  (['control', 'predicted', 'observed'] as PointSource[]).filter((s) => sourceCounts.value[s] > 0),
-)
-
-const visibleSources = computed<PointSource[]>(() =>
-  presentSources.value.filter((s) => enabledSources.value.includes(s)),
-)
-
-const displayedCount = computed(() =>
-  visibleSources.value.reduce((sum, s) => sum + sourceCounts.value[s], 0),
-)
-
-const SOURCE_META: Record<PointSource, { label: string; color: string; shape: string }> = {
-  control: { label: '对照 control', color: CHART_COLORS.control, shape: '●' },
-  predicted: { label: '预测 predicted', color: CHART_COLORS.predicted, shape: '●' },
-  observed: { label: '观测 observed', color: CHART_COLORS.observed, shape: '▲' },
+const route = useRoute(), router = useRouter(), runs = useRunStore()
+const record = computed(() => runs.entry(props.runId)?.record)
+const data = ref<ScientificCellState | null>(null), figureUrl = ref(''), error = ref(''), exportError = ref('')
+const loading = ref(false), exporting = ref(false), zoom = ref(false), search = ref('')
+const kind = computed<'gene'|'task'>(() => route.query.feature_kind === 'task' ? 'task' : 'gene')
+const requestedFeature = computed(() => typeof route.query.feature_id === 'string' ? route.query.feature_id : '')
+const options = computed(() => (kind.value === 'gene' ? data.value?.available_features.genes : data.value?.available_features.tasks) ?? [])
+const filtered = computed(() => options.value.filter(id => id === data.value?.feature.id || id.toLowerCase().includes(search.value.toLowerCase().trim())))
+const sourceLabels: Record<PointSource,string> = {control:'扰动前 / 对照',predicted:'扰动后 / 模型预测',observed:'扰动后 / 实测'}
+const sourceColors: Record<PointSource,string> = {control:'#0072B2',predicted:'#D55E00',observed:'#009E73'}
+const sources = computed(() => (['control','predicted','observed'] as PointSource[]).filter(source => data.value?.distributions[source]))
+let controller: AbortController | undefined, exportController: AbortController | undefined
+function clearFigure() { if (figureUrl.value) URL.revokeObjectURL(figureUrl.value); figureUrl.value = '' }
+async function load() {
+  controller?.abort(); exportController?.abort(); exporting.value = false
+  const current = controller = new AbortController(), id = props.runId, chosenKind = kind.value
+  clearFigure(); data.value = null; error.value = ''; exportError.value = ''; loading.value = true
+  try {
+    const document = await api.getCellState(id, chosenKind, requestedFeature.value, current.signal)
+    if (current.signal.aborted) return
+    data.value = document
+    const figure = await api.getCellStateFigure(id, document.feature.kind, document.feature.id, 'svg', current.signal)
+    if (!current.signal.aborted) figureUrl.value = URL.createObjectURL(figure)
+  } catch (cause) { if (!current.signal.aborted) error.value = cause instanceof Error ? cause.message : '科研图读取失败' }
+  finally { if (!current.signal.aborted) loading.value = false }
 }
-
-const display = computed<BlockDisplay>(() => {
-  const b = block.value
-  if (!b || b.status === 'idle' || b.status === 'loading') return 'loading'
-  if (b.status === 'error') {
-    // 结果文件缺失 / 运行不存在 → 不可用态；其余 → 请求失败
-    if (b.error?.status === 404) return 'unavailable'
-    if (b.error?.status === 409) return 'unavailable'
-    return 'error'
-  }
-  return (b.data?.points.length ?? 0) > 0 ? 'ok' : 'empty'
-})
-
-function toggleSource(source: PointSource): void {
-  if (enabledSources.value.includes(source)) {
-    if (visibleSources.value.length > 1) {
-      enabledSources.value = enabledSources.value.filter((s) => s !== source)
-    }
-  } else {
-    enabledSources.value = [...enabledSources.value, source]
-  }
+watch([() => props.runId, kind, requestedFeature], () => {search.value = ''; void load()}, {immediate:true})
+function chooseFeature(value: string, selectedKind = kind.value) {
+  void router.replace({path:route.path,query:{...route.query,feature_kind:selectedKind,feature_id:value || undefined}})
 }
-
-function retry(): void {
-  runs.retryBlock(props.runId, 'projection')
+function changeKind(event: Event) { chooseFeature('', (event.target as HTMLSelectElement).value as 'gene'|'task') }
+function difference(source: PointSource): number | null {
+  const mean = data.value?.distributions[source]?.mean, control = data.value?.distributions.control?.mean
+  return mean != null && control != null ? mean-control : null
 }
+async function exportFigure(format: 'svg'|'pdf'|'png'|'json') {
+  if (!data.value || exporting.value) return
+  const snapshot = data.value, current = exportController = new AbortController()
+  exporting.value = true; exportError.value = ''
+  try {
+    const blob = format === 'json' ? new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'})
+      : await api.getCellStateFigure(props.runId,snapshot.feature.kind,snapshot.feature.id,format,current.signal)
+    if (!current.signal.aborted) downloadBlob(blob,`${snapshot.run_id}_cell_state_${snapshot.feature.kind}.${format}`)
+  } catch (cause) { if (!current.signal.aborted) exportError.value = cause instanceof Error ? cause.message : '导出失败' }
+  finally { if (!current.signal.aborted) exporting.value = false }
+}
+onBeforeUnmount(() => {controller?.abort(); exportController?.abort(); clearFigure()})
 </script>
-
 <template>
-  <BlockState
-    :display="display"
-    :error="block?.error"
-    loading-text="正在加载二维投影…"
-    empty-text="本次结果没有可显示的投影点"
-    unavailable-text="本次结果未提供二维投影"
-    unavailable-hint="基因响应与代谢功能标签页仍可正常使用。"
-    @retry="retry"
-  >
-    <div class="legend-row" aria-label="来源图例与开关">
-      <button
-        v-for="source in presentSources"
-        :key="source"
-        type="button"
-        class="legend-toggle"
-        :class="{ off: !enabledSources.includes(source) }"
-        :aria-pressed="enabledSources.includes(source)"
-        :title="`点击${enabledSources.includes(source) ? '隐藏' : '显示'}${SOURCE_META[source].label}`"
-        @click="toggleSource(source)"
-      >
-        <span class="legend-shape" :style="{ color: SOURCE_META[source].color }" aria-hidden="true">
-          {{ SOURCE_META[source].shape }}
-        </span>
-        {{ sourceLabels[source] }}
-        <span class="muted">（{{ sourceCounts[source] }}）</span>
-      </button>
-      <span class="legend-count">
-        当前显示 {{ displayedCount }} 点（上限由后端控制，最多 12000）
-      </span>
+  <section class="scientific-cell-state" aria-label="单细胞科研图">
+    <header class="state-heading"><div><span class="eyebrow">SINGLE-CELL / EXPRESSION &amp; FUNCTION</span><h2>扰动如何改变细胞群体？</h2><p>先看整体表达分布，再看一个基因或代谢任务在各个细胞中的数值。</p></div><span class="pill pill-neutral">{{ runSourceLabel(record?.request.mode,runId,record?.result_kind) }}</span></header>
+    <div class="figure-reading" aria-label="科研图阅读说明">
+      <div><b>A</b><strong>整体分布有没有改变？</strong><p>颜色和点形区分群体；共同 PCA 坐标用于观察重叠、分散与偏移。</p></div>
+      <div><b>B</b><strong>哪些细胞的指标更高？</strong><p>同坐标、同色标：蓝色低、黄色高。颜色对应选定指标，不代表群体。</p></div>
+      <div><b>C</b><strong>变化发生在整个群体吗？</strong><p>横轴为指标数值，纵轴为不超过该值的细胞比例；曲线向右通常表示数值更高。</p></div>
     </div>
-
-    <div class="state-controls" aria-label="状态分布比较方式">
-      <button type="button" class="btn btn-sm" :aria-pressed="layout === 'compare'" @click="layout = 'compare'">并排比较</button>
-      <button type="button" class="btn btn-sm" :aria-pressed="layout === 'overlay'" @click="layout = 'overlay'">叠加比较</button>
-      <span>共享坐标范围 · 每点一个细胞 · 不逐点配对</span>
+    <div class="state-feature-controls">
+      <label>指标类型<select aria-label="指标类型" :value="kind" @change="changeKind"><option value="gene">基因表达</option><option value="task">代谢任务分数</option></select></label>
+      <label v-if="data">搜索指标<input v-model="search" aria-label="搜索逐细胞指标" placeholder="基因名或任务名称" /></label>
+      <label v-if="data" class="feature-picker">选择指标<select aria-label="选择逐细胞指标" :value="data.feature.id" @change="chooseFeature(($event.target as HTMLSelectElement).value)"><option v-for="id in filtered" :key="id" :value="id">{{ id }}</option></select></label>
     </div>
-    <p v-if="synthetic" class="notice notice-warn">当前为合成样例，散点来自合成单细胞表达矩阵，不是 STATE 预测或真实实验观测，不能用于实验验证。{{ block?.data?.original_manifest_sha256 ? '该历史演示的单细胞样例与投影为后续补充，原始结果保留。' : '' }}</p>
-    <p v-else-if="block?.data?.population_selection?.status !== 'matched'" class="notice notice-warn">旧分析未记录扰动细胞筛选协议，预测群体可能混有模拟对照；表达与代谢汇总也可能受影响，请新建运行核验。</p>
-    <p v-else class="muted small">预测群体已按 {{ block.data.population_selection.perturbation }} 标签筛选：保留 {{ block.data.population_selection.selected_prediction_cells }} 个，排除 {{ block.data.population_selection.excluded_prediction_cells }} 个其他标签细胞。</p>
-    <p v-if="!synthetic && sourceCounts.observed === 0" class="muted small">本次运行未提供扰动后观测细胞；当前比较对照与模型预测。</p>
-    <div v-if="layout === 'compare'" class="state-comparison">
-      <section v-for="source in visibleSources" :key="source" class="state-population" :aria-label="sourceLabels[source]">
-        <h3>{{ sourceLabels[source] }} <small>{{ sourceCounts[source] }} 个显示点</small></h3>
-        <ProjectionScatter :dark="true" :compact="true" :points="block?.data?.points ?? []" :visible-sources="[source]" :source-labels="sourceLabels" />
-      </section>
-    </div>
-    <ProjectionScatter v-else :dark="true" :points="block?.data?.points ?? []" :visible-sources="visibleSources" :source-labels="sourceLabels" />
-
-    <p class="muted small note">
-      方法：{{ block?.data?.method ?? 'seeded-random-projection' }}（种子 {{ block?.data?.seed ?? '—' }}）。
-      各来源共用后端投影与坐标范围，页面不做二次降维。这是表达矩阵的可视化，不能称为 STATE 的 SE 嵌入、UMAP 或真实细胞位置；多次运行不能直接叠加。
-      细胞序号（cell_index）只在同一来源内有效，相同序号不表示同一个细胞的前后实测轨迹。二维图不能单独证明预测准确性或完整保留高维差异。
-    </p>
-  </BlockState>
+    <p v-if="loading" role="status" class="state-message">正在核对本次表达来源并生成科研图…</p>
+    <div v-else-if="error" role="alert" class="state-message"><h3>本次科研图暂不可用</h3><p>{{ error }}</p><button class="btn btn-sm" @click="load">重新加载</button><button v-if="requestedFeature" class="btn btn-sm" @click="chooseFeature('')">选择可用指标</button></div>
+    <template v-else-if="data && figureUrl">
+      <div class="figure-toolbar"><div class="state-source-legend"><span v-for="source in sources" :key="source"><i :style="{background:sourceColors[source]}" />{{ sourceLabels[source] }} · n={{ data.distributions[source]?.n }}</span></div><div class="btn-row"><button class="btn btn-sm" @click="zoom=!zoom">{{ zoom?'适应页面':'放大科研图' }}</button><button v-for="format in (['svg','pdf','png','json'] as const)" :key="format" class="btn btn-sm" :disabled="exporting" @click="exportFigure(format)">导出 {{ format.toUpperCase() }}</button></div></div>
+      <p v-if="exportError" role="alert" class="notice notice-warn">{{ exportError }}</p>
+      <p v-if="!data.distributions.observed" class="state-evidence-note">未提供扰动后实测细胞；本页展示对照与模型预测的差异。</p>
+      <figure class="scientific-figure" :class="{zoom}"><img :src="figureUrl" alt="A 群体 PCA 叠加图，B 各群体选定指标着色图，C 逐细胞指标累积分布图" /><figcaption>共同对照参考 PCA · {{ data.gene_count }} 个基因 · 前两轴解释对照方差 {{ ((data.explained_variance_ratio[0]!+data.explained_variance_ratio[1]!)*100).toFixed(1) }}% · 展示 {{ data.displayed_cells }} / {{ data.total_cells }} 个细胞</figcaption></figure>
+      <div class="state-numbers"><h3>{{ data.feature.id }} <small>{{ data.feature.units }}</small></h3><p>分布与下表使用全部有效细胞。n 是细胞数；缺失值不作零值处理。均值差不代表统计显著性。</p><div class="table-scroll"><table><thead><tr><th>群体</th><th>有效 / 总细胞</th><th>均值</th><th>中位数</th><th>四分位区间</th><th>均值 − 对照</th></tr></thead><tbody><tr v-for="source in sources" :key="source"><td>{{ sourceLabels[source] }}</td><td>{{ data.distributions[source]?.n_valid }} / {{ data.distributions[source]?.n }}</td><td>{{ fmtNumber(data.distributions[source]?.mean) }}</td><td>{{ fmtNumber(data.distributions[source]?.median) }}</td><td>{{ fmtNumber(data.distributions[source]?.q25) }} ～ {{ fmtNumber(data.distributions[source]?.q75) }}</td><td>{{ fmtDelta(difference(source)) }}</td></tr></tbody></table></div></div>
+      <div class="state-boundary"><p>PCA 在完整对照的 log1p(CP10K) 表达上拟合，仅中心化；预测和实测使用同一中心与基底。图形中的位置是表达空间坐标，细胞不逐点配对。代谢任务分数来自本次保存的逐细胞 scCellFie 结果，不等于代谢通量。</p><p>此图用于发现值得继续研究的分布差异。预测准确性请结合<RouterLink :to="{path:'/workbench',query:{run:runId,tab:'validation'}}">预测验证</RouterLink>；细胞数量不能替代生物学重复。PDF / SVG 为矢量图，PNG 为 300 dpi。</p><details><summary>数据来源与核对记录</summary><p>原始运行：{{ data.provenance.source_run_id }}；已核对已有基因均值与逐细胞任务 ID。</p><p class="mono">Manifest SHA256: {{ data.provenance.manifest_sha256 }}</p></details></div>
+    </template>
+  </section>
 </template>
-
 <style scoped>
-.state-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0}.state-controls button[aria-pressed="true"]{border-color:var(--primary);color:var(--primary);background:#eaf1ea}.state-controls span{font-size:10px;color:var(--muted);margin-left:auto}.state-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:14px}.state-population{min-width:0}.state-population h3{font-size:12px;font-weight:500;margin:10px 0}.state-population h3 small{font-size:10px;color:var(--muted);margin-left:8px}.note{line-height:1.8}
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 6px;
-}
-.legend-toggle {
-  appearance: none;
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 999px;
-  padding: 3px 12px;
-  font-size: 12px;
-  font-family: var(--font);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink);
-}
-.legend-toggle:hover {
-  border-color: var(--faint);
-}
-.legend-toggle.off {
-  opacity: 0.45;
-}
-.legend-shape {
-  font-size: 11px;
-  line-height: 1;
-}
-.legend-count {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--muted);
-}
-.note {
-  margin: 6px 0 0;
-}
+.state-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}.state-heading h2{font-size:24px;font-weight:500;margin:10px 0}.state-heading p{color:var(--muted);font-size:12px;line-height:1.8}.figure-reading{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px 0}.figure-reading b{font:700 18px Arial,sans-serif;color:var(--primary);display:inline-block;margin-right:10px}.figure-reading strong{font-size:12px;font-weight:500}.figure-reading p{font-size:11px;line-height:1.8;color:var(--muted);margin:8px 0 0}.state-feature-controls{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:24px 0}.state-feature-controls label{font-size:11px;color:var(--muted);min-width:140px}.state-feature-controls select,.state-feature-controls input{display:block;margin-top:7px;width:100%;padding:10px;border:1px solid var(--border);background:white;color:var(--ink);font:12px var(--font);max-width:100%}.feature-picker{flex:1;min-width:260px!important}.figure-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.state-source-legend{display:flex;flex-wrap:wrap;gap:16px;font-size:11px}.state-source-legend i{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%}.state-evidence-note{font-size:11px;color:var(--muted);margin-top:18px}.scientific-figure{margin:18px 0;background:#fff;border:1px solid #e4e8e5;overflow-x:auto}.scientific-figure img{display:block;width:100%;min-width:850px;height:auto}.scientific-figure.zoom img{width:2100px;max-width:none}.scientific-figure figcaption{font-size:11px;line-height:1.8;padding:12px 18px;border-top:1px solid var(--border);color:var(--muted)}.state-numbers h3{font-size:15px;font-weight:500;overflow-wrap:anywhere}.state-numbers small{font-size:11px;color:var(--muted);margin-left:12px}.state-numbers p,.state-boundary{font-size:11px;color:var(--muted);line-height:1.9}.state-numbers table{width:100%;font-size:12px;border-collapse:collapse;white-space:nowrap}.state-numbers td,.state-numbers th{padding:12px;text-align:right;border-bottom:1px solid var(--border);font-weight:400}.state-numbers td:first-child,.state-numbers th:first-child{text-align:left}.state-numbers thead{background:#f5f7f5}.state-boundary{border-top:1px solid var(--border);margin-top:24px;padding-top:12px}.state-boundary details{margin-top:16px}.state-boundary summary{cursor:pointer;color:var(--primary)}.state-boundary .mono{overflow-wrap:anywhere}.state-message{padding:60px 20px;text-align:center;background:#f6f7f3;font-size:12px;line-height:1.9}.state-message h3{font-size:16px;font-weight:500}.state-message button{margin:12px 4px}.table-scroll{overflow:auto}@media(max-width:850px){.figure-reading{grid-template-columns:1fr;gap:12px}.state-heading{align-items:start;flex-direction:column}.state-feature-controls label{flex:1}.feature-picker{flex-basis:100%}}
 </style>

@@ -7,6 +7,7 @@
 export type CellLine = 'K562' | 'RPE1' | 'Jurkat' | 'HepG2'
 
 export type RunMode = 'online' | 'precomputed' | 'validation'
+export type ResultKind = 'synthetic_demo' | 'frozen_model_result'
 
 export type RunStatus =
   | 'queued'
@@ -36,6 +37,7 @@ export interface CreateRunResponse {
 }
 
 export interface RunRecord {
+  result_kind?: ResultKind | null
   run_id: string
   status: RunStatus
   stage_progress: number
@@ -59,6 +61,8 @@ export interface CoverageSummary {
 export interface EvidenceItem {
   id: string
   label: string
+  category?: string | null
+  subcategory?: string | null
   predicted_delta: number
   observed_delta: number | null
   coverage: number
@@ -70,6 +74,7 @@ export interface EvidenceItem {
 }
 
 export interface RunSummary {
+  result_kind?: ResultKind | null
   run_id: string
   status: RunStatus
   stage_progress: number
@@ -170,6 +175,7 @@ export interface GenesResponse {
 }
 
 export interface MetabolicTasksResponse {
+  completeness_available?: boolean
   items: EvidenceItem[]
   limit: number
   truncated: boolean
@@ -181,7 +187,9 @@ export interface MetabolicTasksResponse {
 
 export interface RunProvenance {
   run_id: string
-  source_type: 'online' | 'validation' | 'synthetic_precomputed'
+  source_type: 'online' | 'validation' | 'synthetic_precomputed' | 'frozen_precomputed'
+  source_run_id?: string | null
+  original_manifest_sha256?: string | null
   created_at: string
   completed_at: string
   manifest_sha256: string
@@ -195,6 +203,11 @@ export interface RunValidation {
   metrics: Record<string, number | null>
   protocol_status: 'unconfirmed'
   warnings: string[]
+  metric_scope?: 'metabolic_task_delta'
+  expression?: Record<string, number | boolean | null> | null
+  differential_expression?: Record<string, number | string | null> | null
+  held_out_validation?: boolean
+  parameters?: Record<string, unknown> | null
 }
 
 export interface ReactionRow {

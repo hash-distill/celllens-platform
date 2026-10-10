@@ -165,3 +165,34 @@ def test_embed_key_model_rejects_missing_panel_slot(tmp_path: Path):
     request = StateRunInput("K562", "MYC", tmp_path / "control.h5ad", 1, 42)
     with pytest.raises(StateInferenceError, match="missing obsm"):
         validate_state_output(FakeAnnData(), request, model)
+
+
+def test_latent_input_can_have_separate_expression_output_slot(tmp_path: Path):
+    (tmp_path / "genes.txt").write_text("A\nB\n")
+    model = RegistryEntry(
+        {"id": "se-full", "gene_list_path": "genes.txt", "embed_key": "X_state", "expression_key": "X"},
+        tmp_path,
+    )
+    output = FakeAnnData(var_names=["A", "B"], obsm={"X_state": np.ones((1, 2058))})
+    request = StateRunInput("K562", "MYC", tmp_path / "control.h5ad", 1, 42)
+    validate_state_output(output, request, model)
+
+
+@pytest.mark.parametrize("device", ["cpu", "cuda"])
+def test_se_command_uses_signed_latent_runner_on_either_device(tmp_path: Path, device):
+    model = RegistryEntry(
+        {
+            "model_dir": "model",
+            "checkpoint_path": "model/best.ckpt",
+            "perturbation_column": "gene",
+            "embed_key": "X_state",
+            "expression_key": "X",
+        },
+        tmp_path,
+    )
+    request = StateRunInput("K562", "MYC", tmp_path / "control.h5ad", 64, 42)
+    command = StateCliEngine(device=device).build_command(
+        request, model, tmp_path / "predicted.h5ad", tmp_path / "perts.tsv"
+    )
+    assert command[:3] == [sys.executable, "-m", "backend.app.engines.state_se_runner"]
+    assert command[command.index("--celllens-device") + 1] == device

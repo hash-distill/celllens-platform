@@ -7,6 +7,14 @@ from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 
+def expand_projection(page):
+    """Projection is an auxiliary view, opened explicitly before checking it."""
+    preview = page.locator(".projection-preview")
+    if preview.count() and preview.get_attribute("open") is None:
+        preview.locator(":scope > summary").click()
+        page.wait_for_load_state("networkidle")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8000")
@@ -58,7 +66,9 @@ def main() -> None:
             source: sum(point["source"] == source for point in projection["points"])
             for source in ["control", "predicted", "observed"]
         }
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_be_visible()
+        expand_projection(page)
         expect(page.locator(".state-population")).to_have_count(
             sum(count > 0 for count in source_counts.values())
         )
@@ -66,9 +76,12 @@ def main() -> None:
             expect(
                 page.locator(".state-population").filter(has=page.get_by_role("heading", name=label))
             ).to_contain_text(f"{source_counts[source]} 个显示点")
+        expand_projection(page)
         expect(page.locator(".state-overview .note")).to_contain_text("不表示同一个细胞")
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_contain_text("预测群体已按")
         page.get_by_role("button", name="叠加比较", exact=True).click()
+        expand_projection(page)
         expect(page.locator(".state-overview .projection-chart")).to_have_count(1)
         page.get_by_role("button", name="并排比较", exact=True).click()
         results.append(
@@ -144,9 +157,10 @@ def main() -> None:
             expect(page.locator(".cell-viewport")).to_have_count(0)
             if step == 1:
                 expect(page.locator(".gene-row").first).to_be_visible()
+                expand_projection(page)
                 expect(page.locator(".state-overview")).to_be_visible()
             if step == 2:
-                expect(page.locator(".trace-network")).to_be_visible()
+                expect(page.locator(".function-node").first).to_be_visible()
                 page.screenshot(path=str(out / "demo-metabolism.png"), full_page=True)
         page.locator(".demo-title h1").click()
         page.keyboard.press("Escape")
@@ -163,6 +177,7 @@ def main() -> None:
         results.append("legacy detail redirects to the unified workbench; structural view is removed")
 
         page.goto(f"{base}/workbench?run={args.historical_run_id}", wait_until="networkidle")
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_contain_text("旧分析未记录扰动细胞筛选协议")
         expect(page.locator(".task-trace")).to_contain_text("本次运行尚无关联追溯记录")
         expect(page.locator(".trace-network")).to_have_count(0)
@@ -201,6 +216,7 @@ def main() -> None:
             lambda route: route.fulfill(status=404, json={"detail": {"code": "ARTIFACT_NOT_FOUND"}}),
         )
         page.goto(f"{base}/workbench?run={run_id}", wait_until="networkidle")
+        expand_projection(page)
         expect(page.locator(".state-overview")).to_contain_text("本次结果未提供二维投影")
         expect(page.locator(".gene-row").first).to_be_visible()
         expect(page.locator(".task-row").first).to_be_visible()

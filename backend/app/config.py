@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     state_executable: str = "state"
     log_level: str = "INFO"
     max_projection_points: int = 12_000
+    allow_synthetic_results: bool = False
     database_url: str = "mysql+pymysql://celllens:celllens_dev@127.0.0.1:3307/celllens?charset=utf8mb4"
     create_database_schema: bool = False
     worker_id: str = "celllens-worker-1"
@@ -40,6 +41,10 @@ class Settings(BaseSettings):
     @property
     def sccellfie_database_root(self) -> Path:
         return self.project_root / "data" / "registry" / "sccellfie" / "human"
+
+    @property
+    def gene_identity_root(self) -> Path:
+        return self.registry_root / "gene_identity"
 
 
 @lru_cache

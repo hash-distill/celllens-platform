@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source": "https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt",
+  "source_sha256": "8bf6f686e640dbc864a346484626953621b0500d900d26cd085a35c2782d725d",
+  "database_manifest_sha256": "8abad7a25ffe134b99c4f6c79cb4c0c2ab02de727eca83bb59fca41e11a60c61",
+  "database_gene_count": 931,
+  "files": {
+    "human.json": "1a1104da220148474d08e69cd52a4910e0fe5a3a565c87519fa21270689bc807"
+  },
+  "policy": "approved, unique previous, unique alias; explicit HGNC ID resolves ambiguity"
+}

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useRunStore } from '../stores/run'
 import { runSourceLabel } from '../utils/source'
 import ResponseWorkspace from '../components/response/ResponseWorkspace.vue'
+import FunctionWorkspace from '../components/function/FunctionWorkspace.vue'
 import ResponseIntro from '../components/response/ResponseIntro.vue'
 import EvidenceSidebar from '../components/EvidenceSidebar.vue'
 import ValidationTab from '../components/tabs/ValidationTab.vue'
@@ -34,7 +35,7 @@ let progressTimer: number | undefined
 /** 0–1，按真实经过时间推进，供进度条与倒计时共用。 */
 const autoplayProgress = ref(0)
 const source = computed(() => entry.value?.record
-  ? runSourceLabel(entry.value.record.request.mode, runId.value) : '未绑定实验 · 分析流程介绍')
+  ? runSourceLabel(entry.value.record.request.mode, runId.value, entry.value.record.result_kind) : '未绑定实验 · 分析流程介绍')
 const completed = computed(() => entry.value?.record?.status === 'completed')
 
 function go(index: number): void {
@@ -74,6 +75,7 @@ function exit(): void {
   void router.push(runId.value ? {path: '/workbench', query:{run:runId.value}} : '/workbench')
 }
 function keydown(event: KeyboardEvent): void {
+  if (event.defaultPrevented) return
   if (event.key === 'Escape') { exit(); return }
   const target = event.target as HTMLElement | null
   if (target?.closest('input,select,textarea,[contenteditable="true"]')) return
@@ -108,7 +110,7 @@ onBeforeUnmount(() => {
     <header class="demo-top">
       <div><span class="micro">CELLLENS / PRESENTATION</span><span class="demo-source">{{ source }}</span></div>
       <div class="demo-controls">
-        <button class="btn btn-sm" type="button" :aria-pressed="playing" @click="togglePlay"><UiIcon :name="playing ? 'pause':'play'" :size="14" />{{ playing ? '暂停演示':'自动播放' }}</button>
+        <button class="btn btn-sm" type="button" :aria-pressed="playing" @click="togglePlay"><UiIcon :name="playing ? 'pause':'play'" :size="14" />{{ playing ? '暂停播放':'自动播放' }}</button>
         <button class="btn btn-sm" type="button" @click="exit"><UiIcon name="back" :size="14" />返回工作台</button>
       </div>
     </header>
@@ -117,18 +119,18 @@ onBeforeUnmount(() => {
     <p v-if="playing" class="demo-progress-note" role="status">自动播放中 · 第 {{ step + 1 }}/4 章 · {{ Math.max(1, Math.ceil(CHAPTER_MS / 1000 * (1 - autoplayProgress))) }} 秒后进入下一章</p>
     <div class="demo-stage">
       <template v-if="step === 0">
-        <div v-if="entry?.record" class="demo-experiment"><span class="micro">本次实验</span><h2>{{ entry.record.request.cell_line }} / {{ entry.record.request.perturbation }}</h2><p>{{ entry.record.request.n_cells }} 个采样细胞 · 随机种子 {{ entry.record.request.seed }} · {{ source }}</p><code>{{ runId }}</code></div>
+        <div v-if="entry?.record" class="demo-experiment"><span class="micro">本次实验</span><h2>{{ entry.record.request.cell_line }} / {{ entry.record.request.perturbation }}</h2><p><template v-if="entry.record.request.mode === 'precomputed'">读取已保存结果 · </template><template v-else>{{ entry.record.request.n_cells }} 个采样细胞 · 随机种子 {{ entry.record.request.seed }} · </template>{{ source }}</p><code>{{ runId }}</code></div>
         <ResponseIntro />
       </template>
-      <section v-else-if="!runId" class="demo-result demo-empty"><h2>选择一次实验，查看实际响应。</h2><p>当前只介绍分析流程。完成运行后，从工作台点击“演示本次实验”。</p><RouterLink to="/workbench" class="btn btn-primary">打开工作台</RouterLink></section>
+      <section v-else-if="!runId" class="demo-result demo-empty"><h2>选择一次实验，查看实际响应。</h2><p>当前只介绍分析流程。完成运行后，从工作台点击“解读本次实验”。</p><RouterLink to="/workbench" class="btn btn-primary">打开工作台</RouterLink></section>
       <section v-else-if="entry?.notFound" class="demo-result demo-empty"><h2>运行不存在</h2><p>请检查运行编号。</p></section>
-      <section v-else-if="!completed" class="demo-result demo-empty"><h2>{{ entry?.record?.status === 'failed' ? '本次计算失败' : '等待本次实验完成' }}</h2><p>{{ entry?.recordError?.message || entry?.record?.error_message || '结果就绪后自动显示，不使用替代样例。' }}</p></section>
-      <ResponseWorkspace v-else-if="step === 1 || step === 2" :key="runId + ':' + step" :run-id="runId" :focus="step === 1 ? 'genes' : 'tasks'" />
+      <section v-else-if="!completed" class="demo-result demo-empty"><h2>{{ entry?.record?.status === 'failed' ? '本次计算失败' : '等待本次实验完成' }}</h2><p>{{ entry?.recordError?.message || entry?.record?.error_message || '结果就绪后自动显示。' }}</p></section>
+      <ResponseWorkspace v-else-if="step === 1" :key="runId + ':' + step" :run-id="runId" focus="genes" /><FunctionWorkspace v-else-if="step === 2" :key="runId" :run-id="runId" />
       <section v-else class="demo-result"><ValidationTab :run-id="runId" /><EvidenceSidebar v-if="entry" :entry="entry" /><RouterLink :to="{path:'/runs/'+runId,query:{tab:'validation'}}" class="btn">打开完整验证与来源记录 →</RouterLink></section>
     </div>
     <footer class="demo-bottom">
       <button class="btn btn-sm" :disabled="step===0" @click="stop();go(step-1)">← 上一章</button>
-      <nav aria-label="演示章节"><button v-for="(item,index) in chapters" :key="item.name" :class="{active:step===index}" :aria-current="step===index?'step':undefined" @click="stop();go(index)"><span>0{{ index+1 }}</span>{{ item.name }}</button></nav>
+      <nav aria-label="解读章节"><button v-for="(item,index) in chapters" :key="item.name" :class="{active:step===index}" :aria-current="step===index?'step':undefined" @click="stop();go(index)"><span>0{{ index+1 }}</span>{{ item.name }}</button></nav>
       <button class="btn btn-sm" :disabled="step===3" @click="stop();go(step+1)">下一章 →</button>
     </footer>
     <p class="demo-keyhint">← / → 切换章节 · 空格播放或暂停 · Esc 返回 · 自动播放每章 {{ Math.round(CHAPTER_MS / 1000) }} 秒{{ reducedMotion ? ' · 已启用减少动态':'' }}</p>

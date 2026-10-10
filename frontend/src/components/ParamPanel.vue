@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCatalogStore } from '../stores/catalog'
 import { useDraftStore } from '../stores/draft'
@@ -55,6 +55,8 @@ const perturbationQuery = ref(draft.perturbation)
 watch(() => draft.perturbation, value => { perturbationQuery.value = value })
 const dropdownOpen = ref(false)
 const highlightIndex = ref(-1)
+let dropdownCloseTimer: number | undefined
+onBeforeUnmount(() => window.clearTimeout(dropdownCloseTimer))
 
 const perturbationState = computed(() => catalog.perturbations[`${draft.cellLine}:${draft.mode}`] ?? null)
 
@@ -66,12 +68,14 @@ const filteredPerturbations = computed(() => {
 })
 
 function openDropdown(): void {
+  window.clearTimeout(dropdownCloseTimer)
   dropdownOpen.value = true
   highlightIndex.value = -1
 }
 
 function closeDropdownSoon(): void {
-  window.setTimeout(() => {
+  window.clearTimeout(dropdownCloseTimer)
+  dropdownCloseTimer = window.setTimeout(() => {
     dropdownOpen.value = false
     // 失焦时若输入不是列表项，回退到已提交选择（禁止任意文本）
     const query = perturbationQuery.value.trim().toUpperCase()
@@ -116,6 +120,7 @@ function onQueryKeydown(event: KeyboardEvent): void {
 const modeOptions = computed(() => {
   const ctx = catalog.contextFor(draft.cellLine)
   const reasons = ctx?.readiness_reasons ?? []
+  const demoContexts = catalog.contexts.filter((item) => item.precomputed_ready).map((item) => item.cell_line)
   return [
     {
       value: 'online' as RunMode,
@@ -132,24 +137,27 @@ const modeOptions = computed(() => {
     },
     {
       value: 'precomputed' as RunMode,
-      label: '预计算演示',
+      label: '结果回放',
       ready: ctx?.precomputed_ready ?? false,
       reason:
         ctx === null
           ? '细胞背景可用性尚未加载'
           : ctx.precomputed_ready
-            ? '合成演示数据，结果会常驻标记来源'
-            : '该背景没有通过哈希校验的预计算包',
+            ? '读取已保存的真实模型结果，本次不重新计算'
+            : `${draft.cellLine} 暂无可回放结果${demoContexts.length > 0 ? `；可切换至 ${demoContexts.join('、')} 使用结果回放` : ''}`,
     },
     {
       value: 'validation' as RunMode,
-      label: '匹配验证',
-      ready: false,
-      // 首版验证提交入口未开放：即使 validation_ready 为 true 也不开放提交
-      reason: '提交入口未开放（待后端与数据负责人提供开发用验证名单后启用）',
+      label: '实测对照',
+      ready: ctx?.validation_ready ?? false,
+      reason: ctx?.validation_ready
+        ? '仅开放有匹配实测数据的扰动；生成新预测并与登记观测比较'
+        : '当前背景暂无已核验的实测对照数据与名单；已有结果可在实验记录查看',
     },
   ]
 })
+
+const unavailableModes = computed(() => modeOptions.value.filter((mode) => !mode.ready))
 
 const selectedModeOption = computed(
   () => modeOptions.value.find((m) => m.value === draft.mode) ?? null,
@@ -265,7 +273,7 @@ async function copySubmitDiagnostics(): Promise<void> {
         <!-- 细胞背景 -->
         <div class="field">
           <span class="label" id="cell-line-label">细胞背景</span>
-          <div class="choice-group" role="radiogroup" aria-labelledby="cell-line-label">
+          <div class="choice-group cell-choice-group" role="radiogroup" aria-labelledby="cell-line-label">
             <label
               v-for="opt in cellOptions"
               :key="opt.value"
@@ -308,6 +316,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               autocomplete="off"
               :disabled="perturbationState?.loading"
               @focus="openDropdown"
+              @click="openDropdown"
               @input="openDropdown"
               @blur="closeDropdownSoon"
               @keydown="onQueryKeydown"
@@ -367,14 +376,20 @@ async function copySubmitDiagnostics(): Promise<void> {
                 :value="opt.value"
                 :checked="draft.mode === opt.value"
                 :disabled="!opt.ready"
+                :aria-describedby="!opt.ready ? `mode-unavailable-${opt.value}` : undefined"
                 @change="draft.mode = opt.value"
               />
               <span>
                 <span class="choice-name">{{ opt.label }}</span>
-                <span v-if="opt.reason && (!horizontal || draft.mode === opt.value)" class="choice-reason"><br />{{ opt.reason }}</span>
+                <span v-if="opt.ready && opt.reason && (!horizontal || draft.mode === opt.value)" class="choice-reason"><br />{{ opt.reason }}</span>
               </span>
             </label>
           </div>
+          <ul v-if="unavailableModes.length" class="mode-availability" aria-label="模式可用性说明">
+            <li v-for="opt in unavailableModes" :id="`mode-unavailable-${opt.value}`" :key="opt.value">
+              <strong>{{ opt.label }}：</strong>{{ opt.reason }}。
+            </li>
+          </ul>
           <p v-if="selectedModeOption && !selectedModeOption.ready" class="field-error">
             当前选择的模式不可用：{{ selectedModeOption.reason }}。模式不会被自动替换，请手动调整。
           </p>
@@ -393,8 +408,8 @@ async function copySubmitDiagnostics(): Promise<void> {
           <div v-if="draft.advancedOpen" class="advanced">
             <template v-if="isPrecomputed">
               <p class="notice notice-info">
-                预计算演示读取既有结果文件：n_cells 与 seed 不改变既有结果，已锁定。
-                这些是请求参数，不代表合成包最初生成参数；本次包的哈希见证据栏。
+                结果回放读取既有结果文件：n_cells 与 seed 不改变既有结果，已锁定。
+                这些是请求参数，不代表已保存结果最初生成参数；本次包的哈希见证据栏。
               </p>
             </template>
             <template v-else>
@@ -484,7 +499,7 @@ async function copySubmitDiagnostics(): Promise<void> {
               class="small"
               style="margin: 6px 0 0"
             >
-              在线推演暂时不可用。参数已保留；也可以选择预计算演示模式查看合成样例（不会自动切换）。
+              在线推演暂时不可用。参数已保留；也可以选择结果回放模式查看已保存的真实结果。
             </p>
           </template>
           <div class="btn-row" style="margin-top: 8px">
@@ -504,6 +519,28 @@ async function copySubmitDiagnostics(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.cell-choice-group,
+.horizontal .cell-choice-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+}
+.cell-choice-group .choice {
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+}
+.mode-availability {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.mode-availability li + li {
+  margin-top: 6px;
 }
 .perturbation-box {
   position: relative;

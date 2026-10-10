@@ -13,7 +13,7 @@ const catalog = useCatalogStore()
 const runs = useRunStore()
 const ui = useUiStore()
 
-/** Mock 样例数据常驻标记（仅显式开关开启时出现） */
+/** 开发数据来源标记（生产构建不启用） */
 const mockOn = isMockEnabled()
 
 let healthTimer: number | null = null
@@ -39,8 +39,7 @@ onBeforeUnmount(() => {
 <template>
   <AppHeader />
   <div v-if="mockOn" class="mock-banner" role="status">
-    Mock 样例数据 · 当前为演示 / 调试模式，全部接口返回固定种子的合成样例，不是真实计算结果。
-    可在「使用说明 → Mock 演示模式」关闭。
+    开发数据模式 · 当前数据为合成数据。请关闭开发开关后连接正式服务。
   </div>
   <ConnectionBanner />
   <main>

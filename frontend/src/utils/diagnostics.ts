@@ -18,7 +18,7 @@ export interface DiagnosticsInput {
  */
 export function buildDiagnostics(input: DiagnosticsInput): string {
   const lines: string[] = [
-    'CellLens 细胞知镜 · 联调诊断信息',
+    'CellLens 细胞知镜 · 运行诊断信息',
     `页面版本: ${__APP_VERSION__}`,
     `API 基址: ${API_ROOT}`,
     `采集时间: ${new Date().toISOString()}`,

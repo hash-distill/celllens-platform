@@ -42,7 +42,7 @@ onBeforeUnmount(() => controller?.abort())
     <header class="trace-heading"><div><span class="micro">CELLLENS / EVIDENCE TRACE</span><h2>从功能变化，追溯关联依据。</h2></div><span class="trace-kind">知识库关联</span></header>
     <p v-if="loading" class="trace-message" role="status">正在读取本次运行的任务关联记录…</p>
     <div v-else-if="available === false" class="trace-message" role="status"><h3>本次运行尚无关联追溯记录</h3><p>当前任务的分数与覆盖信息仍可查看。本次保存结果未提供该任务的反应—基因追溯；完整关联需由新分析生成。</p></div>
-    <div v-else-if="error" class="trace-message"><h3>{{ error.code === 'TASK_TRACE_UNAVAILABLE' ? '本次运行尚无关联追溯记录' : error.code === 'TASK_NOT_FOUND' ? '未找到该任务的关联记录' : '关联追溯暂时不可用' }}</h3><p>{{ error.code === 'TASK_TRACE_UNAVAILABLE' ? '已有表达与代谢结果仍可查看。使用当前版本重新运行后，可保存任务—反应—基因关联及数据库版本。合成样例不补写真实关系。' : error.message }}</p><button v-if="error.status !== 404" class="btn btn-sm" @click="load">重试追溯</button></div>
+    <div v-else-if="error" class="trace-message"><h3>{{ error.code === 'TASK_TRACE_UNAVAILABLE' ? '本次运行尚无关联追溯记录' : error.code === 'TASK_NOT_FOUND' ? '未找到该任务的关联记录' : '关联追溯暂时不可用' }}</h3><p>{{ error.code === 'TASK_TRACE_UNAVAILABLE' ? '已有表达与代谢结果仍可查看。使用当前版本重新运行后，可保存任务—反应—基因关联及数据库版本。合成记录没有真实知识关联产物。' : error.message }}</p><button v-if="error.status !== 404" class="btn btn-sm" @click="load">重试追溯</button></div>
     <template v-else-if="data">
       <p class="trace-caption">连线表示已记录的知识库组成关系；数值来自本次运行。相关基因不等于已验证的因果贡献。</p>
       <button class="btn btn-sm" :aria-pressed="spatial" @click="spatial = !spatial">{{ spatial ? '收起空间网络' : '探索三维功能网络' }}</button>

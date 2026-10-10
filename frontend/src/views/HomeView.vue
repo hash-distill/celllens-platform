@@ -8,7 +8,7 @@ const entries = [
   {to:'/workbench',icon:'chart',number:'01',title:'实验工作台',text:'设置细胞背景与基因扰动，查看单细胞状态、表达响应与代谢功能。',action:'新建实验'},
   {to:'/records',icon:'file',number:'02',title:'实验记录',text:'检索已提交的实验，核对运行状态和来源，继续阅读已有结果。',action:'查看记录'},
   {to:'/compare',icon:'compare',number:'03',title:'实验比较',text:'选择已有实验并排比较，结合来源与覆盖证据检查变化。',action:'比较实验'},
-  {to:'/demo',icon:'play',number:'04',title:'演示模式',text:'围绕一个实验，依次讲解问题、单细胞状态、代谢功能和证据。',action:'进入演示'},
+  {to:'/demo',icon:'play',number:'04',title:'结果解读',text:'围绕一个实验，依次讲解问题、单细胞状态、代谢功能和证据。',action:'查看解读'},
 ]
 </script>
 <template>

@@ -117,6 +117,31 @@ def test_trace_api_bounds_lists_and_reports_absent_task(tmp_path):
         )
 
 
+def test_full_function_trace_preserves_all_nodes_rules_and_observed_values(tmp_path):
+    app, root = completed_app(tmp_path)
+    document = build_document()
+    document["genes"]["GENE1"]["observed_delta"] = -0.5
+    document["reactions"]["rxn_a"]["observed_delta"] = 0.25
+    publish(app, root, document)
+    with TestClient(app) as client:
+        response = client.get(
+            "/api/v1/runs/run_trace/task-trace?task_id=task_a&scope=all&reaction_limit=1&gene_limit=1"
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["scope"] == "all"
+        assert len(data["reactions"]) == data["total_reactions"] == 2
+        assert data["truncated"] is False
+        reaction = data["reactions"][0]
+        assert reaction["gene_rule"] == "GENE1 and MISSING"
+        assert len(reaction["genes"]) == reaction["total_genes"] == 2
+        assert reaction["truncated"] is False
+        assert reaction["observed_delta"] == 0.25
+        assert reaction["genes"][0]["observed_delta"] == -0.5
+        assert reaction["genes"][1]["predicted"] is None
+        assert data["relationship_kind"] == "knowledge_association"
+
+
 def test_trace_rejects_tampered_or_cross_run_artifact(tmp_path):
     app, root = completed_app(tmp_path)
     document = build_document()
@@ -279,13 +304,18 @@ def test_analysis_persists_trace_and_no_database_has_explicit_warning(tmp_path, 
 
     monkeypatch.setattr(scientific_analysis, "_load_frozen_database", lambda root: (database, "frozen-v1"))
     service = scientific_analysis.ScientificAnalysisService(tmp_path, Engine())
-    model = RegistryEntry({}, tmp_path)
-    dataset = RegistryEntry({"control_path": "control.h5ad"}, tmp_path)
+    model = RegistryEntry({"expression_scale": "log1p_cp10k"}, tmp_path)
+    dataset = RegistryEntry({"control_path": "control.h5ad", "expression_scale": "log1p_cp10k"}, tmp_path)
     request = CreateRunRequest(cell_line="K562", perturbation="MYC")
     output = tmp_path / "result"
     output.mkdir()
     result = service.run("run_new", request, model, dataset, tmp_path / "predicted.h5ad", output)
     assert output / "task_trace.json" in result.artifacts
+    assert output / "official_completeness.json" in result.artifacts
+    official = json.loads((output / "official_completeness.json").read_text())
+    assert official["run_id"] == "run_new"
+    assert official["source_gene_sha256"] == file_sha256(output / "gene_deltas.csv")
+    assert official["method"] == "sccellfie.reports.compute_dataset_completeness"
     document = json.loads((output / "task_trace.json").read_text())
     assert document["run_id"] == "run_new"
     assert document["genes"]["GENE1"]["predicted_delta"] > 0
