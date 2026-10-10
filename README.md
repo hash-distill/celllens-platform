@@ -1,153 +1,168 @@
 <p align="center">
-  <img src="frontend/public/favicon.png" alt="细胞知镜 CellLens 图标" width="96" height="96" />
+  <img src="frontend/public/favicon.png" alt="CellLens 图标" width="96" height="96" />
 </p>
 
 # 细胞知镜 · CellLens
 
-**面向基因扰动研究的表达预测与代谢功能分析工作台。**
+**单细胞基因扰动预测与代谢功能分析工作台。**
 
-CellLens 使用 STATE 预测扰动后的单细胞表达，再通过 scCellFie 分析代谢任务与反应分数。独立首页介绍研究流程与能力，实验工作台围绕“单细胞状态分布—基因响应—代谢功能—证据追溯”展示本次运行，支持对照与预测群体的并排/叠加比较、基因与任务联动选择、覆盖筛选，以及任务—反应—基因的功能前后对比；三维关联网络保留为辅助探索。实验设置、结果分析、比较和结果解读入口统一在顶部导航；历史实验通过独立的“实验记录”页面检索。细胞器结构示意已移除。
+CellLens 将 STATE 的扰动表达预测与 scCellFie 的代谢任务分析整合为 Web 工作流。用户可以选择细胞背景和扰动基因，提交计算，查看单细胞状态、基因响应与代谢功能变化，追溯结果来源并导出分析报告。
 
-“代谢功能”集中提供功能前后对比和任务分数与数据覆盖：四背景真实结果可查看同布局网络、变化量、实测、GPR 和冻结来源。[操作说明](docs/guide/FUNCTION_WORKSPACE.md)。单细胞状态改为共同对照 PCA、逐细胞基因/任务着色和累积分布，支持 SVG/PDF/300 dpi PNG 导出。[科研图说明](docs/guide/SCIENTIFIC_CELL_STATE.md)。
+![CellLens 实验工作台](docs/screenshots/response-workbench.png)
 
-当前版本为 `0.1.0`，提供面向受控科研环境的分析服务。K562、RPE1、Jurkat、HepG2 在线计算链路已在 Windows 本机实测；新增三个背景各完成一次真实 GPU 预测，详见[接入验收](docs/verification/2026-10-08-context-integration.md)。正式生物学泛化评价尚未完成。
+## 功能
 
-真实结果现已接入 scCellFie 官方数据集完整性分析，展示完整覆盖的任务/反应、影响加权完整性和缺失基因，并可下载完整 JSON。7 次可追溯运行已补充报告；项目旧 80%／60% 分档保留为历史/API 兼容信息。详见[官方完整性验收](docs/verification/2026-10-09-official-completeness.md)。
+- **扰动预测**：支持 K562、RPE1、Jurkat、HepG2，选择登记的单基因扰动，设置预测细胞数和随机种子。
+- **单细胞状态**：在共同对照 PCA 坐标中比较对照、预测与可用观测，按基因或代谢任务着色，查看累积分布。
+- **基因响应**：查看平均表达、预测变化和匹配观测，筛选基因并联动单细胞图。
+- **代谢功能**：比较任务与反应分数，浏览任务—反应—基因关联、GPR 规则、完整性指标和缺失基因。
+- **实验管理**：查看任务进度，检索服务器实验记录，选择多个已完成实验进行比较，按章节解读结果。
+- **来源与导出**：记录参数、模型与数据版本、文件哈希；导出 CSV、HTML 报告、关联与完整性 JSON，以及 SVG/PDF/PNG 科研图。
 
-![CellLens 首页](docs/screenshots/home.png)
+### 运行模式
 
-![扰动响应工作台](docs/screenshots/response-workbench.png)
-
-*2026-10-10 正式页面与真实结果回放。结果保留原运行来源；功能网络位置为展示布局，连线为冻结知识库关联。*
-
-## 本系统的集成创新
-
-- **状态、表达与功能联读**：先比较单细胞表达状态的前后分布，再查看群体平均表达变化与代谢任务分数；状态点不表示同一细胞的前后实测配对。
-- **覆盖约束下的结果筛选**：任务变化与基因覆盖同步呈现，支持按覆盖等级查看，避免把强变化直接当作可靠结论。
-- **运行级解释追溯**：新运行冻结任务—反应—基因关系及数据库文件哈希，可在列表或三维功能网络中探索；历史运行无追溯产物时明确提示缺失。
-
-这些是 CellLens 的分析工作流与交互实现；STATE 和 scCellFie 是使用的上游方法，不将它们宣称为本项目原创算法。详情见[改造与创新说明](docs/guide/RESPONSE_WORKBENCH.md)。
-
-## 从这里开始
-
-- [使用指南](docs/guide/USER_GUIDE.md)：参数含义、完成一次运行、阅读结果。
-- [STATE 与 scCellFie 模型说明](docs/guide/MODELS.md)：原始任务、输入输出与科学边界。
-- [完整文档目录](docs/README.md)：部署、架构、接口、前端和运维。
-- [脚本用途](scripts/README.md)：日常运行与资产准备工具。
-
-## 功能与模式
-
-系统支持实验设置与进度、表达与代谢双视图、任务关联追溯、三维功能网络、候选比较、CSV/HTML 报告、运行来源记录，服务器实验记录检索，以及四章结果解读。
-
-| 模式 | 执行内容 | 当前边界 |
+| 模式 | 用途 | 所需资产 |
 |---|---|---|
-| 在线推演 `online` | STATE 推理与表达、代谢分析 | 支持 K562、RPE1、Jurkat、HepG2 的登记单基因扰动；需就绪的模型、数据与 GPU |
-| 结果回放 `precomputed` | 校验并读取现有包 | 四背景 ALDOA 为保存的真实模型结果，校验来源与哈希；本次不执行模型 |
-| 实测对照 `validation` | 新预测与登记观测比较 | 四背景均开放 ALDOA；冻结协议与观测哈希核验，尚非独立留出验收 |
+| 在线推演 `online` | 执行 STATE 预测及表达、代谢分析 | 对应背景的模型、对照数据和 GPU |
+| 结果回放 `precomputed` | 读取并核验保存的真实结果 | 完整回放包及来源记录 |
+| 实测对照 `validation` | 执行预测并与匹配观测比较 | 在线资产、观测数据和登记协议 |
 
-## 快速启动
+可用背景、扰动与模式由资产注册表和服务状态决定。当前支持单基因扰动；预测细胞请求数为 64–4,096。回放沿用保存结果的参数，不重新执行模型。代谢分数表示表达对功能的支持程度，完整性指标描述基因覆盖；结果解读见 [模型与数据](docs/MODEL_AND_DATA.md)。
 
-以下命令在仓库根目录运行。新环境先按 [部署与启动](docs/DEPLOYMENT.md) 准备依赖、`.env`、MySQL、迁移和科学资产；克隆源码不包含全部运行资产。
+## 技术栈
 
-### 已配置的 Windows 本机
+| 层次 | 组件 |
+|---|---|
+| 前端 | Vue 3、TypeScript、Pinia、Vite、ECharts、Three.js |
+| 后端 | Python、FastAPI、Pydantic、SQLAlchemy |
+| 科学计算 | STATE、scCellFie、AnnData、Scanpy |
+| 存储 | MySQL、Alembic 迁移、文件式分析产物 |
 
-构建前端并启动：
+## 安装与启动
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql
-```
+环境需要 Python 3.11 或 3.12、uv、Node.js/npm 和 MySQL。在线计算还需要兼容当前 PyTorch/CUDA 依赖的 NVIDIA GPU。依赖版本以 `uv.lock` 和 `frontend/package-lock.json` 为准。
 
-已有最新前端构建时：
+源码包含注册表、配置、基因面板和冻结代谢数据库。模型权重、原始 H5AD、真实回放包及历史运行产物需要另行准备。
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -SkipBuild
-```
+### 1. 获取源码并安装依赖
 
-打开 [首页](http://127.0.0.1:8000/)，从顶部进入实验工作台或实验记录。脚本检查并复用已启动的 MySQL；它不代替依赖安装和模型准备。
-
-### 开发时分别启动
-
-终端一：
+以下命令在仓库根目录执行：
 
 ```bash
+git clone https://github.com/hash-distill/celllens-platform.git
+cd celllens-platform
+uv sync --locked --python 3.11 --extra model --extra report --group dev
+npm --prefix frontend ci
+```
+
+### 2. 配置数据库
+
+将 `.env.example` 复制为 `.env`，设置 `CELLLENS_DATABASE_URL`。可以连接已有 MySQL，也可以使用仓库中的数据库容器：
+
+```bash
+docker compose up -d mysql
+docker compose ps mysql
+```
+
+等待数据库状态为 `healthy` 后执行迁移和连接检查：
+
+```bash
+uv run --no-sync alembic upgrade head
+uv run --no-sync python scripts/check_mysql.py
+```
+
+Compose 的默认连接信息与 `.env.example` 一致。更改账户或密码时需同时修改数据库配置与连接 URL。Docker Compose 只启动 MySQL，应用需要单独启动。
+
+### 3. 准备科学资产
+
+按照 [模型与数据说明](docs/MODEL_AND_DATA.md) 获取匹配版本的模型与数据，并放到注册表指定的位置：
+
+| 内容 | 配置或目录 |
+|---|---|
+| 模型目录、检查点及配套文件 | `data/registry/models.json` → `models/` |
+| 对照与观测 H5AD | `data/registry/datasets.json` → `data/raw/` |
+| 模型配置与有序基因面板 | `configs/models/`、`data/registry/state_*_genes.txt` |
+| 代谢数据库 | `data/registry/sccellfie/human/` |
+| 真实回放包 | `data/demo/{背景}/{扰动}/` |
+
+在线计算资产准备后运行：
+
+```bash
+uv run --no-sync python scripts/audit_registry.py
+```
+
+只使用结果回放时，需要完整回放包，并在 `.env` 中关闭 `CELLLENS_WORKER_ENABLED` 和 `CELLLENS_GPU_AVAILABLE`。不同运行方式的依赖与资产要求见 [部署文档](docs/DEPLOYMENT.md)。
+
+### 4. 构建并启动
+
+```bash
+npm --prefix frontend run build
 uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
-终端二：
+打开 [应用首页](http://127.0.0.1:8000/) 或 [API 文档](http://127.0.0.1:8000/docs)。构建后由后端同时提供前端页面与 API。
+
+服务使用单个 Uvicorn 进程，尚未提供用户认证与权限隔离，部署时应使用受控网络。Windows 启动脚本、无 GPU 回放与服务器配置见 [部署文档](docs/DEPLOYMENT.md)。
+
+## 使用
+
+1. 打开“实验工作台”，选择细胞背景、运行模式和扰动基因。
+2. 设置预测细胞数和随机种子，提交实验并查看执行进度。
+3. 运行完成后浏览单细胞状态、基因响应和代谢功能；查看关联基因、完整性与来源记录。
+4. 在“实验记录”中检索已有运行，加入“实验比较”，或导出本次结果。
+
+详细操作见 [使用指南](docs/guide/USER_GUIDE.md)。
+
+## 开发
+
+完成依赖、数据库和资产配置后，在两个终端分别启动后端与前端：
 
 ```bash
+# 终端一
+uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+
+# 终端二
 npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-开发页面为 `http://127.0.0.1:5173`。构建后由后端提供 `frontend/dist`，页面与 API 共用 8000。
+开发页面为 `http://127.0.0.1:5173`，`/api` 默认代理到后端 8000 端口。Windows PowerShell 可使用 `npm.cmd` 执行 npm 命令。
 
-## 页面入口
-
-| 页面 | 路由 |
-|---|---|
-| 首页 | `/` |
-| 实验工作台 | `/workbench`，绑定结果时为 `/workbench?run=<run_id>` |
-| 实验记录 | `/records`，支持检索、状态/来源筛选、分页 |
-| 兼容旧结果链接 | `/runs/<run_id>` 自动跳转工作台 |
-| 实验比较 | `/compare` |
-| 本次结果解读 | `/demo?run=<run_id>&step=0` |
-| 方法与服务状态 | `/about` |
-
-运行完成后点击“解读本次实验”，依次讲解实验问题、表达响应、代谢功能、证据与验证。自动播放每章 10 秒，顶部显示进度条与倒计时，可随时暂停；这是章节讲解，不是连续生理过程模拟。结果缺失时显示对应产物的可用状态。
-
-## 工程目录
-
-```text
-celllens-platform/
-├── backend/             API、科学计算适配、数据库迁移与测试
-├── frontend/            Vue 页面、Three.js 功能网络、ECharts 图表
-├── configs/             模型、分析与拆分配置
-├── data/registry/       注册表、哈希、基因面板与冻结代谢数据库
-├── data/raw/            输入表达数据（不纳入 Git）
-├── data/demo/           预计算包（不纳入 Git）
-├── data/derived/runs/   运行产物（不纳入 Git）
-├── models/              模型权重（不纳入 Git）
-├── scripts/             启动、检查、资产处理与契约导出
-├── docs/                统一文档入口、使用说明与技术参考
-│   ├── guide/           使用、模型与结果解读
-│   ├── screenshots/     精选实际页面截图
-│   └── verification/    明确日期的历史工程检查记录
-├── reports/             新检查产物与日志（不纳入 Git，可清理）
-├── ops/                 本机 MySQL 配置参考
-├── pyproject.toml       Python 依赖与检查配置
-└── uv.lock              Python 依赖锁文件
-```
-
-`.venv`、`frontend/node_modules` 是本机已安装依赖；`.mysql-data` 是数据库数据目录。准备重新安装或迁移前需分别核对，不应与普通测试缓存一起清理。
-
-## 开发检查
+开发检查：
 
 ```bash
-uv pip check
 uv run --no-sync pytest -q
 uv run --no-sync ruff check backend scripts
 uv run --no-sync basedpyright
 npm --prefix frontend run build
 ```
 
-浏览器检查需要 Playwright 与 Chromium，具体命令、依赖和输出路径见 [脚本索引](scripts/README.md)。数据库、真实推理与故障处理见 [运行与检查](docs/OPERATIONS.md)。
+## 目录
 
-## 科学与部署边界
+```text
+celllens-platform/
+├── backend/          API、计算适配、业务服务、迁移与测试
+├── frontend/         页面、图表、功能网络与状态管理
+├── configs/          模型、分析与数据划分配置
+├── data/registry/    资产注册表、基因面板与冻结数据库
+├── scripts/          启动、资产准备与检查工具
+├── docs/             使用、部署、接口与技术文档
+├── licenses/         第三方许可原文与来源清单
+├── ops/              本地数据库配置参考
+├── pyproject.toml    Python 依赖与开发配置
+└── uv.lock           Python 依赖锁文件
+```
 
-- 当前基因差值为 log1p(CP10K) 群体均值差；单细胞主图采用共同对照 PCA，提供逐细胞着色与累积分布，不能单凭二维图证明预测准确性。
-- 代谢分数不等于通量、浓度或 ATP 产量；覆盖等级不等于预测准确率。
-- 四种细胞背景已开放；匹配观测比较当前登记 ALDOA，训练排除关系未核实，独立泛化评价尚未完成。
-- 服务尚无用户认证与权限隔离；worker 与 Web 在同一进程，当前部署使用单个 Uvicorn 进程。
-- 实验记录保存在服务器数据库；比较候选保存在当前浏览器；模型、输入和完整产物不包含在 Git 源码中。
+## 文档
 
-详细解释见 [模型与数据](docs/MODEL_AND_DATA.md)。实际截图见 [页面截图](docs/screenshots/README.md)；检查记录见 [2026-10-08 页面与导航验收](docs/verification/2026-10-08-navigation.md)、[响应工作台验收](docs/verification/2026-10-08-response-workbench.md) 与 [2026-10-04 工程检查记录](docs/verification/2026-10-04/README.md)。
+- [使用指南](docs/guide/USER_GUIDE.md)
+- [部署与启动](docs/DEPLOYMENT.md)
+- [系统架构](docs/ARCHITECTURE.md)
+- [API 说明](docs/API.md)
+- [模型与数据](docs/MODEL_AND_DATA.md)
+- [前端开发](docs/FRONTEND.md)
+- [脚本索引](scripts/README.md)
+- [完整文档目录](docs/README.md)
 
-## 许可与变更
+## 许可
 
-项目自有代码与文档采用 [MIT 协议](LICENSE)，许可范围和第三方归属见 [NOTICE](NOTICE) 与 [第三方说明](docs/THIRD_PARTY_NOTICES.md)。
-
-STATE 源代码、模型权重、模型使用和输出继续适用上游许可；模型的非商业用途条件不因本项目采用 MIT 而改变。scCellFie 数据库与 HGNC 名称映射分别保留原有许可。仓库不分发权重、原始 H5AD、完整运行产物或凭据。
-
-使用 STATE 方法或结果时请引用：Adduri, A. et al. (2025), [Predicting cellular responses to perturbation across diverse contexts with State](https://doi.org/10.1101/2025.06.26.661135)。scCellFie 方法引用见第三方说明。
-
-接口变更同步 `docs/openapi.json`，部署变更同步部署文档；不要提交凭据、模型权重与完整运行产物。
+项目自有代码与文档采用 [MIT License](LICENSE)。第三方方法、模型、数据库与结果的适用条款见 [NOTICE](NOTICE) 和 [第三方许可说明](docs/THIRD_PARTY_NOTICES.md)；根目录 MIT 不替代这些上游许可。

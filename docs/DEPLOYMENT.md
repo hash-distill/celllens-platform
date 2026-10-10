@@ -17,7 +17,7 @@ Windows 本机支持在线运行、手动服务入口及一键启动；Docker My
 
 ## 2. 获取源码与准备依赖
 
-仓库为私有仓库，克隆前需要具有访问权限。
+获取项目源码：
 
 ```bash
 git clone https://github.com/hash-distill/celllens-platform.git
