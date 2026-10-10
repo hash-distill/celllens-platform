@@ -84,6 +84,30 @@ def test_state_output_contract_records_provenance(tmp_path: Path):
     assert output.uns["celllens_provenance"]["model_id"] == "state-v1"
 
 
+def test_state_output_rejects_a_different_cell_background(tmp_path: Path):
+    model = RegistryEntry(
+        {"id": "rpe1", "perturbation_column": "target_gene", "cell_type_column": "cell_line"}, tmp_path
+    )
+    request = StateRunInput("RPE1", "MYC", tmp_path / "control.h5ad", 1, 42)
+    output = FakeAnnData()
+    output.obs["cell_line"] = ["k562"]
+    with pytest.raises(StateInferenceError, match="background"):
+        validate_state_output(output, request, model)
+
+
+def test_cli_perturbation_preserves_official_mixed_case_vocabulary(tmp_path: Path):
+    import torch
+
+    engine = StateCliEngine()
+    assert hasattr(engine, "perturbation_label"), "official vocabulary resolution is missing"
+    torch.save({"C1orf43": torch.ones(2), "AAMP": torch.zeros(2)}, tmp_path / "pert_onehot_map.pt")
+    model = RegistryEntry({"model_dir": "."}, tmp_path)
+    assert engine.perturbation_label("C1ORF43", model) == "C1orf43"
+    assert engine.perturbation_label("AAMP", model) == "AAMP"
+    with pytest.raises(StateInferenceError, match="vocabulary"):
+        engine.perturbation_label("UNKNOWN", model)
+
+
 def test_embed_key_model_validates_prediction_panel_not_var_names(tmp_path: Path):
     """The registered gene list describes obsm[embed_key], not the full var_names axis.
 
@@ -141,3 +165,34 @@ def test_embed_key_model_rejects_missing_panel_slot(tmp_path: Path):
     request = StateRunInput("K562", "MYC", tmp_path / "control.h5ad", 1, 42)
     with pytest.raises(StateInferenceError, match="missing obsm"):
         validate_state_output(FakeAnnData(), request, model)
+
+
+def test_latent_input_can_have_separate_expression_output_slot(tmp_path: Path):
+    (tmp_path / "genes.txt").write_text("A\nB\n")
+    model = RegistryEntry(
+        {"id": "se-full", "gene_list_path": "genes.txt", "embed_key": "X_state", "expression_key": "X"},
+        tmp_path,
+    )
+    output = FakeAnnData(var_names=["A", "B"], obsm={"X_state": np.ones((1, 2058))})
+    request = StateRunInput("K562", "MYC", tmp_path / "control.h5ad", 1, 42)
+    validate_state_output(output, request, model)
+
+
+@pytest.mark.parametrize("device", ["cpu", "cuda"])
+def test_se_command_uses_signed_latent_runner_on_either_device(tmp_path: Path, device):
+    model = RegistryEntry(
+        {
+            "model_dir": "model",
+            "checkpoint_path": "model/best.ckpt",
+            "perturbation_column": "gene",
+            "embed_key": "X_state",
+            "expression_key": "X",
+        },
+        tmp_path,
+    )
+    request = StateRunInput("K562", "MYC", tmp_path / "control.h5ad", 64, 42)
+    command = StateCliEngine(device=device).build_command(
+        request, model, tmp_path / "predicted.h5ad", tmp_path / "perts.tsv"
+    )
+    assert command[:3] == [sys.executable, "-m", "backend.app.engines.state_se_runner"]
+    assert command[command.index("--celllens-device") + 1] == device

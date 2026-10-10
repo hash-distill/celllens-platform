@@ -15,11 +15,11 @@ function loadFromStorage(): CandidateItem[] {
   return readHistory<CandidateItem>(STORAGE_KEY).slice(0, MAX_CANDIDATES)
 }
 
-/** 候选托盘：以 run_id 去重、最多 4 个，存储在本机（本浏览器记录） */
+/** 比较候选：以 run_id 去重、最多 4 个，存储在本机（本浏览器记录） */
 export const useCandidatesStore = defineStore('candidates', {
   state: () => ({
     items: loadFromStorage(),
-    expanded: true,
+    expanded: false,
   }),
   getters: {
     isFull(state): boolean {
@@ -39,8 +39,8 @@ export const useCandidatesStore = defineStore('candidates', {
     },
     /** 返回添加结果，失败原因用于禁用提示 */
     add(runId: string, request: CreateRunRequest): { ok: boolean; reason: string | null } {
-      if (this.has(runId)) return { ok: false, reason: '该运行已在候选托盘中' }
-      if (this.isFull) return { ok: false, reason: '候选托盘最多保存 4 个运行，请先移除' }
+      if (this.has(runId)) return { ok: false, reason: '该运行已在比较候选中' }
+      if (this.isFull) return { ok: false, reason: '比较候选最多保存 4 个运行，请先移除' }
       this.items = [
         ...this.items,
         { run_id: runId, request: { ...request }, added_at: new Date().toISOString() },

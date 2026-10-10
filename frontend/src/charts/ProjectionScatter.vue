@@ -13,6 +13,9 @@ import { SOURCE_LABEL } from '../utils/format'
 const props = defineProps<{
   points: ProjectionPoint[]
   visibleSources: PointSource[]
+  dark?: boolean
+  compact?: boolean
+  sourceLabels?: Record<PointSource, string>
 }>()
 
 const el = ref<HTMLElement | null>(null)
@@ -24,6 +27,22 @@ const SOURCE_META: Record<PointSource, { color: string; symbol: string }> = {
 }
 
 function buildOption(): EChartsOption {
+  const labels = props.sourceLabels ?? SOURCE_LABEL
+  // Fix bounds using every source, even when hidden, so panels and toggles stay comparable.
+  function extent(axis: 'x' | 'y'): [number, number] {
+    const values = props.points.map(point => point[axis]).filter(Number.isFinite)
+    if (!values.length) return [-1, 1]
+    let low = Infinity, high = -Infinity
+    for (const value of values) { low = Math.min(low, value); high = Math.max(high, value) }
+    const padding = (high - low || Math.max(Math.abs(low), 1)) * 0.05
+    return [low - padding, high + padding]
+  }
+  const [xMin, xMax] = extent('x')
+  const [yMin, yMax] = extent('y')
+  const axisNumber = (value: number) => Math.abs(value) >= 10000 || (value !== 0 && Math.abs(value) < 0.001)
+    ? value.toExponential(1) : String(Number(value.toFixed(2)))
+  const textColor = props.dark ? '#a8c0ba' : '#6b7778'
+  const lineColor = props.dark ? '#304443' : '#e5e8e0'
   const series: SeriesOption[] = (['control', 'predicted', 'observed'] as PointSource[])
     .filter((source) => props.visibleSources.includes(source))
     .map((source) => {
@@ -32,7 +51,7 @@ function buildOption(): EChartsOption {
         .filter((p) => p.source === source)
         .map((p) => ({ value: [p.x, p.y], cellIndex: p.cell_index, source }))
       return {
-        name: SOURCE_LABEL[source],
+        name: labels[source],
         type: 'scatter',
         symbol: meta.symbol,
         symbolSize: source === 'control' ? 5 : 6,
@@ -49,7 +68,7 @@ function buildOption(): EChartsOption {
       text: '二维随机投影',
       left: 8,
       top: 4,
-      textStyle: { fontSize: 14, color: '#172033', fontWeight: 600 },
+      textStyle: { fontSize: 14, color: textColor, fontWeight: 500 },
     },
     grid: { left: 56, right: 24, top: 40, bottom: 44 },
     xAxis: {
@@ -58,9 +77,12 @@ function buildOption(): EChartsOption {
       nameGap: 28,
       type: 'value',
       scale: true,
-      axisLine: { lineStyle: { color: '#cbd5e1' } },
-      splitLine: { lineStyle: { color: '#eef2f7' } },
-      axisLabel: { color: '#64748b' },
+      min: xMin,
+      max: xMax,
+      axisLine: { lineStyle: { color: lineColor } },
+      splitLine: { lineStyle: { color: lineColor } },
+      axisLabel: { color: textColor, formatter: axisNumber },
+      nameTextStyle: { color: textColor },
     },
     yAxis: {
       name: '投影轴 2',
@@ -68,9 +90,12 @@ function buildOption(): EChartsOption {
       nameGap: 40,
       type: 'value',
       scale: true,
-      axisLine: { lineStyle: { color: '#cbd5e1' } },
-      splitLine: { lineStyle: { color: '#eef2f7' } },
-      axisLabel: { color: '#64748b' },
+      min: yMin,
+      max: yMax,
+      axisLine: { lineStyle: { color: lineColor } },
+      splitLine: { lineStyle: { color: lineColor } },
+      axisLabel: { color: textColor, formatter: axisNumber },
+      nameTextStyle: { color: textColor },
     },
     series,
     tooltip: {
@@ -81,7 +106,7 @@ function buildOption(): EChartsOption {
         }
         const d = p.data
         return [
-          `来源：${SOURCE_LABEL[d.source]}（${d.source}）`,
+          `来源：${labels[d.source]}（${d.source}）`,
           `细胞序号：${d.cellIndex}`,
           `投影轴 1：${d.value[0].toFixed(4)}`,
           `投影轴 2：${d.value[1].toFixed(4)}`,
@@ -101,11 +126,11 @@ function buildOption(): EChartsOption {
   }
 }
 
-useEChart(el, buildOption, [() => props.points, () => props.visibleSources])
+useEChart(el, buildOption, [() => props.points, () => props.visibleSources, () => props.sourceLabels])
 </script>
 
 <template>
-  <div ref="el" class="projection-chart" role="img" aria-label="二维随机投影散点图"></div>
+  <div ref="el" class="projection-chart" :class="{dark,compact}" role="img" aria-label="二维随机投影散点图"></div>
 </template>
 
 <style scoped>
@@ -113,4 +138,6 @@ useEChart(el, buildOption, [() => props.points, () => props.visibleSources])
   width: 100%;
   height: 440px;
 }
+.projection-chart.dark{background:#132024;border-radius:4px;padding:12px}
+.projection-chart.compact{height:340px}
 </style>

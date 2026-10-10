@@ -37,8 +37,7 @@ HELDOUT_OUT = PROJECT_ROOT / "data" / "raw" / "replogle-k562" / "heldout.h5ad"
 SPLIT_OUT = PROJECT_ROOT / "configs" / "splits" / "replogle-v1.json"
 HVG_REGISTRY = PROJECT_ROOT / "data" / "registry" / "state_k562_genes.txt"
 TOML_CANDIDATES = (
-    PROJECT_ROOT.parent / "调研与方案" / "STATE_调研证据_2026-09-19" / "replogle_k562_split.toml",
-    PROJECT_ROOT.parent / ".replogle-src" / "k562.toml",
+    PROJECT_ROOT / "configs" / "splits" / "replogle-k562-source.toml",
 )
 
 CELL_LINE = "k562"

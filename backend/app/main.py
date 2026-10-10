@@ -81,7 +81,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @application.get("/", include_in_schema=False)
     @application.get("/workbench", include_in_schema=False)
+    @application.get("/records", include_in_schema=False)
     @application.get("/compare", include_in_schema=False)
+    @application.get("/demo", include_in_schema=False)
     @application.get("/about", include_in_schema=False)
     @application.get("/runs/{run_id}", include_in_schema=False)
     def frontend_page(run_id: str | None = None) -> FileResponse:

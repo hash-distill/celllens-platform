@@ -1,0 +1,8 @@
+# Frozen scientific resources and preserved license texts are hashed as bytes.
+# Keep them identical across Windows and Linux checkouts.
+configs/** -text whitespace=cr-at-eol,-blank-at-eof
+data/registry/sccellfie/** -text whitespace=cr-at-eol
+data/registry/gene_identity/** -text whitespace=cr-at-eol
+data/registry/state_*_genes.txt -text whitespace=cr-at-eol
+# Preserve upstream license whitespace as well as line endings.
+licenses/** -text whitespace=cr-at-eol,-blank-at-eof,-blank-at-eol

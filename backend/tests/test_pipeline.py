@@ -1,6 +1,9 @@
 import hashlib
 import json
 
+import pytest
+
+from backend.app.core.errors import ScientificContractError
 from backend.app.core.registry import AssetRegistry
 from backend.app.core.storage import RunStore
 from backend.app.schemas import CreateRunRequest, RunStatus
@@ -19,9 +22,29 @@ class FakeStateEngine:
 
 
 class FakeAnalysisService:
+    def __init__(self, omit_projection=False):
+        self.omit_projection = omit_projection
+
     def run(self, run_id, request, model, dataset, predicted_path, output_dir):
         gene_path = output_dir / "gene_deltas.csv"
         gene_path.write_text("gene,predicted_delta\nMYC,1.0\n", encoding="utf-8")
+        projection_path = output_dir / "projection.json"
+        artifacts = [gene_path]
+        if not self.omit_projection:
+            projection_path.write_text(
+                json.dumps(
+                    {
+                        "method": "seeded-random-projection",
+                        "seed": 42,
+                        "points": [
+                            {"x": 0.1, "y": 0.2, "source": "control", "cell_index": 0},
+                            {"x": 0.3, "y": 0.4, "source": "predicted", "cell_index": 0},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            artifacts.append(projection_path)
         return AnalysisResult(
             summary={
                 "run_id": run_id,
@@ -45,11 +68,12 @@ class FakeAnalysisService:
                 "warnings": ["metabolic database unavailable"],
                 "error_code": None,
             },
-            artifacts=[gene_path],
+            artifacts=artifacts,
         )
 
 
-def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path):
+@pytest.mark.parametrize("omit_projection", [False, True])
+def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path, omit_projection):
     registry_root = tmp_path / "data" / "registry"
     registry_root.mkdir(parents=True)
     checkpoint = tmp_path / "models" / "checkpoint.ckpt"
@@ -96,12 +120,19 @@ def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path):
         store,
         AssetRegistry(tmp_path, registry_root),
         FakeStateEngine(),
-        FakeAnalysisService(),
+        FakeAnalysisService(omit_projection),
         derived,
         worker_id="test-worker",
         lease_seconds=60,
     )
     store.create("run_1", CreateRunRequest(cell_line="K562", perturbation="MYC"))
+    if omit_projection:
+        with pytest.raises(ScientificContractError, match="Required single-cell projection"):
+            pipeline._run_sync("run_1")
+        assert store.get("run_1").status == RunStatus.FAILED
+        assert store.get("run_1").error_code == "SCIENTIFIC_CONTRACT_ERROR"
+        assert not (derived / "run_1").exists()
+        return
     pipeline._run_sync("run_1")
 
     assert store.get("run_1").status == RunStatus.COMPLETED
@@ -112,5 +143,6 @@ def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path):
         "summary",
         "manifest",
         "gene_deltas",
+        "projection",
     }
     assert not list(derived.glob("run_1.attempt-*.partial"))

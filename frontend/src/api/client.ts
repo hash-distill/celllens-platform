@@ -6,7 +6,11 @@ import {
   API_ROOT,
 } from './http'
 import { isMockEnabled } from './mockFlag'
+import type { ScientificCellState } from '../types/cellState'
+import { apiUrl } from './http'
 import { toFiniteNumber } from '../utils/number'
+import type { TaskTraceResponse } from '../types/trace'
+import type { CompletenessResponse } from '../types/completeness'
 import type {
   ContextItem,
   CreateRunRequest,
@@ -23,6 +27,8 @@ import type {
   ReactionsResponse,
   ReadyResponse,
   RunRecord,
+  RunListResponse,
+  RunListQuery,
   RunMode,
   RunProvenance,
   RunValidation,
@@ -32,14 +38,45 @@ import type {
 /**
  * 端点封装与返回值适配（字符串数值统一在此转换）。
  *
- * Mock 分发：仅当显式开关（VITE_ENABLE_MOCK=true 或界面本机开关）开启时，
+ * 开发数据分发：仅在 Vite 开发服务中显式启用开关时，
  * 才动态引入 src/fixtures/mockApi 返回样例数据；开关关闭时完全不引用 fixtures。
  * 真实请求失败不会自动切换到 mock（无任何 fallback 逻辑）。
  */
 
-const loadMock = () => import('../fixtures/mockApi')
+const loadMock = import.meta.env.DEV
+  ? () => import('../fixtures/mockApi')
+  : () => Promise.reject(new Error('Development data are disabled in production'))
 
 export const api = {
+  async getCellState(runId: string, kind: 'gene'|'task', feature: string, signal?: AbortSignal): Promise<ScientificCellState> {
+    if (isMockEnabled()) throw new ApiError({kind:'http',status:409,code:'CELL_STATE_UNAVAILABLE',message:'Mock 未提供可核验的逐细胞表达。',endpoint:'/cell-state'})
+    return apiFetch<ScientificCellState>(`/runs/${encodeURIComponent(runId)}/cell-state`, {query:{feature_kind:kind,feature_id:feature},signal,timeoutMs:120000})
+  },
+  async getCellStateFigure(runId: string, kind: 'gene'|'task', feature: string, format: 'svg'|'pdf'|'png', signal?: AbortSignal): Promise<Blob> {
+    if (isMockEnabled()) throw new Error('Mock 未提供科研图')
+    const response = await window.fetch(apiUrl(`/runs/${encodeURIComponent(runId)}/cell-state/figure`,{feature_kind:kind,feature_id:feature,file_format:format}),{signal})
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(parseDetail(body?.detail,`科研图请求失败：HTTP ${response.status}`).message)
+    }
+    return response.blob()
+  },
+  async getFunctionTrace(runId: string, taskId: string, signal?: AbortSignal): Promise<TaskTraceResponse> {
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: 'Mock 样例未提供真实功能网络。', endpoint: '/task-trace' })
+    return apiFetch<TaskTraceResponse>(`/runs/${encodeURIComponent(runId)}/task-trace`, { query: { task_id: taskId, scope: 'all' }, signal })
+  },
+  async getCompleteness(runId: string, signal?: AbortSignal): Promise<CompletenessResponse> {
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'COMPLETENESS_UNAVAILABLE', message: 'Mock 样例未提供官方完整性报告。', endpoint: '/completeness' })
+    return apiFetch<CompletenessResponse>(`/runs/${encodeURIComponent(runId)}/completeness`, { signal })
+  },
+  async listRuns(query: RunListQuery = {}, signal?: AbortSignal): Promise<RunListResponse> {
+    if (isMockEnabled()) return (await loadMock()).listRuns(query)
+    return apiFetch<RunListResponse>('/runs', { query: { ...query }, signal })
+  },
+  async getTaskTrace(runId: string, taskId: string, signal?: AbortSignal): Promise<TaskTraceResponse> {
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: 'Mock 样例不提供真实知识库追溯。', endpoint: '/task-trace' })
+    return apiFetch<TaskTraceResponse>(`/runs/${encodeURIComponent(runId)}/task-trace`, { query: { task_id: taskId, reaction_limit: 30, gene_limit: 30 }, signal })
+  },
   async health(signal?: AbortSignal): Promise<HealthResponse> {
     if (isMockEnabled()) return (await loadMock()).health()
     return apiFetch<HealthResponse>('/health', { signal, timeoutMs: 10000 })
@@ -118,6 +155,11 @@ export const api = {
       method?: string
       seed?: number
       points?: Array<Record<string, unknown>>
+      population_selection?: ProjectionResponse['population_selection']
+      data_kind?: ProjectionResponse['data_kind']
+      input_sha256?: string
+      generator?: string
+      original_manifest_sha256?: string | null
     }>(`/runs/${encodeURIComponent(runId)}/projection`, { signal })
     const points: ProjectionPoint[] = (raw.points ?? [])
       .map((p) => ({
@@ -133,7 +175,10 @@ export const api = {
           p.cell_index !== null &&
           (p.source === 'control' || p.source === 'predicted' || p.source === 'observed'),
       )
-    return { method: raw.method ?? 'seeded-random-projection', seed: raw.seed ?? 0, points }
+    return { method: raw.method ?? 'seeded-random-projection', seed: raw.seed ?? 0, points,
+      population_selection: raw.population_selection, data_kind: raw.data_kind,
+      input_sha256: raw.input_sha256, generator: raw.generator,
+      original_manifest_sha256: raw.original_manifest_sha256 }
   },
 
   /** genes：CSV 转 JSON，数字是字符串，统一转换为 number | null */
@@ -159,13 +204,13 @@ export const api = {
     limit = 1000,
     signal?: AbortSignal,
   ): Promise<MetabolicTasksResponse> {
-    if (isMockEnabled()) return (await loadMock()).getMetabolicTasks(runId, limit)
-    const raw = await apiFetch<{ items?: Array<Record<string, unknown>>; limit: number; truncated: boolean; scope?: 'top' | 'all'; total?: number; excluded_count?: number }>(
+    if (isMockEnabled()) return { ...(await (await loadMock()).getMetabolicTasks(runId, limit)), completeness_available: false }
+    const raw = await apiFetch<{ items?: Array<Record<string, unknown>>; limit: number; truncated: boolean; scope?: 'top' | 'all'; total?: number; excluded_count?: number; reactions_available?: boolean; completeness_available?: boolean }>(
       `/runs/${encodeURIComponent(runId)}/metabolic-tasks`,
       { query: { limit, scope: 'all' }, signal },
     )
     const items: EvidenceItem[] = (raw.items ?? []).map((row) => normalizeEvidence(row))
-    return { items, limit: raw.limit, truncated: Boolean(raw.truncated), scope: raw.scope, total: raw.total, excluded_count: raw.excluded_count }
+    return { items, limit: raw.limit, truncated: Boolean(raw.truncated), scope: raw.scope, total: raw.total, excluded_count: raw.excluded_count, reactions_available: raw.reactions_available, completeness_available: raw.completeness_available ?? false }
   },
 
   /** reactions：旧运行可能是宽表结构（后端返回 500 INVALID_ARTIFACT）或 404，由调用方降级展示 */
@@ -220,6 +265,8 @@ function normalizeEvidence(row: Record<string, unknown>): EvidenceItem {
   return {
     id: String(row.id ?? ''),
     label: String(row.label ?? row.id ?? ''),
+    category: typeof row.category === 'string' ? row.category : null,
+    subcategory: typeof row.subcategory === 'string' ? row.subcategory : null,
     predicted_delta: toFiniteNumber(row.predicted_delta) ?? 0,
     observed_delta: toFiniteNumber(row.observed_delta),
     coverage: toFiniteNumber(row.coverage) ?? 0,
@@ -230,6 +277,9 @@ function normalizeEvidence(row: Record<string, unknown>): EvidenceItem {
     determinant_genes: Array.isArray(row.determinant_genes)
       ? row.determinant_genes.map((g) => String(g))
       : [],
+    control: toFiniteNumber(row.control),
+    predicted: toFiniteNumber(row.predicted),
+    trace_available: typeof row.trace_available === 'boolean' ? row.trace_available : null,
   }
 }
 

@@ -11,6 +11,7 @@ $repositoryPath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Pat
 Push-Location -LiteralPath $repositoryPath
 $frontendProcess = $null
 $previousProxyTarget = $env:CELLLENS_API_PROXY_TARGET
+$previousSyntheticSetting = $env:CELLLENS_ALLOW_SYNTHETIC_RESULTS
 try {
     foreach ($program in @('uv', 'node', 'npm.cmd')) {
         if (-not (Get-Command $program -ErrorAction SilentlyContinue)) { throw "$program is required" }
@@ -25,6 +26,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Frontend dependency installation failed' }
     }
     if ($Mode -eq 'Production') {
+        $env:CELLLENS_ALLOW_SYNTHETIC_RESULTS = 'false'
         if (-not $SkipBuild) {
             & npm.cmd --prefix frontend run build
             if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' }
@@ -45,5 +47,6 @@ try {
 } finally {
     if ($frontendProcess -and -not $frontendProcess.HasExited) { Stop-Process -Id $frontendProcess.Id }
     $env:CELLLENS_API_PROXY_TARGET = $previousProxyTarget
+    $env:CELLLENS_ALLOW_SYNTHETIC_RESULTS = $previousSyntheticSetting
     Pop-Location
 }

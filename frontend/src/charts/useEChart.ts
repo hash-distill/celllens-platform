@@ -9,11 +9,11 @@ echarts.use([BarChart, ScatterChart, GridComponent, TooltipComponent, TitleCompo
   ToolboxComponent, DataZoomComponent, MarkLineComponent, CanvasRenderer])
 
 export const CHART_COLORS = {
-  control: '#94A3B8',
-  predicted: '#2563EB',
-  observed: '#F59E0B',
-  deltaDown: '#4F46E5',
-  deltaUp: '#EA580C',
+  control: '#9AA5B1',
+  predicted: '#79B7B2',
+  observed: '#C7A45E',
+  deltaDown: '#6BABA5',
+  deltaUp: '#C47654',
 } as const
 
 const reducedMotion =

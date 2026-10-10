@@ -12,6 +12,18 @@ from backend.app.core.run_manifest import atomic_write_json, file_sha256
 from backend.app.engines.evidence_engine import compare_task_deltas
 from backend.app.engines.metabolic_engine import ScCellFieEngine
 from backend.app.schemas import CreateRunRequest
+from backend.app.services.completeness import compute_official_completeness
+from backend.app.services.expression_scale import (
+    ANALYSIS_VERSION,
+    linear_cp10k,
+    mark_cp10k,
+    prepare_log_expression,
+    require_scale,
+    validate_expression,
+)
+from backend.app.services.expression_validation import build_expression_validation
+from backend.app.services.gene_identity import GeneIdentityAdapter
+from backend.app.services.task_trace import build_task_trace, task_metadata
 
 
 @dataclass(frozen=True)
@@ -27,10 +39,12 @@ class ScientificAnalysisService:
         metabolic_engine: ScCellFieEngine | None = None,
         *,
         max_projection_points: int = 12_000,
+        gene_identity_root: Path | None = None,
     ):
         self.database_root = database_root
         self.metabolic_engine = metabolic_engine or ScCellFieEngine()
         self.max_projection_points = max_projection_points
+        self.gene_identity_root = gene_identity_root
 
     def run(
         self,
@@ -48,6 +62,9 @@ class ScientificAnalysisService:
 
         control = ad.read_h5ad(dataset.path("control_path"))
         predicted = ad.read_h5ad(predicted_path)
+        predicted, population_selection = _select_prediction_population(
+            predicted, model.payload.get("perturbation_column"), request.perturbation
+        )
         observed = None
         if request.mode == "validation":
             observed = ad.read_h5ad(dataset.path("observed_path"))
@@ -60,14 +77,60 @@ class ScientificAnalysisService:
                     "Validation dataset has no cells for the requested perturbation"
                 )
 
+        control_scale = require_scale(dataset.payload.get("expression_scale"))
+        predicted_scale = require_scale(model.payload.get("expression_scale"))
+        total_counts_key = dataset.payload.get("total_counts_key")
+        # Convert the full source before selecting HVGs; counts denominators must
+        # describe the full library, not the retained prediction panel.
+        control = prepare_log_expression(control, control_scale, total_counts_key=total_counts_key)
+        predicted = prepare_log_expression(
+            predicted, predicted_scale, total_counts_key=model.payload.get("total_counts_key")
+        )
+        if observed is not None:
+            observed = prepare_log_expression(observed, control_scale, total_counts_key=total_counts_key)
+
         # STATE writes gene-space predictions into obsm[embed_key] when the model is
         # registered with an embed_key, leaving .X untouched. Without this the predicted
         # matrix would silently equal the control matrix and every delta would be zero.
-        embed_key = model.payload.get("embed_key")
+        embed_key = model.payload.get("expression_key") or model.payload.get("embed_key")
+        strict_expression_slot = bool(model.payload.get("expression_key"))
         gene_list_path = model.path("gene_list_path") if model.payload.get("gene_list_path") else None
-        control = _expression_view(control, embed_key, gene_list_path)
-        predicted = _expression_view(predicted, embed_key, gene_list_path)
-        observed = _expression_view(observed, embed_key, gene_list_path) if observed is not None else None
+        control = _expression_view(control, embed_key, gene_list_path, strict=strict_expression_slot)
+        predicted = _expression_view(predicted, embed_key, gene_list_path, strict=bool(embed_key))
+        observed = _expression_view(observed, embed_key, gene_list_path, strict=strict_expression_slot)
+        for source in (control, predicted, observed):
+            if source is not None:
+                validate_expression(source.X)
+        validation_population = None
+        if observed is not None:
+            control, predicted, observed, validation_population = _match_validation_batches(
+                control, predicted, observed, dataset.payload.get("validation_batch_key")
+            )
+
+        # obsm may hold the model's expression rather than .X. Canonicalize that
+        # slot too; the active ST-HVG contract already uses log1p_cp10k.
+        if embed_key and embed_key != "X":
+            for source, scale in (
+                (control, control_scale),
+                (predicted, predicted_scale),
+                (observed, control_scale),
+            ):
+                if source is not None and scale != "log1p_cp10k":
+                    raise ScientificContractError("obsm expression requires log1p_cp10k; adapt it explicitly")
+
+        identity_path = None
+        if self.gene_identity_root is not None:
+            adapter = GeneIdentityAdapter.load(self.gene_identity_root, self.database_root)
+            control, control_identity = adapter.adapt(control)
+            predicted, predicted_identity = adapter.adapt(predicted)
+            identity_reports = {"control": control_identity, "predicted": predicted_identity}
+            if observed is not None:
+                observed, observed_identity = adapter.adapt(observed)
+                identity_reports["observed"] = observed_identity
+            identity_path = output_dir / "gene_identity.json"
+            atomic_write_json(
+                identity_path, {"schema_version": 1, "run_id": run_id, "sources": identity_reports}
+            )
 
         aligned, genes, original_control_gene_count = _align_sources(control, predicted, observed)
         control, predicted, observed = aligned
@@ -88,6 +151,26 @@ class ScientificAnalysisService:
         gene_table.index.name = "gene"
         gene_path = output_dir / "gene_deltas.csv"
         gene_table.to_csv(gene_path)
+
+        contract_path = output_dir / "expression_contract.json"
+        atomic_write_json(
+            contract_path,
+            {
+                "analysis_version": ANALYSIS_VERSION,
+                "run_id": run_id,
+                "source_scales": {
+                    "control": control_scale,
+                    "predicted": predicted_scale,
+                    "observed": control_scale if observed is not None else None,
+                },
+                "gene_units": "mean(log1p(CP10K))",
+                "metabolic_units": "CP10K, inverse log1p without panel renormalization",
+                "predicted_values_are_measured_counts": False,
+                "gene_count": len(genes),
+                "population_selection": population_selection,
+                "validation_population": validation_population,
+            },
+        )
 
         top_genes = []
         delta_values = gene_table["predicted_delta"].to_numpy(dtype=float)
@@ -114,26 +197,46 @@ class ScientificAnalysisService:
         ]
         if observed is not None:
             projection_sources.append(("observed", _dense_matrix(observed.X)))
-        atomic_write_json(
-            projection_path,
-            _projection_document(
-                projection_sources,
-                seed=request.seed,
-                max_points=self.max_projection_points,
-            ),
+        projection = _projection_document(
+            projection_sources,
+            seed=request.seed,
+            max_points=self.max_projection_points,
+            input_scale="log1p_cp10k",
         )
+        projection["population_selection"] = population_selection
+        atomic_write_json(projection_path, projection)
 
         warnings: list[str] = []
-        artifacts = [gene_path, projection_path]
+        artifacts = [gene_path, projection_path, contract_path]
+        validation = None
+        if observed is not None:
+            validation, validation_artifacts = build_expression_validation(
+                control, predicted, observed, output_dir
+            )
+            artifacts.extend(validation_artifacts)
+            validation["population_matching"] = validation_population
+        if identity_path is not None:
+            artifacts.append(identity_path)
         coverage_summary = None
         metabolic_tasks: list[dict[str, Any]] = []
         try:
             database, database_version = _load_frozen_database(self.database_root)
+            official = compute_official_completeness(genes, database, database_version)
+            official.update(run_id=run_id, source_gene_sha256=file_sha256(gene_path))
+            official_path = output_dir / "official_completeness.json"
+            atomic_write_json(official_path, official)
+            artifacts.append(official_path)
             completeness = _task_completeness(database, genes)
             coverage_path = output_dir / "metabolic_coverage.csv"
             completeness.to_csv(coverage_path, index=True)
             artifacts.append(coverage_path)
-            combined = _combine_sources(ad, control, predicted, observed)
+            combined = _combine_sources(
+                ad,
+                linear_cp10k(control),
+                linear_cp10k(predicted),
+                linear_cp10k(observed) if observed is not None else None,
+            )
+            mark_cp10k(combined)  # AnnData concat drops uns by default.
             if _contains_negative(combined.X):
                 raise ScientificContractError("scCellFie requires non-negative count-like expression values")
             result = self.metabolic_engine.run(
@@ -148,12 +251,24 @@ class ScientificAnalysisService:
             task_scores.to_csv(task_path)
             reaction_path = output_dir / "reaction_scores.csv"
             reaction_scores = result.reaction_scores.copy()
-            reaction_scores["source"] = combined.obs.loc[
-                reaction_scores.index, "celllens_source"
-            ].astype(str)
+            reaction_scores["source"] = combined.obs.loc[reaction_scores.index, "celllens_source"].astype(str)
             reaction_scores.to_csv(reaction_path)
             artifacts.extend([task_path, reaction_path])
-            metabolic_tasks = _summarize_tasks(task_scores, completeness, observed is not None)
+            metabolic_tasks = _summarize_tasks(task_scores, completeness, observed is not None, database)
+            trace_path = output_dir / "task_trace.json"
+            atomic_write_json(
+                trace_path,
+                build_task_trace(
+                    run_id,
+                    database,
+                    database_version,
+                    task_scores,
+                    reaction_scores,
+                    gene_table,
+                    completeness,
+                ),
+            )
+            artifacts.append(trace_path)
             coverage_summary = _coverage_summary(
                 len(genes) / original_control_gene_count,
                 database,
@@ -162,11 +277,16 @@ class ScientificAnalysisService:
             )
             if observed is not None:
                 metrics = _validation_metrics(task_scores)
-                metrics_path = output_dir / "validation_metrics.json"
-                atomic_write_json(metrics_path, metrics)
-                artifacts.append(metrics_path)
+                assert validation is not None
+                validation.update(metrics)  # Preserve legacy task metrics; label their scope explicitly.
+                validation["metabolic"] = metrics
         except (FileNotFoundError, ValueError, ScientificContractError, InsufficientCoverageError) as exc:
             warnings.append(f"Metabolic analysis unavailable: {exc}")
+
+        if validation is not None:
+            metrics_path = output_dir / "validation_metrics.json"
+            atomic_write_json(metrics_path, validation)
+            artifacts.append(metrics_path)
 
         summary = {
             "run_id": run_id,
@@ -183,10 +303,38 @@ class ScientificAnalysisService:
         return AnalysisResult(summary=summary, artifacts=artifacts)
 
 
+def _select_prediction_population(
+    predicted: Any, perturbation_column: str | None, perturbation: str
+) -> tuple[Any, dict[str, Any]]:
+    """STATE may emit simulated controls alongside targets; analyse only the requested target."""
+    input_count = predicted.n_obs
+    metadata: dict[str, Any] = {
+        "version": 1,
+        "status": "unconfigured",
+        "perturbation_column": perturbation_column,
+        "perturbation": perturbation,
+        "input_prediction_cells": input_count,
+    }
+    if perturbation_column:
+        if perturbation_column not in predicted.obs:
+            raise ScientificContractError("Prediction is missing the registered perturbation column")
+        labels = predicted.obs[perturbation_column].astype(str).str.strip().str.upper()
+        mask = labels == perturbation.strip().upper()
+        if not mask.any():
+            raise ScientificContractError("Prediction has no cells for the requested perturbation")
+        predicted = predicted[mask].copy()
+        metadata["status"] = "matched"
+    metadata["selected_prediction_cells"] = predicted.n_obs
+    metadata["excluded_prediction_cells"] = input_count - predicted.n_obs
+    return predicted, metadata
+
+
 def _expression_view(
     adata: Any | None,
     embed_key: str | None,
     gene_list_path: Path | None = None,
+    *,
+    strict: bool = False,
 ) -> Any | None:
     """Return an AnnData whose .X holds the space the model actually predicts in.
 
@@ -196,7 +344,11 @@ def _expression_view(
     that slot holds the highly-variable-gene panel, so the object must also be subset
     to the matching genes. When the key is absent we fall back to `.X` unchanged.
     """
-    if adata is None or not embed_key or embed_key not in adata.obsm:
+    if adata is None or not embed_key or embed_key == "X":
+        return adata
+    if embed_key not in adata.obsm:
+        if strict:
+            raise ScientificContractError(f"Registered expression slot obsm[{embed_key!r}] is missing")
         return adata
     matrix = np.asarray(adata.obsm[embed_key])
     expected_genes = _registered_gene_list(gene_list_path, matrix.shape[1])
@@ -207,8 +359,7 @@ def _expression_view(
     if len(positions) != len(expected_genes):
         missing = [gene for gene in expected_genes if gene not in canonical]
         raise ScientificContractError(
-            f"Expression source is missing {len(missing)} registered genes, "
-            f"e.g. {missing[:5]}"
+            f"Expression source is missing {len(missing)} registered genes, e.g. {missing[:5]}"
         )
     if matrix.shape[1] != len(expected_genes):
         raise ScientificContractError(
@@ -240,6 +391,31 @@ def _registered_gene_list(gene_list_path: Path | None, width: int) -> list[str]:
     return genes
 
 
+def _match_validation_batches(control: Any, predicted: Any, observed: Any, batch_key: str | None):
+    sources = {"control": control, "predicted": predicted, "observed": observed}
+    report = {"batch_key": batch_key, "input_cells": {key: frame.n_obs for key, frame in sources.items()}}
+    if batch_key is None:
+        report["status"] = "unstratified"
+        return control, predicted, observed, report
+    if any(batch_key not in frame.obs for frame in sources.values()):
+        raise ScientificContractError(f"Registered validation batch column {batch_key!r} is missing")
+    common = set.intersection(*(set(frame.obs[batch_key].astype(str)) for frame in sources.values()))
+    if not common:
+        raise ScientificContractError("Validation populations have no common measured batches")
+    matched = {
+        key: frame[frame.obs[batch_key].astype(str).isin(common)].copy() for key, frame in sources.items()
+    }
+    if min(frame.n_obs for frame in matched.values()) < 2:
+        raise ScientificContractError("Common-batch validation has fewer than two cells in a population")
+    report.update(
+        status="common_batches_only",
+        common_batches=sorted(common),
+        selected_cells={key: frame.n_obs for key, frame in matched.items()},
+        limitation="Batch frequencies are not reweighted; unpaired population diagnostic",
+    )
+    return matched["control"], matched["predicted"], matched["observed"], report
+
+
 def _align_sources(control: Any, predicted: Any, observed: Any | None):
     sources = [control, predicted] + ([observed] if observed is not None else [])
     symbol_lists: list[list[str]] = []
@@ -267,12 +443,13 @@ def _align_sources(control: Any, predicted: Any, observed: Any | None):
 
 
 def _normalized_gene_mean(adata: Any) -> np.ndarray:
+    if adata.uns.get("celllens_expression", {}).get("scale") != "log1p_cp10k":
+        raise ScientificContractError("Gene means require declared log1p_cp10k expression scale")
     matrix = adata.X
     mean = np.asarray(matrix.mean(axis=0)).reshape(-1).astype(float)
-    total = float(mean.sum())
-    if not np.isfinite(mean).all() or total <= 0:
-        raise ScientificContractError("Expression source has invalid or zero total counts")
-    return np.log1p(mean / total * 10_000.0)
+    if not np.isfinite(mean).all() or np.any(mean < 0):
+        raise ScientificContractError("Expression source has invalid log expression")
+    return mean
 
 
 def _contains_negative(matrix: Any) -> bool:
@@ -294,7 +471,8 @@ def _combine_sources(ad: Any, control: Any, predicted: Any, observed: Any | None
 
 def _load_frozen_database(root: Path) -> tuple[dict[str, Any], str]:
     manifest_path = root / "manifest.json"
-    document = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_bytes = manifest_path.read_bytes()
+    document = json.loads(manifest_bytes)
     if not document.get("enabled"):
         raise FileNotFoundError("frozen scCellFie database is not enabled")
     files = document.get("files")
@@ -306,6 +484,16 @@ def _load_frozen_database(root: Path) -> tuple[dict[str, Any], str]:
             raise FileNotFoundError(f"missing scCellFie database file: {filename}")
         if file_sha256(path).lower() != str(expected).lower():
             raise ValueError(f"scCellFie database hash mismatch: {filename}")
+    required_files = {
+        "Rxn-Info-Recon2-2.json",
+        "Task-Info.csv",
+        "Task_by_Rxn.csv",
+        "Task_by_Gene.csv",
+        "Rxn_by_Gene.csv",
+        "Thresholds.csv",
+    }
+    if not required_files.issubset(files):
+        raise ValueError("scCellFie manifest must pin all six human database files")
     try:
         from sccellfie.datasets.database import load_sccellfie_database
     except ImportError as exc:
@@ -314,6 +502,17 @@ def _load_frozen_database(root: Path) -> tuple[dict[str, Any], str]:
     required = {"rxn_info", "task_info", "task_by_rxn", "task_by_gene", "rxn_by_gene", "thresholds"}
     if any(database.get(key) is None for key in required):
         raise ValueError("scCellFie database could not be loaded completely")
+    # Detect changes between verification and parsing; never attest a different DB snapshot.
+    if manifest_path.read_bytes() != manifest_bytes or any(
+        file_sha256(root / filename).lower() != str(expected).lower() for filename, expected in files.items()
+    ):
+        raise ValueError("scCellFie database changed while loading")
+    database["_celllens_provenance"] = {
+        "manifest_sha256": file_sha256(manifest_path),
+        "files": dict(files),
+        "source": document.get("source"),
+        "organism": document.get("organism", "human"),
+    }
     return database, str(document.get("version", "unknown"))
 
 
@@ -363,7 +562,10 @@ def _coverage_summary(
 
 
 def _summarize_tasks(
-    scores: pd.DataFrame, completeness: pd.DataFrame, has_observed: bool
+    scores: pd.DataFrame,
+    completeness: pd.DataFrame,
+    has_observed: bool,
+    database: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     numeric = scores.drop(columns=["source"]).apply(pd.to_numeric, errors="coerce")
     grouped = numeric.groupby(scores["source"], observed=True).mean()
@@ -387,7 +589,9 @@ def _summarize_tasks(
         output.append(
             {
                 "id": str(task),
-                "label": str(task),
+                **(task_metadata(database, str(task)) if database is not None else {"label": str(task)}),
+                "control": _optional_float(grouped.loc["control", task]),
+                "predicted": _optional_float(grouped.loc["predicted", task]),
                 "predicted_delta": float(delta[task]),
                 "observed_delta": observed_delta,
                 "coverage": coverage,
@@ -427,6 +631,7 @@ def _projection_document(
     *,
     seed: int,
     max_points: int,
+    input_scale: str = "raw_counts",
 ) -> dict[str, Any]:
     """Create a deterministic, bounded 2-D random projection with stratified sampling."""
     nonempty = [(name, np.asarray(matrix, dtype=np.float32)) for name, matrix in sources if len(matrix)]
@@ -443,9 +648,7 @@ def _projection_document(
         index = max(range(len(quotas)), key=lambda item: quotas[item])
         quotas[index] -= 1
     while sum(quotas) < budget:
-        candidates = [
-            index for index, (_, matrix) in enumerate(nonempty) if quotas[index] < len(matrix)
-        ]
+        candidates = [index for index, (_, matrix) in enumerate(nonempty) if quotas[index] < len(matrix)]
         index = max(candidates, key=lambda item: raw[item] - quotas[item])
         quotas[index] += 1
 
@@ -459,8 +662,14 @@ def _projection_document(
     basis = rng.normal(size=(width, 2)).astype(np.float32) / np.sqrt(max(width, 1))
     points: list[dict[str, Any]] = []
     for name, indices, matrix in sampled:
-        totals = matrix.sum(axis=1, keepdims=True)
-        normalized = np.log1p(matrix / np.maximum(totals, 1e-12) * 10_000.0)
+        if input_scale == "log1p_cp10k":
+            normalized = matrix
+        elif input_scale == "raw_counts":
+            # Legacy synthetic demo callers explicitly retain their generator contract.
+            totals = matrix.sum(axis=1, keepdims=True)
+            normalized = np.log1p(matrix / np.maximum(totals, 1e-12) * 10_000.0)
+        else:
+            raise ScientificContractError(f"Unsupported projection expression scale: {input_scale}")
         coordinates = normalized @ basis
         for cell_index, (x_value, y_value) in zip(indices, coordinates, strict=True):
             points.append(
@@ -471,4 +680,4 @@ def _projection_document(
                     "cell_index": int(cell_index),
                 }
             )
-    return {"method": "seeded-random-projection", "seed": seed, "points": points}
+    return {"method": "seeded-random-projection", "seed": seed, "input_scale": input_scale, "points": points}

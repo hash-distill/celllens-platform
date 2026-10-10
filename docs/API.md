@@ -18,7 +18,7 @@
 
 | 字段 | 约束 |
 |---|---|
-| `cell_line` | K562 或 RPE1；后者当前禁用 |
+| `cell_line` | K562、RPE1、Jurkat 或 HepG2；实际可用性由 catalog 与已校验资产决定 |
 | `perturbation` | 1–64 字符，字母/数字/下划线/点/连字符；自动转大写，在线请求须在支持列表 |
 | `mode` | online、validation、precomputed；默认 online |
 | `n_cells` | 64–4096，默认 512；请求推理细胞数，不是质量指标 |
@@ -29,12 +29,20 @@
 | 模式 | 行为 | 依赖 |
 |---|---|---|
 | online | STATE 预测与转录/代谢分析，不读取匹配观测 | MySQL、worker、GPU、模型及对照 |
-| validation | 在线链路加匹配扰动观测比较 | 在线依赖及包含该扰动的观测 |
+| validation | 在线链路加实测样本诊断，非独立留出验收 | 在线依赖、观测哈希及冻结诊断协议名单 |
 | precomputed | 校验并复制现有预计算包，不调用模型 | MySQL、匹配目录中的摘要及清单 |
 
 运行查询返回请求、状态、`stage_progress`、时间、warnings 和错误信息。状态枚举为 queued、state_running、adapting、metabolic_running、validating、completed、failed。进度来自后端节点；completed/failed 为终态。
 
+## 历史实验检索
+
+`GET /api/v1/runs?limit=20&offset=0&q=AAMP&status=completed&mode=online` 从服务器数据库读取历史记录。`limit` 为 1–100（默认 20），`offset` 非负；`q` 最长 128 字符，对运行编号、背景、扰动进行不区分大小写的包含检索，百分号等作为普通字符。`status` 为 all/active/completed/failed，active 包含所有非终态；`mode` 可省略或指定 online/precomputed/validation。`total` 是筛选后的完整数量。浏览器存储不决定此列表，接口不提供删除操作。
+
 ## 接口列表
+
+`GET /api/v1/runs/{run_id}/completeness` 返回保存并登记的 scCellFie 官方数据集级完整性报告：方法名、包版本、参数、函数源码与源基因文件哈希、冻结数据库来源、overall_summary、完整 tasks/reactions 明细。全部关联基因和 essential 基因范围同时保留；essential 空集返回 1 是官方约定，不表示完整证据。缺失产物返回 404，未登记、哈希变化或跨运行报告返回 500 `INVALID_COMPLETENESS`。读取不会即时补算或替换数据库。`metabolic-tasks` 响应的 `completeness_available` 用于避免请求已知缺失的报告。
+
+旧 `coverage`、`evidence_level` 与三档计数仍保留兼容性，表示项目 80%／60% 规则，不是官方完整性、置信度或论文标准。新报告使用官方连续指标，未建立官方指标的项目分档门槛。
 
 路径均相对 `/api/v1`。
 
@@ -43,25 +51,37 @@
 | GET | `/health` | 服务及数据库状态，需读取响应字段 |
 | GET | `/ready` | 数据库与 worker/GPU 开关；未全部满足返回 503 |
 | GET | `/catalog/contexts` | 三种模式就绪状态、模型 ID 及原因 |
-| GET | `/catalog/perturbations?cell_line=K562&mode=online` | `{cell_line, mode, items}`；online 为模型支持扰动，precomputed 为通过清单及哈希校验的组合，validation 当前为空 |
+| GET | `/catalog/perturbations?cell_line=K562&mode=online` | `{cell_line, mode, items}`；online 为模型支持扰动，precomputed 为通过清单及哈希校验的组合，validation 为已校验诊断协议名单（当前四背景均 ALDOA） |
+| GET | `/runs` | 服务器历史实验；按创建时间及编号倒序，返回 items/total/limit/offset，支持分页及检索筛选 |
 | POST | `/runs` | 创建运行，成功返回 202 |
 | GET | `/runs/{run_id}` | 请求、运行阶段与错误 |
 | GET | `/runs/{run_id}/summary` | 汇总；未完成时可返回状态和空结果 |
-| GET | `/runs/{run_id}/projection` | `{method, seed, points}`；点含 x/y/source/cell_index，默认最多 12000 点 |
+| GET | `/runs/{run_id}/projection` | `{method, seed, points}`；合成单细胞演示另含 data_kind、input_sha256、generator 和可选的历史补充来源；点含 x/y/source/cell_index，默认最多 12000 点；新版在线分析另含 `population_selection`，记录目标扰动筛选的输入、保留与排除细胞数 |
 | GET | `/runs/{run_id}/genes?limit=2000` | CSV 行转 JSON；gene/control/predicted/predicted_delta 与可选观测列，数值可能是字符串 |
-| GET | `/runs/{run_id}/metabolic-tasks?limit=1000` | 默认 scope=top 返回 Top 20；scope=all 从本次任务矩阵和覆盖表读取完整有效结果，缺少产物时明确退回 scope=top |
+| GET | `/runs/{run_id}/cell-state?feature_kind=gene&feature_id=ENO1` | 只读科研视图：共同对照 PCA、解释方差、显示点与指标值、完整群体 ECDF/统计、共享坐标与色标、来源核对；feature_kind 为 gene/task，指标为空时选默认指标；无法核对冻结来源返回 409 CELL_STATE_UNAVAILABLE |
+| GET | `/runs/{run_id}/cell-state/figure?feature_kind=gene&feature_id=ENO1&file_format=svg` | 同数据 Matplotlib 图下载；支持 svg/pdf/png（300 dpi）；响应头 X-CellLens-Manifest-SHA256 为来源哈希；不修改运行、不重新推理或评分 |
+| GET | `/runs/{run_id}/metabolic-tasks?limit=1000` | 默认 scope=top 返回 Top 20；scope=all 从本次任务矩阵和覆盖表读取完整有效结果，缺少产物或旧 precomputed 长表格式时明确返回 scope=top 已保存摘要 |
 | GET | `/runs/{run_id}/reactions?limit=1000` | 真实矩阵按来源取均值，再按绝对差异排序；其他 CSV 格式可能有不同列 |
+| GET | `/runs/{run_id}/task-trace?task_id=...` | 读取本次冻结的任务—反应—基因知识关联及对照/预测/差值；reaction_limit、gene_limit 默认 30，范围 1–100 |
 | GET | `/runs/{run_id}/provenance` | 本次 manifest 的历史模型/数据 ID、资产/代码/清单哈希及时间；不返回本机路径 |
 | GET | `/runs/{run_id}/validation` | 已生成的验证指标，缺失返回 404；protocol_status=unconfirmed，不能视为正式验收 |
 | GET | `/runs/{run_id}/report` | HTML 下载；包含基因、任务及警告 |
 
 三类表格返回 `{items, limit, truncated}`，limit 均允许 1–10000。truncated=false 只表示接口未因 limit 截断，不证明摘要包含全部任务。真实基因表保持输出顺序，接口不会按效应大小排序。
 
-precomputed_ready 要求至少一个组合通过同一创建契约校验。validation_ready 仍只反映资产整体就绪，不保证具体扰动有匹配观测或实验拆分已批准；前端保持验证提交关闭。
+precomputed_ready 要求至少一个组合通过同一创建契约校验，包必须包含已登记哈希且有效的 projection.json，至少有对照与扰动后群体的有限坐标、来源和细胞序号。在线/诊断运行在发布前同样校验投影，并要求纳入产物清单；不完整缓存不得复用。validation_ready 要求在线依赖及冻结诊断协议有效；具体扰动还须在该名单中。不合规请求创建任务前返回 422 DIAGNOSTIC_UNAVAILABLE。
+
+运行记录、历史列表及摘要新增可选 `result_kind`：`frozen_model_result` 为真实结果回放，`synthetic_demo` 为历史合成数据；旧包默认按合成来源识别。真实冻结包必须附原始 manifest、原运行编号及其输出哈希，数值产物逐文件核验；回放重绑定运行编号并重新登记全部产物。provenance 返回 `source_type=frozen_precomputed`、`source_run_id`、`original_manifest_sha256` 和包清单哈希，原模型/数据资产哈希保留。回放不执行推理，请求 n_cells/seed 不改变已保存结果。四背景已有 ALDOA 真实回放，K562/MYC 合成资产保留为历史来源；正式目录排除合成包，新建合成回放默认返回 422 `SYNTHETIC_RESULT_DISABLED`。开发检查可通过 `CELLLENS_ALLOW_SYNTHETIC_RESULTS=true` 显式开启，正式部署保持 false。
 
 metabolic-tasks 另返回 scope、total；全量分支返回 excluded_count，排除预测变化为非有限数值的任务，绝不将其替换为零。scope=all 表示完整有效变化集合，覆盖摘要的任务计数仍包含证据不足或不可计算任务。
 
+任务列表还返回 `reactions_available`，各任务返回 `trace_available`：`false` 表示对应保存结果缺失，前端直接展示缺失说明，不请求不存在的可选接口；`true` 表示冻结追溯中包含该任务；`null` 表示追溯无法确认（例如哈希损坏），前端仍允许请求并展示真实错误，不将损坏伪装为缺失。Top 摘要与全量结果均提供这些字段，分类筛选只作用于已加载任务。
+
 ## 摘要语义
+
+`GET /runs/{run_id}/task-trace?task_id=...&scope=all` 为功能对比提供该任务的全部关联反应和基因。`scope` 允许 `top` / `all`，默认 `top` 兼容旧调用；`top` 使用 `reaction_limit` / `gene_limit`（默认各 30，范围 1–100），`all` 忽略这两项列表限额，不删减已保存关联。响应返回实际 `scope`，保留 `gene_rule`、`observed_delta`、`score_units` 和缺失 null；仍按 run_id、冻结产物身份和 SHA-256 核验，只读取当前运行记录。这里的“全部”限于该任务的保存关联，不表示整个代谢库都已评分。
+
+任务追溯响应包含数据库版本、源文件哈希、任务分类、反应列表及关联基因。`relationship_kind=knowledge_association` 不代表因果贡献；`determinant_status=unavailable` 明确表示未提供评分决定基因归因。缺少数值返回 null；反应和基因列表各自返回 total/truncated。缺少历史追溯产物返回 `404 TASK_TRACE_UNAVAILABLE`，任务不在产物中返回 `404 TASK_NOT_FOUND`；产物哈希或身份错误返回 500，不用当前数据库代替历史版本。
 
 摘要包含运行编号、状态、背景、扰动、coverage、top_genes、metabolic_tasks、warnings 和 error_code。
 
@@ -87,6 +107,8 @@ metabolic-tasks 另返回 scope、total；全量分支返回 excluded_count，�
 | 503 | WORKER_UNAVAILABLE、GPU_UNAVAILABLE 或资产不可用 |
 | 500 | INVALID_PRECOMPUTED_RESULT、INVALID_ARTIFACT 等结果异常 |
 
-单个产物缺失只应影响对应视图。当前尚未开放完整覆盖表下载、运行列表或取消任务。provenance 只读取历史清单，不重新计算所有大型文件哈希。validation 读取后端指标文件，不在浏览器重算；当前 top-k 默认 10、方向一致按符号比较、Spearman 对并列值采用平均秩，实验拆分尚待确认。
+单个产物缺失只应影响对应视图。provenance 只读取历史清单，不重新计算所有大型文件哈希，另返回 prediction_reused、reanalysis_of、analysis_script_sha256 和登记的表达尺度。真实旧运行缺少 expression_contract.json 时，summary 的 warnings 提示使用重算版本；不会改写旧摘要文件。
+
+validation 读取后端指标文件，不在浏览器重算。metrics 保持原代谢任务字段，metric_scope=metabolic_task_delta；其 top-k 默认 10。expression 单独返回 log1p(CP10K) 群体变化的相关性、MSE/MAE、no_change_mse/mae、mse_relative_to_no_change 和改进比例。differential_expression 返回 Wilcoxon/BH/FDR 0.05 的 DEG 数、重叠率、方向、AP；parameters 记录方法、版本和不可用指标原因。无法计算的值返回 null。held_out_validation=false、protocol_status=unconfirmed 表示匹配观测诊断，不能宣称正式留出泛化验收。多个扰动判别能力、效应量排序及训练数据基线尚需独立协议。
 
 更新契约时运行 `uv run --no-sync python scripts/export_openapi.py` 并核对前端类型。`frontend/src/types/run.ts` 为页面使用的 TypeScript 契约镜像。

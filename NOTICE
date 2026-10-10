@@ -1,0 +1,43 @@
+CellLens / 细胞知镜
+Copyright (c) 2026 CellLens contributors
+
+The root MIT license applies to original CellLens software and documentation,
+except for separately identified third-party material and model-generated
+scientific results. It does not relicense dependencies, model weights,
+upstream source code or runtime modifications of that source, datasets,
+third-party databases, or results produced using separately licensed models.
+
+STATE (arc-state 0.11.1), Arc Institute:
+- Upstream source code: CC BY-NC-SA 4.0.
+- Model weights and model use: Arc Research Institute State Model
+  Non-Commercial License and Model Acceptable Use Policy.
+- Outputs retain the applicable output, citation, and redistribution
+  conditions in the model license; they are not granted a blanket MIT license.
+- CellLens invokes installed STATE code. Its SE adapter modifies the installed
+  inference function at runtime to preserve signed latent coordinates; the
+  modified STATE function remains subject to STATE's upstream source license.
+- Reference: Adduri, A. et al. (2025), Predicting cellular responses to
+  perturbation across diverse contexts with State.
+  https://doi.org/10.1101/2025.06.26.661135
+
+scCellFie 0.6.2:
+- MIT License, Copyright (c) 2024, Wellcome Sanger Institute.
+- The frozen human Recon2 files under data/registry/sccellfie/human are
+  third-party material, not original CellLens data. Retain their upstream
+  attribution and license, including sources incorporated into that database.
+- Reference: Atlas-scale metabolic activities inferred from single-cell and
+  spatial transcriptomics (2025).
+  https://doi.org/10.1101/2025.05.09.653038
+
+HGNC:
+- HGNC-derived nomenclature in data/registry/gene_identity is CC0 1.0.
+- Attribution: HUGO Gene Nomenclature Committee, https://www.genenames.org/
+  (RRID:SCR_002827).
+
+Model weights, original H5AD data, complete run artifacts, credentials,
+installed dependencies, and local build outputs are excluded from this
+source repository. Documentation screenshots may contain scientific outputs
+and retain their stated source and the applicable upstream output terms.
+
+See docs/THIRD_PARTY_NOTICES.md and licenses/ for license scope, source links,
+and preserved upstream license texts. This notice does not modify those terms.

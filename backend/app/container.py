@@ -31,6 +31,9 @@ def build_container(settings: Settings) -> AppContainer:
         analysis_service=ScientificAnalysisService(
             settings.sccellfie_database_root,
             max_projection_points=settings.max_projection_points,
+            gene_identity_root=(
+                settings.gene_identity_root if settings.gene_identity_root.exists() else None
+            ),
         ),
         derived_root=settings.derived_root,
         worker_id=settings.worker_id,

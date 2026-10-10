@@ -140,6 +140,34 @@ class RunStore:
                 raise KeyError(run_id)
             return self._decode(model)
 
+    def list_runs(
+        self, *, limit: int, offset: int, query: str = "", status: str = "all", mode: str | None = None
+    ) -> tuple[list[RunRecord], int]:
+        statement = select(RunModel)
+        if query.strip():
+            term = query.strip()
+            statement = statement.where(
+                or_(
+                    RunModel.run_id.icontains(term, autoescape=True),
+                    RunModel.perturbation.icontains(term, autoescape=True),
+                    RunModel.cell_line.icontains(term, autoescape=True),
+                )
+            )
+        if status == "active":
+            statement = statement.where(RunModel.status.notin_(["completed", "failed"]))
+        elif status != "all":
+            statement = statement.where(RunModel.status == status)
+        if mode:
+            statement = statement.where(RunModel.mode == mode)
+        with self.session_factory() as session:
+            total = session.scalar(select(func.count()).select_from(statement.subquery())) or 0
+            rows = session.scalars(
+                statement.order_by(RunModel.created_at.desc(), RunModel.run_id.desc())
+                .limit(limit)
+                .offset(offset)
+            ).all()
+            return [self._decode(row) for row in rows], int(total)
+
     def transition(
         self,
         run_id: str,

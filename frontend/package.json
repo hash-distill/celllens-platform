@@ -1,6 +1,7 @@
 {
   "name": "celllens-frontend",
   "private": true,
+  "license": "MIT",
   "version": "0.1.0",
   "type": "module",
   "description": "CellLens 细胞知镜前端：单细胞扰动预测与代谢分析工作台",
@@ -13,10 +14,12 @@
   "dependencies": {
     "echarts": "^5.6.0",
     "pinia": "^2.3.1",
+    "three": "0.186.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@types/three": "0.186.0",
     "@vitejs/plugin-vue": "^5.2.3",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",

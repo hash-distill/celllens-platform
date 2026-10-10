@@ -1,0 +1,48 @@
+{
+  "retrieved_at": "2026-10-10",
+  "note": "License text bytes are preserved; root MIT does not supersede these licenses.",
+  "files": [
+    {
+      "file": "state/CC-BY-NC-SA-4.0.txt",
+      "sha256": "e66c269d4819aaab34b49ef5220c4ddab6756f21bb5180761a4eb8561f2b7bbd",
+      "source": "arc-state 0.11.1 distribution license",
+      "upstream": "https://github.com/ArcInstitute/state/blob/main/LICENSE",
+      "version": "0.11.1"
+    },
+    {
+      "file": "scCellFie-0.6.2-MIT.txt",
+      "sha256": "9a9a8c4b23583de5526e13f34f4091a972418d2f8477415f7f3377a540f4b630",
+      "source": "sccellfie 0.6.2 distribution license",
+      "upstream": "https://github.com/earmingol/scCellFie/blob/main/LICENSE.txt",
+      "version": "0.6.2"
+    },
+    {
+      "file": "state/MODEL_LICENSE.md",
+      "sha256": "513add0eb2b35e59ce7cd7ff1249b9104794f5fb879ec287a4a9a52e4a96b7a5",
+      "source": "arcinstitute/SE-600M",
+      "revision": "5a9a80f44f7ce32ce57059933ef0d735d7c10ce5",
+      "upstream": "https://huggingface.co/arcinstitute/SE-600M/blob/5a9a80f44f7ce32ce57059933ef0d735d7c10ce5/MODEL_LICENSE.md"
+    },
+    {
+      "file": "state/MODEL_ACCEPTABLE_USE_POLICY.md",
+      "sha256": "6eb675a79981d59923be82e3931ef45187b373d7dff04ec7497c897d17d35c51",
+      "source": "arcinstitute/SE-600M",
+      "revision": "5a9a80f44f7ce32ce57059933ef0d735d7c10ce5",
+      "upstream": "https://huggingface.co/arcinstitute/SE-600M/blob/5a9a80f44f7ce32ce57059933ef0d735d7c10ce5/MODEL_ACCEPTABLE_USE_POLICY.md"
+    },
+    {
+      "file": "state/LICENSE.md",
+      "sha256": "e66c269d4819aaab34b49ef5220c4ddab6756f21bb5180761a4eb8561f2b7bbd",
+      "source": "arcinstitute/SE-600M",
+      "revision": "5a9a80f44f7ce32ce57059933ef0d735d7c10ce5",
+      "upstream": "https://huggingface.co/arcinstitute/SE-600M/blob/5a9a80f44f7ce32ce57059933ef0d735d7c10ce5/LICENSE.md"
+    },
+    {
+      "file": "CC0-1.0.txt",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/CC0-1.0.txt",
+      "upstream": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+      "purpose": "HGNC CC0 1.0 data terms (standard text preserved from SPDX)"
+    }
+  ]
+}

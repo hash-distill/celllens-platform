@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onBeforeUnmount, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCandidatesStore } from '../stores/candidates'
+import { useUiStore } from '../stores/ui'
 import { api } from '../api/client'
 import { ApiError } from '../api/http'
 import { runSourceLabel } from '../utils/source'
 import { EVIDENCE_LABEL, fmtDelta, fmtPercent, MODE_LABEL, shortRunId } from '../utils/format'
-import CandidateTray from '../components/CandidateTray.vue'
 import type { EvidenceItem, RunRecord, RunSummary } from '../types/run'
 
 /**
@@ -24,24 +24,45 @@ interface CandidateData {
 
 const router = useRouter()
 const candidates = useCandidatesStore()
+const ui = useUiStore()
 
 const dataMap = reactive<Record<string, CandidateData>>({})
 
-onMounted(() => {
-  void loadAll()
-})
+const controllers = new Map<string, AbortController>()
+watch(() => candidates.items.map(item => item.run_id), ids => {
+  const selected = new Set(ids)
+  for (const id of Object.keys(dataMap)) {
+    if (!selected.has(id)) {
+      controllers.get(id)?.abort()
+      controllers.delete(id)
+      delete dataMap[id]
+    }
+  }
+  for (const id of ids) if (!dataMap[id]) void loadOne(id)
+}, {immediate:true, flush:'sync'})
+onBeforeUnmount(() => { for (const controller of controllers.values()) controller.abort() })
 
-async function loadAll(): Promise<void> {
-  await Promise.all(candidates.items.map((item) => loadOne(item.run_id)))
+function removeCandidate(runId: string): void {
+  candidates.remove(runId)
+  ui.push('success', '已移出比较，实验记录仍保留')
+}
+
+function clearCandidates(): void {
+  candidates.clear()
+  ui.push('success', '已清空比较，可从实验记录重新选择')
 }
 
 async function loadOne(runId: string): Promise<void> {
+  controllers.get(runId)?.abort()
+  const controller = new AbortController()
+  controllers.set(runId, controller)
   dataMap[runId] = { record: null, summary: null, error: null, loading: true }
   try {
     const [recordResult, summaryResult] = await Promise.allSettled([
-      api.getRun(runId),
-      api.getSummary(runId),
+      api.getRun(runId, controller.signal),
+      api.getSummary(runId, controller.signal),
     ])
+    if (controller.signal.aborted || controllers.get(runId) !== controller || !candidates.has(runId)) return
     if (recordResult.status === 'fulfilled') {
       dataMap[runId].record = recordResult.value
     } else {
@@ -52,7 +73,10 @@ async function loadOne(runId: string): Promise<void> {
       dataMap[runId].summary = summaryResult.value
     }
   } finally {
-    dataMap[runId].loading = false
+    if (!controller.signal.aborted && controllers.get(runId) === controller && dataMap[runId]) {
+      dataMap[runId].loading = false
+      controllers.delete(runId)
+    }
   }
 }
 
@@ -82,7 +106,7 @@ function sourceLabel(runId: string): string {
   const mode =
     dataMap[runId]?.record?.request.mode ??
     items.value.find((i) => i.run_id === runId)?.request.mode
-  return runSourceLabel(mode, runId)
+  return runSourceLabel(mode, runId, dataMap[runId]?.record?.result_kind)
 }
 </script>
 
@@ -91,31 +115,36 @@ function sourceLabel(runId: string): string {
     <div class="card">
       <div class="flex-between">
         <div>
-          <h1 class="page-title">候选比较</h1>
+          <h1 class="page-title">实验比较</h1>
           <p class="muted small" style="margin: 6px 0 0">
             <span class="pill pill-neutral">本浏览器记录</span>
             已加入的运行并排展示（最多 4 个，以 run_id 去重）。
             <strong>尚未核验版本一致，仅描述性并列</strong>：请打开各运行证据栏核对历史模型 / 数据哈希与生成时间，
-            不输出实验优先级评分；合成演示与真实运行标注来源，不共用排名。
+            不输出实验优先级评分；比较前请核对细胞背景、结果来源、表达尺度和模型版本。
           </p>
         </div>
-        <button class="btn" type="button" @click="router.push('/workbench')">返回工作台</button>
+        <div class="comparison-actions">
+          <RouterLink to="/records" class="btn btn-primary">选择实验</RouterLink>
+          <button v-if="items.length" class="btn clear-comparison" type="button" @click="clearCandidates">清空比较</button>
+          <button class="btn" type="button" @click="router.push('/workbench')">返回工作台</button>
+        </div>
       </div>
     </div>
 
     <div v-if="items.length === 0" class="card empty-card">
-      <p class="empty-title">候选托盘为空</p>
+      <p class="empty-title">尚未选择比较实验</p>
       <p class="muted small">
-        打开某个运行详情，点击「加入候选」后回到本页查看并排比较。记录仅保存在本浏览器。
+        从实验记录或工作台点击「加入比较」，再回到本页。可随时移出单个实验或清空列表，选择新的比较组合。
       </p>
-      <button class="btn btn-primary" type="button" style="margin-top: 12px" @click="router.push('/workbench')">
-        去工作台选择运行
+      <button class="btn btn-primary" type="button" style="margin-top: 12px" @click="router.push('/records')">
+        去实验记录选择
       </button>
     </div>
 
     <template v-else>
       <!-- 基本信息并排表 -->
       <div class="card">
+        <p class="comparison-selection">已选择 {{ items.length }} / 4 个实验 · 移出仅影响本浏览器比较列表，实验记录与结果文件保留。</p>
         <h2 class="card-title">基本信息与覆盖摘要</h2>
         <div class="table-wrap">
           <table class="table compare-table">
@@ -123,7 +152,9 @@ function sourceLabel(runId: string): string {
               <tr>
                 <th scope="col">字段</th>
                 <th v-for="item in items" :key="item.run_id" scope="col">
+                  <div class="comparison-title">{{ item.request.cell_line }} / {{ item.request.perturbation }}</div>
                   <div class="mono">{{ shortRunId(item.run_id) }}</div>
+                  <div class="comparison-column-actions">
                   <button
                     class="btn btn-ghost btn-sm"
                     type="button"
@@ -132,6 +163,8 @@ function sourceLabel(runId: string): string {
                   >
                     打开
                   </button>
+                  <button class="btn btn-ghost btn-sm remove-comparison" type="button" :data-remove-run="item.run_id" :aria-label="`移出比较 ${item.request.cell_line} / ${item.request.perturbation} ${item.run_id}`" @click="removeCandidate(item.run_id)">移出比较</button>
+                  </div>
                 </th>
               </tr>
             </thead>
@@ -203,7 +236,7 @@ function sourceLabel(runId: string): string {
                 </td>
               </tr>
               <tr>
-                <th scope="row">任务数（覆盖支持/探索性/证据不足）</th>
+                <th scope="row">项目旧分档任务数（80%／60%）</th>
                 <td v-for="item in items" :key="item.run_id">
                   <template v-if="dataMap[item.run_id]?.summary?.coverage">
                     {{ dataMap[item.run_id]?.summary?.coverage?.supported_tasks }} /
@@ -266,7 +299,6 @@ function sourceLabel(runId: string): string {
       </div>
     </template>
 
-    <CandidateTray />
   </div>
 </template>
 
@@ -274,6 +306,12 @@ function sourceLabel(runId: string): string {
 .page-title {
   font-size: 21px;
 }
+.comparison-actions,.comparison-column-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.comparison-actions{justify-content:flex-end}.comparison-column-actions{margin-top:8px}
+.comparison-title{font-size:13px;margin-bottom:5px;color:var(--ink)}
+.comparison-selection{font-size:12px;color:var(--muted);line-height:1.8;margin:0 0 14px}
+.remove-comparison,.clear-comparison{color:#a64839;border:1px solid #dcc1bb}
+@media(max-width:650px){.comparison-actions{justify-content:flex-start;margin-top:12px}.flex-between{flex-wrap:wrap;gap:12px}}
 .empty-card {
   text-align: center;
   padding: 40px;
@@ -284,7 +322,7 @@ function sourceLabel(runId: string): string {
   margin: 0 0 6px;
 }
 .compare-table th[scope='row'] {
-  background: #f8fafc;
+  background: #f1f3ed;
   color: var(--muted);
   font-weight: 600;
   max-width: 260px;

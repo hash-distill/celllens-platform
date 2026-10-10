@@ -1,8 +1,10 @@
 import json
 
 from backend.app.config import get_settings
+from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
 from backend.app.core.registry import AssetRegistry
 from backend.app.core.run_manifest import file_sha256
+from backend.app.services.gene_identity import GeneIdentityAdapter
 
 
 def _verify_declared(registry, entry, pairs, failures, label):
@@ -51,6 +53,8 @@ def main() -> int:
             print(f"SKIP model {row.get('id')}: {row.get('disabled_reason')}")
             continue
         entry = registry.model_for(row["cell_line"])
+        if not row.get("expression_scale"):
+            failures.append(f"Model {row['id']} has no declared expression scale")
         _verify_declared(
             registry,
             entry,
@@ -67,6 +71,8 @@ def main() -> int:
             print(f"SKIP dataset {row.get('id')}: {row.get('disabled_reason')}")
             continue
         entry = registry.dataset_for(row["cell_line"])
+        if not row.get("expression_scale"):
+            failures.append(f"Dataset {row['id']} has no declared expression scale")
         _verify_declared(
             registry,
             entry,
@@ -74,11 +80,24 @@ def main() -> int:
                 ("control_path", "control_sha256"),
                 ("observed_path", "observed_sha256"),
                 ("split_path", "split_sha256"),
+                ("validation_protocol_path", "validation_protocol_sha256"),
             ),
             failures,
             f"dataset {row['id']}",
         )
+        if row.get("validation_protocol_path"):
+            try:
+                protocol = load_diagnostic_protocol(entry, registry.model_for(row["cell_line"]))
+                print(f"OK measured diagnostic {row['cell_line']} {protocol['perturbations']}")
+            except Exception as exc:
+                failures.append(f"Diagnostic protocol audit failed: {exc}")
     _audit_sccellfie(settings.sccellfie_database_root, failures)
+    if settings.gene_identity_root.exists():
+        try:
+            adapter = GeneIdentityAdapter.load(settings.gene_identity_root, settings.sccellfie_database_root)
+            print(f"OK HGNC identity {len(adapter.by_id)} database genes")
+        except Exception as exc:
+            failures.append(f"HGNC identity audit failed: {exc}")
     for message in failures:
         print(f"ERROR {message}")
     return 1 if failures else 0

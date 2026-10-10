@@ -4,6 +4,7 @@ from typing import Any
 import pandas as pd
 
 from backend.app.core.errors import InsufficientCoverageError, ScientificContractError
+from backend.app.services.expression_scale import validate_expression
 
 
 @dataclass(frozen=True)
@@ -28,8 +29,17 @@ class ScCellFieEngine:
         database_version: str,
         completeness: pd.DataFrame,
     ) -> MetabolicResult:
-        if completeness.empty or not (completeness["evidence_level"] != "insufficient").any():
-            raise InsufficientCoverageError("No metabolic task passes the frozen completeness gate")
+        if adata.n_vars == 0:
+            raise InsufficientCoverageError("No expression genes are available for metabolic analysis")
+        if (
+            adata.uns.get("celllens_expression", {}).get("scale") != "cp10k"
+            or adata.uns.get("normalization", {}).get("method") != "total_counts"
+            or adata.uns.get("normalization", {}).get("target_sum") != 10_000
+        ):
+            raise ScientificContractError(
+                "scCellFie requires declared CP10K expression; normalization is frozen"
+            )
+        validate_expression(adata.X)
         thresholds = database.get("thresholds")
         if not isinstance(thresholds, pd.DataFrame) or self.threshold_key not in thresholds.columns:
             raise ScientificContractError(

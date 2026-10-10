@@ -1,0 +1,9 @@
+id: state-replogle-rpe1-fewshot-v1
+state_code_version: 0.11.1
+cell_line: RPE1
+perturbation_type: genetic
+perturbation_column: gene
+cell_type_column: cell_line
+embed_key: X_hvg
+control_perturbation: non-targeting
+output_space: gene

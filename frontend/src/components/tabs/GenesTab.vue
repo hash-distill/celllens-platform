@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRunStore } from '../../stores/run'
 import { useUiStore } from '../../stores/ui'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
@@ -9,7 +9,7 @@ import { downloadCsv } from '../../utils/csv'
 import type { GeneRow } from '../../types/run'
 import TablePager from '../TablePager.vue'
 import { usePagedRows } from '../../utils/pagination'
-import { runSourceLabel } from '../../utils/source'
+import { isSyntheticResult, runSourceLabel } from '../../utils/source'
 
 /**
  * 基因响应：上方绝对变化最大基因水平条形图（以零为中心发散），
@@ -73,6 +73,11 @@ const { page, pages, visible: pageRows } = usePagedRows(sorted)
 
 const selected = computed(() => items.value.find((row) => row.gene === selectedGene.value) ?? null)
 
+const expressionScale = computed(() => Math.max(1e-9, ...[selected.value?.control, selected.value?.predicted, selected.value?.observed].filter((v): v is number => v !== null && v !== undefined).map(Math.abs)))
+watch(items, rows => {
+  if (!rows.some(row => row.gene === selectedGene.value)) selectedGene.value = barItems.value[0]?.name ?? null
+}, {immediate:true})
+
 const hasObserved = computed(() => items.value.some((row) => row.observed !== null || row.observed_delta !== null))
 
 const display = computed<BlockDisplay>(() => {
@@ -106,7 +111,7 @@ function retry(): void {
 function exportCsv(): void {
   const data = block.value?.data
   if (!data) return
-  const source = runSourceLabel(entry.value?.record?.request.mode, props.runId)
+  const source = runSourceLabel(entry.value?.record?.request.mode, props.runId, entry.value?.record?.result_kind)
   const filename = `celllens-genes-${source}-${props.runId}-${data.truncated ? 'partial' : 'full'}-limit${data.limit}.csv`
   downloadCsv(
     filename,
@@ -141,7 +146,7 @@ function exportCsv(): void {
     <div v-if="summary && summary.top_genes.length > 0" class="overview">
       <span class="small muted">后端 Top 基因概览（summary.top_genes）：</span>
       <span
-        v-for="gene in summary.top_genes"
+        v-for="gene in summary.top_genes.slice(0,4)"
         :key="gene.id"
         class="pill pill-info"
         :title="`证据等级：${EVIDENCE_LABEL[gene.evidence_level]}；覆盖 ${(gene.coverage * 100).toFixed(1)}%`"
@@ -154,6 +159,7 @@ function exportCsv(): void {
       当前为部分结果：服务端按 limit={{ block?.data?.limit }} 截断，表格与图表只覆盖已加载记录。
     </div>
 
+    <div class="gene-analysis-grid">
     <!-- 差异条形图 -->
     <div class="chart-card">
       <div class="flex-between">
@@ -166,23 +172,11 @@ function exportCsv(): void {
         category-name="基因"
         value-label="预测变化"
         :height="380"
+        :selected-name="selectedGene"
+        @select="selectedGene = $event"
       />
       <p v-else class="muted small">已加载记录中没有有效的预测变化数值。</p>
-    </div>
-
-    <!-- 表格工具行 -->
-    <div class="table-tools">
-      <label class="sr-only" for="gene-search">搜索基因</label>
-      <input
-        id="gene-search"
-        v-model="search"
-        class="input search-input"
-        type="search"
-        placeholder="搜索基因符号（仅覆盖已加载记录）"
-      />
-      <span class="small muted">{{ sorted.length }} / {{ items.length }} 条</span>
-      <span class="spacer"></span>
-      <button class="btn btn-sm" type="button" @click="exportCsv">导出全部已加载 CSV</button>
+      <p class="muted small" style="margin:4px 0 0">点击条形或表格行查看同一基因的数值。</p>
     </div>
 
     <!-- 选中基因详情 -->
@@ -191,6 +185,13 @@ function exportCsv(): void {
         <strong>{{ selected.gene }}</strong>
         <button class="btn btn-ghost btn-sm" type="button" @click="selectedGene = null">关闭</button>
       </div>
+      <div class="expression-values">
+        <div v-for="item in [{label:'对照',value:selected.control,color:'var(--source-control)'},{label:'预测',value:selected.predicted,color:'var(--source-predicted)'},{label:'观测',value:selected.observed,color:'var(--source-observed)'}]" :key="item.label" class="expression-value">
+          <span>{{ item.label }}</span><div class="expression-track"><i v-if="item.value!==null" :style="{width:Math.abs(item.value)/expressionScale*100+'%',background:item.color}"></i></div><strong>{{ fmtNumber(item.value) }}</strong>
+        </div>
+      </div>
+      <p class="micro">本页展示群体平均归一化表达</p>
+      <RouterLink v-if="!isSyntheticResult(entry?.record?.request.mode,runId,entry?.record?.result_kind)" class="btn btn-sm" :to="{path:'/workbench',query:{run:runId,tab:'cell',feature_kind:'gene',feature_id:selected.gene}}">查看该基因逐细胞分布</RouterLink>
       <dl class="evidence-list" style="margin-top: 8px">
         <dt>对照表达</dt>
         <dd>{{ fmtNumber(selected.control) }}</dd>
@@ -205,6 +206,22 @@ function exportCsv(): void {
           <dd>{{ fmtDelta(selected.observed_delta) }}</dd>
         </template>
       </dl>
+    </div>
+
+<div v-if="!selected" class="gene-detail gene-detail-empty"><span class="micro">GENE INSPECTOR</span><p>选择条形或表格记录，查看本次表达数值。</p></div></div>
+    <!-- 表格工具行 -->
+    <div class="table-tools">
+      <label class="sr-only" for="gene-search">搜索基因</label>
+      <input
+        id="gene-search"
+        v-model="search"
+        class="input search-input"
+        type="search"
+        placeholder="搜索基因符号（仅覆盖已加载记录）"
+      />
+      <span class="small muted">{{ sorted.length }} / {{ items.length }} 条</span>
+      <span class="spacer"></span>
+      <button class="btn btn-sm" type="button" @click="exportCsv">导出全部已加载 CSV</button>
     </div>
 
     <!-- 基因表 -->
@@ -265,6 +282,18 @@ function exportCsv(): void {
 </template>
 
 <style scoped>
+.gene-analysis-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,1fr);gap:12px}
+.gene-analysis-grid .chart-card{margin:12px 0 0}
+.gene-analysis-grid .gene-detail{margin:12px 0 0;align-self:stretch;border-color:var(--border);background:#f6f7f2;padding:20px 16px}
+.gene-detail strong{font-size:21px;font-weight:500}
+.expression-values{margin:24px 0 14px;display:grid;gap:16px}
+.expression-value{display:grid;grid-template-columns:28px 1fr 48px;gap:8px;align-items:center;font-size:10px}
+.expression-value strong{font-size:11px;font-weight:400;text-align:right}
+.expression-track{height:5px;background:#e4e8e0}.expression-track i{display:block;height:100%}
+.gene-detail .evidence-list{font-size:11px}
+.gene-detail-empty{color:var(--muted);font-size:12px}
+@media(max-width:1100px){.gene-analysis-grid{grid-template-columns:1fr}.expression-values{max-width:420px;margin-top:14px}}
+
 .overview {
   display: flex;
   align-items: center;
@@ -277,7 +306,7 @@ function exportCsv(): void {
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   margin: 12px 0;
-  background: #fbfcfe;
+  background: var(--card);
 }
 .chart-title {
   font-size: 14px;

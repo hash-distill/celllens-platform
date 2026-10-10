@@ -5,7 +5,7 @@ import { useCatalogStore } from '../stores/catalog'
 import { useUiStore } from '../stores/ui'
 import { fmtPercent, fmtServerTime, MODE_LABEL } from '../utils/format'
 import { buildDiagnostics, copyText } from '../utils/diagnostics'
-import { runSourceLabel } from '../utils/source'
+import { isSyntheticResult, runSourceLabel } from '../utils/source'
 
 /**
  * 固定证据栏：运行编号、请求参数、模型背景、覆盖信息、警告与错误码、
@@ -69,11 +69,11 @@ async function copyDiagnostics(): Promise<void> {
       <div class="flex-between">
         <h2 class="card-title" style="margin-bottom: 0">证据与参数</h2>
         <span
-          v-if="record?.request.mode === 'precomputed'"
+          v-if="isSyntheticResult(record?.request.mode, record?.run_id, record?.result_kind)"
           class="pill pill-synthetic"
-          title="预计算演示结果为合成演示数据，不能当作真实预测"
+          title="此历史记录来源为合成数据，不能作为真实模型预测"
         >
-          合成演示数据
+          合成数据（历史记录）
         </span>
       </div>
 
@@ -85,7 +85,7 @@ async function copyDiagnostics(): Promise<void> {
           <dt>模式</dt>
           <dd>{{ MODE_LABEL[record.request.mode] }}（{{ record.request.mode }}）</dd>
           <dt>来源</dt>
-          <dd>{{ runSourceLabel(record.request.mode, record.run_id) }}</dd>
+          <dd>{{ runSourceLabel(record.request.mode, record.run_id, record.result_kind) }}</dd>
           <dt>细胞背景</dt>
           <dd>{{ record.request.cell_line }}</dd>
           <dt>扰动</dt>
@@ -149,6 +149,9 @@ async function copyDiagnostics(): Promise<void> {
           <dl class="evidence-list">
             <dt>历史模型</dt><dd class="mono">{{ provenance.data.assets.model_id ?? '未记录（合成包或旧运行）' }}</dd>
             <dt>历史数据</dt><dd class="mono">{{ provenance.data.assets.dataset_id ?? '未记录' }}</dd>
+            <template v-if="provenance.data.source_run_id">
+              <dt>原始真实运行</dt><dd><RouterLink :to="{path:'/workbench',query:{run:provenance.data.source_run_id}}">{{ provenance.data.source_run_id }}</RouterLink></dd>
+            </template>
             <dt>完成时间</dt><dd>{{ fmtServerTime(provenance.data.completed_at) }}</dd>
           </dl>
           <details class="hashes">
@@ -156,8 +159,10 @@ async function copyDiagnostics(): Promise<void> {
             <dl>
               <dt>manifest SHA-256</dt><dd class="mono">{{ provenance.data.manifest_sha256 }}</dd>
               <dt>执行代码 SHA-256</dt><dd class="mono">{{ provenance.data.code_sha256 ?? '未记录' }}</dd>
-              <dt v-if="provenance.data.source_manifest_sha256">演示包 manifest SHA-256</dt>
+              <dt v-if="provenance.data.source_manifest_sha256">回放文件清单 SHA-256</dt>
               <dd v-if="provenance.data.source_manifest_sha256" class="mono">{{ provenance.data.source_manifest_sha256 }}</dd>
+              <dt v-if="provenance.data.original_manifest_sha256">原真实运行 manifest SHA-256</dt>
+              <dd v-if="provenance.data.original_manifest_sha256" class="mono">{{ provenance.data.original_manifest_sha256 }}</dd>
               <template v-for="(value, key) in provenance.data.assets" :key="key">
                 <template v-if="String(key).endsWith('_sha256')">
                   <dt>{{ key }}</dt><dd class="mono">{{ value ?? '未记录' }}</dd>
@@ -168,7 +173,7 @@ async function copyDiagnostics(): Promise<void> {
           <p class="muted small">哈希来自本次运行 manifest；展示记录不等于重新核验所有大型文件。</p>
         </template>
         <p v-else-if="provenance.status === 'loading'" class="muted small">正在读取运行溯源…</p>
-        <p v-else class="muted small">{{ provenance.error?.status === 404 ? '本次结果未提供真实运行溯源（Mock 或旧产物）' : '溯源暂不可用' }}</p>
+        <p v-else class="muted small">{{ provenance.error?.status === 404 ? '本次记录未保存可核对的运行来源' : '溯源暂不可用' }}</p>
         <button v-if="provenance.status === 'error' && provenance.error?.status !== 404" class="btn btn-sm" @click="runs.retryBlock(entry.runId, 'provenance')">重试溯源</button>
 
         <div class="btn-row" style="margin-top: 14px">

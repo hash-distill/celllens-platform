@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import ts from 'typescript'
+const source = readFileSync(new URL('../src/utils/functionNetwork.ts', import.meta.url), 'utf8')
+const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText
+const { nodeValue, layoutNodes, scaleFor, nodeColor, nodeTextColor } = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'))
+const score = (id, values={}) => ({ id, label:id, control:null, predicted:null, predicted_delta:null, observed_delta:null, ...values })
+const zero = score('zero',{control:0,predicted:0,predicted_delta:0,observed_delta:0})
+assert.equal(nodeValue(zero,'predicted'),0)
+assert.equal(nodeValue(zero,'observed'),0)
+assert.equal(nodeValue(score('missing'),'predicted'),null)
+assert.equal(nodeValue(score('infinite',{predicted:Infinity}),'predicted'),null)
+assert.equal(nodeValue(score('missing-control',{observed_delta:4}),'observed'),null)
+assert.equal(nodeValue(score('measured',{control:2,observed_delta:-3}),'observed'),-1)
+assert.notEqual(nodeColor(0,1),nodeColor(null,1))
+assert.notEqual(nodeColor(-1,1),nodeColor(1,1))
+assert.equal(nodeTextColor(1,1),'#ffffff')
+assert.equal(nodeTextColor(0,1),'#000000')
+assert.equal(nodeTextColor(null,1),'#000000')
+const task=score('task',{control:100,predicted:120,predicted_delta:20})
+const reaction={...score('rxn',{control:5,predicted:6,predicted_delta:1}),genes:[score('Z',{control:1,predicted:2,predicted_delta:1}),zero]}
+const nodes=layoutNodes(task,reaction)
+assert.equal(scaleFor(nodes,'gene',false),2)
+assert.equal(scaleFor(nodes,'reaction',false),6)
+assert.equal(scaleFor(nodes,'task',false),120)
+assert.equal(scaleFor(nodes,'task',true),20)
+const moved=layoutNodes({...task,predicted:999},{...reaction,genes:reaction.genes.map(g=>({...g,predicted:99})).reverse()})
+assert.deepEqual(nodes.map(n=>[n.kind,n.score.id,n.x,n.y]),moved.map(n=>[n.kind,n.score.id,n.x,n.y]))
+assert.equal(layoutNodes(task,{...reaction,genes:Array.from({length:101},(_,i)=>score(String(i)))}).filter(n=>n.kind==='gene').length,101)
+console.log('Functional values, missing/zero, independent scales, stable layout and full genes: passed')

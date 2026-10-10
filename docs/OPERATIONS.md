@@ -24,7 +24,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -
 | `/api/v1/catalog/perturbations?cell_line=K562&mode=precomputed` | 当前通过清单/哈希校验的预计算组合 |
 | `/docs`、`/openapi.json` | 实时接口契约与请求调试 |
 
-`health` 在数据库故障时仍可能返回 HTTP 200，要读取响应字段。`ready` 未满足全部开关时返回 503；关闭 GPU/worker 的演示环境可正常使用预计算，不能把该 503 直接判成演示不可用。在线资产状态以 catalog 与资产审计为准，硬件/依赖调用仍需真实推理验证。
+`health` 在数据库故障时仍可能返回 HTTP 200，要读取响应字段。`ready` 未满足全部开关时返回 503；关闭 GPU/worker 的结果回放环境可正常使用预计算，不能把该 503 直接判成回放不可用。在线资产状态以 catalog 与资产审计为准，硬件/依赖调用仍需真实推理验证。
 
 ## 检查命令
 
@@ -86,7 +86,7 @@ Windows 构建入口使用 `frontend/.cache/build-tmp` 隔离临时文件，避�
 
 MySQL 保存六张表：`runs`、`run_attempts`、`run_events`、`run_artifacts`、`run_cache`、`alembic_version`。模型、输入与结果文件保存在磁盘；文件清单与数据库产物记录需要一致。
 
-备份至少包含数据库、`.env`、`data/registry/`、`configs/`、所引用的模型/输入文件及 `data/derived/runs/`，同时记录 Git 提交和迁移版本。预计算包需要复现演示时也应备份。仅复制数据库不能恢复文件产物；仅复制结果文件也不会重建运行记录。
+备份至少包含数据库、`.env`、`data/registry/`、`configs/`、所引用的模型/输入文件及 `data/derived/runs/`，同时记录 Git 提交和迁移版本。真实回放包也应完整备份。仅复制数据库不能恢复文件产物；仅复制结果文件也不会重建运行记录。
 
 更新前等待分析完成，备份后执行部署文档中的更新流程。不要从文件系统单独删除运行目录来做清理：当前没有已实现的自动保留策略或运行删除接口，需同时考虑产物、缓存和数据库记录。`configs/app.yaml` 的保留天数不是已执行的清理任务。
 
@@ -107,7 +107,7 @@ MySQL 保存六张表：`runs`、`run_attempts`、`run_events`、`run_artifacts`
 | 请求返回 422 | 扰动支持列表、细胞数/seed 范围或额外字段不符合契约 |
 | validation 接受后失败 | 匹配观测可能没有该扰动；前端当前不开放提交，协议仍待确认 |
 | completed 但无代谢结果 | 查看 warnings、覆盖等级、冻结数据库与表达要求 |
-| 单个结果返回 404 | 该运行没有生成对应产物；演示及降级结果可缺少投影/反应/报告 |
+| 单个结果返回 404 | 该运行没有生成对应产物；历史或部分结果可能缺少对应产物，应核对该运行文件清单 |
 | 浏览器跨域失败 | 当前后端无 CORS；开发用 Vite 代理，构建运行用后端同源页面 |
 | Compose 修改密码后连接仍失败 | 初始化变量不更新已有数据卷账户，需核对实际账户与 `.env` |
 

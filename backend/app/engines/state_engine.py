@@ -32,6 +32,20 @@ class StateCliEngine:
         self.timeout_seconds = timeout_seconds
         self.device = device
 
+    def perturbation_label(self, perturbation: str, model: RegistryEntry) -> str:
+        import torch
+
+        mapping_path = model.path("model_dir") / "pert_onehot_map.pt"
+        if not mapping_path.is_file():
+            raise AssetNotReadyError(f"STATE perturbation vocabulary does not exist: {mapping_path}")
+        mapping = torch.load(mapping_path, map_location="cpu", weights_only=False)
+        matches = {str(key) for key in mapping if str(key).strip().upper() == perturbation.strip().upper()}
+        if len(matches) != 1:
+            raise StateInferenceError(
+                "Requested perturbation is missing or ambiguous in the model vocabulary"
+            )
+        return matches.pop()
+
     def build_command(
         self,
         request: StateRunInput,
@@ -45,6 +59,14 @@ class StateCliEngine:
             if self.device == "cuda"
             else [self.executable]
         )
+        if payload.get("embed_key") == "X_state":
+            prefix = [
+                sys.executable,
+                "-m",
+                "backend.app.engines.state_se_runner",
+                "--celllens-device",
+                self.device,
+            ]
         command = [
             *prefix,
             "tx",
@@ -82,8 +104,9 @@ class StateCliEngine:
                 raise AssetNotReadyError(f"STATE input asset does not exist: {path}")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         perturbation_tsv = output_path.with_suffix(".perturbations.tsv")
+        perturbation_label = self.perturbation_label(request.perturbation, model)
         perturbation_tsv.write_text(
-            f"perturbation\tnum_cells\n{request.perturbation}\t{request.n_cells}\n",
+            f"perturbation\tnum_cells\n{perturbation_label}\t{request.n_cells}\n",
             encoding="utf-8",
         )
         command = self.build_command(request, model, output_path, perturbation_tsv)
@@ -103,6 +126,8 @@ class StateCliEngine:
         output_path.with_suffix(".stderr.log").write_text(completed.stderr[-20_000:], encoding="utf-8")
         if completed.returncode != 0:
             raise StateInferenceError(completed.stderr[-4000:] or f"STATE exited with {completed.returncode}")
+        if "using control fallback one-hot" in completed.stdout:
+            raise StateInferenceError("STATE used a control fallback for an unmapped perturbation")
         if not output_path.is_file() or output_path.stat().st_size == 0:
             raise StateInferenceError("STATE finished without a non-empty output H5AD")
         try:
@@ -129,6 +154,14 @@ def validate_state_output(output: Any, request: StateRunInput, model: RegistryEn
     if matrix.shape != (output.n_obs, output.n_vars):
         raise StateInferenceError("STATE output expression dimensions do not match AnnData shape")
 
+    cell_type_column = model.payload.get("cell_type_column")
+    if cell_type_column:
+        if cell_type_column not in output.obs:
+            raise StateInferenceError("STATE output is missing the registered cell background column")
+        backgrounds = {str(value).strip().lower() for value in output.obs[cell_type_column]}
+        if backgrounds != {request.cell_line.lower()}:
+            raise StateInferenceError("STATE output cell background differs from the requested background")
+
     perturbation_column = model.payload.get("perturbation_column")
     if perturbation_column:
         if perturbation_column not in output.obs:
@@ -148,14 +181,14 @@ def validate_state_output(output: Any, request: StateRunInput, model: RegistryEn
             if line.strip()
         ]
         actual = [str(gene).strip().upper() for gene in output.var_names]
-        embed_key = model.payload.get("embed_key")
-        if embed_key:
+        expression_key = model.payload.get("expression_key") or model.payload.get("embed_key")
+        if expression_key and expression_key != "X":
             # The registered gene list describes the *predicted panel*. For embed_key
             # models STATE writes predictions into obsm[embed_key] and leaves the
             # original var_names untouched, so the panel cannot be compared against
             # var_names order. Verify the prediction width and that every panel gene
             # still exists in the output instead.
-            _validate_prediction_panel(output, embed_key, expected, actual)
+            _validate_prediction_panel(output, expression_key, expected, actual)
         elif actual != expected:
             raise StateInferenceError("STATE output gene order does not match the registered model gene list")
 

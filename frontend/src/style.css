@@ -1,25 +1,25 @@
 /* ========== 细胞知镜 · 浅色科研风全局样式 ========== */
 
 :root {
-  --bg: #f5f7fa;
-  --card: #ffffff;
-  --ink: #172033;
-  --muted: #64748b;
-  --faint: #94a3b8;
-  --primary: #2563eb;
-  --primary-strong: #1d4ed8;
-  --primary-weak: #eff4ff;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --bg: #f4f3ef;
+  --card: #fcfcfa;
+  --ink: #253437;
+  --muted: #6b7778;
+  --faint: #9aa5a0;
+  --primary: #247a70;
+  --primary-strong: #175b54;
+  --primary-weak: #e5efea;
+  --border: #ddded7;
+  --border-strong: #bdc9c1;
 
   /* 数据来源固定配色 */
-  --source-control: #94a3b8;
-  --source-predicted: #2563eb;
-  --source-observed: #f59e0b;
+  --source-control: #9aa5b1;
+  --source-predicted: #79b7b2;
+  --source-observed: #c7a45e;
 
   /* 差异图发散色（下降蓝紫 / 上升橙红） */
-  --delta-down: #4f46e5;
-  --delta-up: #ea580c;
+  --delta-down: #6baba5;
+  --delta-up: #c47654;
 
   --ok: #047857;
   --ok-bg: #ecfdf5;
@@ -30,18 +30,30 @@
   --info-bg: #eff6ff;
   --info: #1d4ed8;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --radius: 4px;
+  --radius-sm: 3px;
+  --shadow: none;
   --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.1);
 
   --font:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+    'IBM Plex Sans', 'Source Han Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei',
+    'Segoe UI', sans-serif;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 html,
@@ -432,10 +444,15 @@ table.table {
 
 /* ---------- 主布局 ---------- */
 .page {
-  padding: 20px 24px 110px;
-  max-width: 1680px;
+  padding: 32px 32px 60px;
+  max-width: 1360px;
   margin: 0 auto;
 }
+.eyebrow{font-size:10px;letter-spacing:.14em;color:var(--primary)}
+.page-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:28px}
+.page-heading h1{font-size:29px;font-weight:500;margin-top:10px}
+.page-heading p{font-size:12px;line-height:1.9;color:var(--muted);margin:10px 0 0}
+@media(max-width:760px){.page{padding:24px 16px 40px}.page-heading{align-items:start;gap:18px;flex-wrap:wrap}.page-heading h1{font-size:25px}}
 .layout-3col {
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr) 300px;
@@ -618,6 +635,8 @@ table.table {
 }
 
 /* ---------- 尊重减少动画设置 ---------- */
+
+.micro{font-size:10px;color:var(--muted);letter-spacing:.08em;font-weight:400}
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;

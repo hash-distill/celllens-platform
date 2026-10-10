@@ -1,0 +1,38 @@
+{
+  "run_id": "run_5fff9141331b469d",
+  "checks": [
+    {
+      "check": "real WebGL orbit, zoom, selection, layers, cut and reset",
+      "passed": true
+    },
+    {
+      "check": "export current rendered PNG",
+      "passed": true
+    },
+    {
+      "check": "real run, gene details/search, full CSV, HTML report and comparison",
+      "passed": true
+    },
+    {
+      "check": "four chapters, URL restoration, pause, keyboard, return and honest empty result",
+      "passed": true
+    },
+    {
+      "check": "1440, 1366, 768 and 390 widths without horizontal overflow",
+      "passed": true
+    },
+    {
+      "check": "WebGL unavailable shows interactive honest 2D fallback",
+      "passed": true
+    },
+    {
+      "check": "system reduced motion disables rotation",
+      "passed": true
+    },
+    {
+      "check": "no unhandled browser errors",
+      "passed": true
+    }
+  ],
+  "pageerrors": []
+}
