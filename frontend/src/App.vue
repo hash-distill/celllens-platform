@@ -7,6 +7,7 @@ import { useServiceStore } from './stores/service'
 import { useCatalogStore } from './stores/catalog'
 import { useRunStore } from './stores/run'
 import { useUiStore } from './stores/ui'
+import { useAuthStore } from './stores/auth'
 
 const service = useServiceStore()
 const catalog = useCatalogStore()
@@ -24,6 +25,7 @@ function onVisibilityChange(): void {
 }
 
 onMounted(() => {
+  void useAuthStore().refresh()
   void service.refresh()
   void catalog.load()
   healthTimer = window.setInterval(() => void service.refresh(), 30000)

@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       '/api': {
         target: loadEnv(mode, '.', '').CELLLENS_API_PROXY_TARGET || 'http://127.0.0.1:8000',
-        changeOrigin: true,
+        changeOrigin: false,
       },
     },
   },

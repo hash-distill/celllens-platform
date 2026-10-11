@@ -25,6 +25,23 @@ class Settings(BaseSettings):
     create_database_schema: bool = False
     worker_id: str = "celllens-worker-1"
     job_lease_seconds: int = 7_200
+    data_worker_enabled: bool = False
+    session_ttl_seconds: int = 43_200
+    session_cookie_secure: bool = False
+    max_upload_bytes: int = 256 * 1024 * 1024
+    max_user_storage_bytes: int = 2 * 1024 * 1024 * 1024
+    max_dataset_cells: int = 10_000
+    max_dataset_genes: int = 60_000
+    max_matrix_values: int = 20_000_000
+    max_decoded_bytes: int = 512 * 1024 * 1024
+
+    @property
+    def user_data_root(self) -> Path:
+        return self.project_root / 'data' / 'user_uploads'
+
+    @property
+    def user_analysis_root(self) -> Path:
+        return self.project_root / 'data' / 'derived' / 'user_analyses'
 
     @property
     def registry_root(self) -> Path:

@@ -140,9 +140,9 @@ uv run --no-sync alembic upgrade head
 uv run --no-sync python scripts/check_mysql.py
 ```
 
-检查成功应输出 `MySQL schema and durable run round trip: OK`。脚本检查六张表、命名锁与运行写入/读取，并清理自己创建的临时检查记录。
+检查成功应输出 `MySQL schema and durable run round trip: OK`。脚本检查十张表、命名锁与运行写入/读取，并清理自己创建的临时检查记录。
 
-Windows 一键脚本在迁移前也会运行此检查，因此全新数据库必须先完成上述迁移；脚本不是空数据库的初始化向导。
+Windows 一键脚本先检查连接，再执行迁移和完整结构检查，支持已有版本的表结构升级；数据库与应用账户仍需事先准备。
 
 ## 6. 准备科学资产或真实回放结果
 
@@ -283,7 +283,7 @@ sudo systemctl status celllens
 sudo journalctl -u celllens -n 100 --no-pager
 ```
 
-`127.0.0.1:8000` 仅供本机访问或反向代理使用。内部局域网直连时可以将绑定地址改为 `0.0.0.0`，并使用服务器实际 IP；公网交付还需要实际网关上的认证、TLS 和网络限制，因为应用本身尚无用户认证与权限隔离。反向代理应将网页、`/assets` 和 `/api` 一起转发到同一后端，避免跨域和详情刷新路径失效。
+`127.0.0.1:8000` 仅供本机访问或反向代理使用。内部局域网直连时可以将绑定地址改为 `0.0.0.0`，并使用服务器实际 IP；公网交付还需要实际网关上的认证、TLS 和网络限制，个人数据入口提供账号与归属校验，但预设实验和历史运行仍为共享入口。反向代理应将网页、`/assets` 和 `/api` 一起转发到同一后端，避免跨域和详情刷新路径失效。
 
 ### 发布更新
 
@@ -312,3 +312,7 @@ sudo journalctl -u celllens -n 100 --no-pager
 ## 参考文档
 
 运行方式对应现有源码；工具参数参考 [FastAPI / Uvicorn](https://fastapi.tiangolo.com/deployment/manually/)、[Vite 6](https://v6.vite.dev/guide/)、[uv 同步与额外依赖](https://docs.astral.sh/uv/concepts/projects/sync/)、[Docker Compose 启动](https://docs.docker.com/reference/cli/docker/compose/up/)、[MySQL 容器初始化](https://hub.docker.com/_/mysql) 与 [systemd 服务](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html)。
+
+## 个人数据与 CPU 下游分析
+
+执行 `alembic upgrade head` 添加账号、会话、用户数据集与分析任务表，再运行 `uv run --no-sync python scripts/manage_users.py create admin --role admin` 创建首个管理员。设置 `CELLLENS_DATA_WORKER_ENABLED=true` 并重启服务。HTTPS 部署设置 `CELLLENS_SESSION_COOKIE_SECURE=true`；原始上传目录不得由网关直接公开。完整流程及输入资源限制见[用户数据指南](guide/USER_DATA.md)。

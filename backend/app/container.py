@@ -7,6 +7,9 @@ from backend.app.core.storage import RunStore
 from backend.app.engines.state_engine import StateCliEngine
 from backend.app.services.pipeline import AnalysisPipeline
 from backend.app.services.scientific_analysis import ScientificAnalysisService
+from backend.app.user_data.analysis import UserAnalysisService
+from backend.app.user_data.store import UserDataStore
+from backend.app.user_data.worker import UserAnalysisWorker
 
 
 @dataclass
@@ -16,6 +19,8 @@ class AppContainer:
     store: RunStore
     pipeline: AnalysisPipeline
     queue: SingleGpuJobQueue
+    user_store: UserDataStore
+    data_worker: UserAnalysisWorker
 
 
 def build_container(settings: Settings) -> AppContainer:
@@ -40,4 +45,6 @@ def build_container(settings: Settings) -> AppContainer:
         lease_seconds=settings.job_lease_seconds,
     )
     queue = SingleGpuJobQueue(pipeline.run)
-    return AppContainer(settings, registry, store, pipeline, queue)
+    user_store = UserDataStore(store)
+    data_worker = UserAnalysisWorker(user_store, UserAnalysisService(settings))
+    return AppContainer(settings, registry, store, pipeline, queue, user_store, data_worker)

@@ -11,6 +11,7 @@ pytest-of-*/
 *.log
 *.err
 data/raw/
+data/user_uploads/
 data/derived/*
 !data/derived/.gitkeep
 data/demo/*

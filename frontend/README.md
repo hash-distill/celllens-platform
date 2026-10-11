@@ -30,3 +30,8 @@ npm --prefix frontend run build
 构建命令包含类型检查，产物位于 `frontend/dist/`，由后端提供页面和静态资源。生产构建使用实际 API；可用模式与结果由后端登记资产和运行记录决定。
 
 系统安装与数据库配置见 [项目 README](../README.md) 和 [部署文档](../docs/DEPLOYMENT.md)。页面、状态管理、图表与接口说明见 [前端文档](../docs/FRONTEND.md)。
+
+
+## 个人数据页面
+
+`/login` 登录科研账号，`/datasets` 上传、校验、管理 H5AD 并创建 CPU 任务，`/analyses/:analysisId` 展示表达 PCA、分组比较、scCellFie 完整性和文件下载。个人接口使用同源 HttpOnly Cookie，写操作附带服务端 CSRF 令牌；页面不解析 H5AD 或重算指标。Vite 代理保留原 Host，以支持登录来源校验。启用步骤见[用户数据指南](../docs/guide/USER_DATA.md)。

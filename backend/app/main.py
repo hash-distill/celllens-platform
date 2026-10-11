@@ -8,6 +8,8 @@ from backend.app.api.catalog import router as catalog_router
 from backend.app.api.runs import router as runs_router
 from backend.app.config import Settings, get_settings
 from backend.app.container import build_container
+from backend.app.user_data.api import router as user_data_router
+from backend.app.user_data.middleware import UploadLimitMiddleware
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -16,6 +18,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if resolved.data_worker_enabled:
+            await container.data_worker.start()
         if resolved.worker_enabled:
             await container.queue.start()
             for run_id in container.store.list_recoverable_run_ids():
@@ -24,6 +28,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         if resolved.worker_enabled:
             await container.queue.stop()
+        if resolved.data_worker_enabled:
+            await container.data_worker.stop()
 
     application = FastAPI(
         title="CellLens API",
@@ -32,6 +38,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     application.state.container = container
+    application.add_middleware(UploadLimitMiddleware, settings=resolved)
 
     @application.get(f"{resolved.api_prefix}/health", tags=["system"])
     def health() -> dict[str, str]:
@@ -60,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application.include_router(catalog_router, prefix=resolved.api_prefix)
     application.include_router(runs_router, prefix=resolved.api_prefix)
+    application.include_router(user_data_router, prefix=resolved.api_prefix)
 
     # Register after API routes; only known SPA paths receive the HTML fallback.
     dist = (resolved.project_root / "frontend" / "dist").resolve()
@@ -85,6 +93,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get("/compare", include_in_schema=False)
     @application.get("/demo", include_in_schema=False)
     @application.get("/about", include_in_schema=False)
+    @application.get("/login", include_in_schema=False)
+    @application.get("/datasets", include_in_schema=False)
+    @application.get("/analyses/{analysis_id}", include_in_schema=False)
     @application.get("/runs/{run_id}", include_in_schema=False)
     def frontend_page(run_id: str | None = None) -> FileResponse:
         index = dist / "index.html"

@@ -17,10 +17,12 @@ try {
         if (-not (Get-Command $program -ErrorAction SilentlyContinue)) { throw "$program is required" }
     }
     if ($StartLocalMysql) { & (Join-Path $PSScriptRoot 'start_mysql.ps1') }
-    & uv run --no-sync python scripts/check_mysql.py
+    & uv run --no-sync python scripts/check_mysql.py --connection-only
     if ($LASTEXITCODE -ne 0) { throw 'Database unavailable. Configure .env and start MySQL before launching.' }
     & uv run --no-sync alembic upgrade head
     if ($LASTEXITCODE -ne 0) { throw 'Database migration failed' }
+    & uv run --no-sync python scripts/check_mysql.py
+    if ($LASTEXITCODE -ne 0) { throw 'Database schema verification failed' }
     if (-not (Test-Path -LiteralPath 'frontend/node_modules/.package-lock.json')) {
         & npm.cmd --prefix frontend ci
         if ($LASTEXITCODE -ne 0) { throw 'Frontend dependency installation failed' }

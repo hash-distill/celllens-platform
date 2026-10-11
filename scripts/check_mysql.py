@@ -1,5 +1,6 @@
 """Verify the configured MySQL schema and a complete durable run round trip."""
 
+import argparse
 import uuid
 
 from sqlalchemy import delete, inspect
@@ -17,11 +18,24 @@ EXPECTED_TABLES = {
     "run_events",
     "run_artifacts",
     "run_cache",
+    "users",
+    "user_sessions",
+    "user_datasets",
+    "user_analyses",
 }
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--connection-only", action="store_true", help="Check connection before schema migration"
+    )
+    args = parser.parse_args()
     store = RunStore(get_settings().database_url)
+    if args.connection_only:
+        store.ping()
+        print("MySQL connection: OK")
+        return
     tables = set(inspect(store.engine).get_table_names())
     missing = EXPECTED_TABLES - tables
     if missing:

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '../api/client'
-import { ApiError } from '../api/http'
+import { ApiError, apiFetch } from '../api/http'
 import type { CompletenessResponse } from '../types/completeness'
 import { fmtPercent } from '../utils/format'
 import { usePagedRows } from '../utils/pagination'
 import TablePager from './TablePager.vue'
 
-const props = defineProps<{ runId: string; available?: boolean; selectedTask?: string }>()
+const props = defineProps<{ runId?: string; analysisId?: string; available?: boolean; selectedTask?: string }>()
 const emit = defineEmits<{ loaded: [report: CompletenessResponse | null] }>()
 const data = ref<CompletenessResponse | null>(null)
 const loading = ref(false)
@@ -28,21 +28,27 @@ async function load() {
   if (props.available !== true) return
   loading.value = true
   try {
-    const result = await api.getCompleteness(props.runId, active.signal)
-    if (active.signal.aborted || result.run_id !== props.runId) return
+    const id = props.analysisId || props.runId || ''
+    let result: CompletenessResponse
+    if (props.analysisId) {
+      const native = await apiFetch<Omit<CompletenessResponse, 'run_id' | 'source_gene_sha256'> & {analysis_id: string; source_sha256: string}>(`/analyses/${props.analysisId}/files/official_completeness.json`, {signal: active.signal})
+      if (native.analysis_id !== props.analysisId) return
+      result = {...native, run_id: native.analysis_id, source_gene_sha256: native.source_sha256}
+    } else result = await api.getCompleteness(id, active.signal)
+    if (active.signal.aborted || result.run_id !== id) return
     data.value = result; emit('loaded', result)
     selected.value = props.selectedTask || result.tasks[0]?.id || ''
   } catch (err) {
     if (!active.signal.aborted) error.value = err instanceof ApiError ? err : new ApiError({ kind: 'network', status: null, code: null, message: '官方完整性报告读取失败', endpoint: '/completeness' })
   } finally { if (!active.signal.aborted) loading.value = false }
 }
-watch(() => [props.runId, props.available], load, { immediate: true })
+watch(() => [props.runId, props.analysisId, props.available], load, { immediate: true })
 watch(() => props.selectedTask, id => { if (id && data.value?.tasks.some(row => row.id === id)) selected.value = id })
 onBeforeUnmount(() => controller?.abort())
 function download() {
   if (!data.value) return
   const url = URL.createObjectURL(new Blob([JSON.stringify(data.value, null, 2)], { type: 'application/json' }))
-  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${props.runId}-official-completeness.json`; anchor.click(); URL.revokeObjectURL(url)
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${props.analysisId || props.runId}-official-completeness.json`; anchor.click(); URL.revokeObjectURL(url)
 }
 </script>
 
@@ -53,7 +59,7 @@ function download() {
     <div v-else-if="error" class="notice notice-danger" role="alert">{{ error.message }}<button class="btn btn-sm" @click="load">重试</button></div>
     <p v-else-if="!data" class="muted small" role="status">{{ available === undefined ? '等待任务结果…' : '本次保存结果未提供官方完整性报告。已有项目分档保留为历史信息。' }}</p>
     <template v-else>
-      <p class="small muted">基于本次预测的 {{ data.panel_gene_count }} 个基因和完整冻结数据库计算。完整性衡量数据可用范围，不代表预测准确率或实验验证。</p>
+      <p class="small muted">基于本次{{ analysisId ? '上传数据' : '预测' }}的 {{ data.panel_gene_count }} 个基因和完整冻结数据库计算。完整性衡量数据可用范围，不代表预测准确率或实验验证。</p>
       <div class="official-cards">
         <div><strong>{{ summary?.n_genes_in_db_present_in_adata }} / {{ summary?.n_genes_in_db_total }}</strong><span>代谢库基因覆盖</span><small>{{ fmtPercent(summary?.fraction_db_genes_present, 1) }}</small></div>
         <div><strong>{{ summary?.n_tasks_fully_covered_all }} / {{ summary?.n_tasks_total }}</strong><span>全部关联基因完整覆盖的任务</span><small>官方统计，不使用 80%／60% 分档</small></div>
@@ -70,7 +76,7 @@ function download() {
         <TablePager v-model:page="page" :pages="pages" :total="filtered.length" />
         <div v-if="detail" class="official-missing"><strong>{{ detail.id }}</strong><p>缺失关联基因（{{ detail.n_missing_all }}）：{{ detail.missing_genes_all || '无' }}</p><p>缺失关键基因（{{ detail.n_missing_essential }}）：{{ detail.missing_genes_essential || (detail.n_genes_essential ? '无' : '未识别到单基因必需项') }}</p></div>
       </details>
-      <details class="official-provenance"><summary>方法版本与来源 · 下载官方报告</summary><p>{{ data.method }} · scCellFie {{ data.package_version }} · {{ data.database_version }}</p><p>参数：metric={{ data.parameters.metric }}，threshold={{ data.parameters.threshold }}；数据集级完整性，不以单细胞零表达判断基因缺失。</p><p>预测面板文件 SHA-256：<code>{{ data.source_gene_sha256 }}</code></p><p>冻结数据库清单 SHA-256：<code>{{ data.database_provenance.manifest_sha256 }}</code></p><p class="small muted">影响加权指标基于官方均一参考，单基因影响累加不能证明多个缺失基因的联合效应。</p><button class="btn btn-sm" @click="download">下载完整 JSON（含反应明细）</button></details>
+      <details class="official-provenance"><summary>方法版本与来源 · 下载官方报告</summary><p>{{ data.method }} · scCellFie {{ data.package_version }} · {{ data.database_version }}</p><p>参数：metric={{ data.parameters.metric }}，threshold={{ data.parameters.threshold }}；数据集级完整性，不以单细胞零表达判断基因缺失。</p><p>{{ analysisId ? '上传源文件' : '预测面板文件' }} SHA-256：<code>{{ data.source_gene_sha256 }}</code></p><p>冻结数据库清单 SHA-256：<code>{{ data.database_provenance.manifest_sha256 }}</code></p><p class="small muted">影响加权指标基于官方均一参考，单基因影响累加不能证明多个缺失基因的联合效应。</p><button class="btn btn-sm" @click="download">下载完整 JSON（含反应明细）</button></details>
     </template>
   </section>
 </template>

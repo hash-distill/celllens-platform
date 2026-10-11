@@ -108,6 +108,7 @@ export interface RawResponse {
 export interface RequestOptions {
   method?: 'GET' | 'POST'
   body?: unknown
+  headers?: Record<string, string>
   query?: Record<string, string | number | boolean | undefined>
   signal?: AbortSignal
   timeoutMs?: number
@@ -141,8 +142,12 @@ export async function apiFetchRaw(path: string, opts: RequestOptions = {}): Prom
   try {
     const res = await fetch(apiUrl(path, opts.query), {
       method: opts.method ?? 'GET',
-      headers: opts.body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      headers: {
+        ...(opts.body !== undefined && !(opts.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+        ...opts.headers,
+      },
+      body: opts.body instanceof FormData ? opts.body : opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      credentials: 'same-origin',
       signal: controller.signal,
     })
     const text = await res.text()

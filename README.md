@@ -8,6 +8,8 @@
 
 CellLens 将 STATE 的扰动表达预测与 scCellFie 的代谢任务分析整合为 Web 工作流。用户可以选择细胞背景和扰动基因，提交计算，查看单细胞状态、基因响应与代谢功能变化，追溯结果来源并导出分析报告。
 
+也可以登录科研账号，上传自己的表达 H5AD，完成数据质控、PCA、分组表达比较与 scCellFie 代谢分析，保存和下载个人数据及结果。
+
 ![CellLens 实验工作台](docs/screenshots/response-workbench.png)
 
 ## 功能
@@ -18,6 +20,8 @@ CellLens 将 STATE 的扰动表达预测与 scCellFie 的代谢任务分析整�
 - **代谢功能**：比较任务与反应分数，浏览任务—反应—基因关联、GPR 规则、完整性指标和缺失基因。
 - **实验管理**：查看任务进度，检索服务器实验记录，选择多个已完成实验进行比较，按章节解读结果。
 - **来源与导出**：记录参数、模型与数据版本、文件哈希；导出 CSV、HTML 报告、关联与完整性 JSON，以及 SVG/PDF/PNG 科研图。
+- **用户数据分析**：上传人类 H5AD 的 X 或 layers，声明表达单位和文库范围，查看校验结果、管理数据集并创建 CPU 分析任务；使用完整上传面板分析代谢功能。
+- **科研账号**：管理员创建用户，个人上传数据、分析任务及文件下载检查所属账号，支持退出和会话到期。
 
 ### 运行模式
 
@@ -75,6 +79,8 @@ Compose 的默认连接信息与 `.env.example` 一致。更改账户或密码�
 
 ### 3. 准备科学资产
 
+用户表达探索无需 STATE 权重或登记的对照数据；上传代谢分析需要下述冻结 scCellFie 数据库与科学依赖。只有预设扰动预测工作流需要准备完整模型资产。
+
 按照 [模型与数据说明](docs/MODEL_AND_DATA.md) 获取匹配版本的模型与数据，并放到注册表指定的位置：
 
 | 内容 | 配置或目录 |
@@ -102,7 +108,19 @@ uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 
 打开 [应用首页](http://127.0.0.1:8000/) 或 [API 文档](http://127.0.0.1:8000/docs)。构建后由后端同时提供前端页面与 API。
 
-服务使用单个 Uvicorn 进程，尚未提供用户认证与权限隔离，部署时应使用受控网络。Windows 启动脚本、无 GPU 回放与服务器配置见 [部署文档](docs/DEPLOYMENT.md)。
+服务使用单个 Uvicorn 进程。个人数据入口提供账号与归属校验；原有预设实验和历史运行仍是共享科研入口，部署时应使用受控网络。无 GPU 回放与服务器配置见 [部署文档](docs/DEPLOYMENT.md)。
+
+### 5. 启用个人数据分析
+
+执行迁移后创建首个管理员账号（密码通过终端隐藏输入，至少 12 位）：
+
+```bash
+uv run --no-sync python scripts/manage_users.py create admin --role admin
+```
+
+在 `.env` 设置 `CELLLENS_DATA_WORKER_ENABLED=true`，重启应用，打开“我的数据”。管理员可在页面创建科研用户。CPU 表达与代谢分析不依赖 GPU worker；若只使用用户数据分析，可设置 `CELLLENS_WORKER_ENABLED=false`、`CELLLENS_GPU_AVAILABLE=false`。
+
+数据格式、接口、配额与分组分析说明见[用户数据指南](docs/guide/USER_DATA.md)。首期支持人类 H5AD；自有数据直接驱动 STATE 预测尚未开放，任意细胞背景不能因此视为模型已支持。
 
 ## 使用
 
