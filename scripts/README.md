@@ -6,7 +6,7 @@
 
 | 脚本 | 用途 |
 |---|---|
-| `start_system.ps1` | Windows 启动或复用数据库、构建前端并启动后端 |
+| `start_system.ps1` | Windows 检查端口占用、启动或复用数据库、构建前端并启动后端 |
 | `start_mysql.ps1` | Windows 独立 MySQL 启动 |
 | `check_mysql.py` | 数据库连接与表检查 |
 | `audit_registry.py` | 注册资产、哈希与冻结数据库检查 |

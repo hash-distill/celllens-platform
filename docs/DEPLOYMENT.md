@@ -227,6 +227,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -SkipBuild
 ```
 
+启动前会检查 API 端口，开发模式还会检查 Vite 端口；发现占用时，在数据库操作和构建之前停止，并显示 `[PORT_IN_USE]`、端口与进程 PID。已有 CellLens 服务时可直接打开页面；重启须先停止旧服务（原终端按 Ctrl+C），再执行启动命令。脚本不自动终止占用进程。改用其他端口可指定 `-ApiPort 8001`，开发前端可指定 `-FrontendPort 5174`。构建后启动前会再次检查端口，以识别过程中新增的占用。
+
+
 开发模式：
 
 ```powershell

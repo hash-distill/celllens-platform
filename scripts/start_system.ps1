@@ -8,11 +8,17 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $repositoryPath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+. (Join-Path $PSScriptRoot 'startup_ports.ps1')
 Push-Location -LiteralPath $repositoryPath
 $frontendProcess = $null
 $previousProxyTarget = $env:CELLLENS_API_PROXY_TARGET
 $previousSyntheticSetting = $env:CELLLENS_ALLOW_SYNTHETIC_RESULTS
 try {
+    if ($Mode -eq 'Development' -and $ApiPort -eq $FrontendPort) { throw 'Development ports must be different' }
+    Assert-StartupPortAvailable -Address $HostAddress -Port $ApiPort -Service 'API'
+    if ($Mode -eq 'Development') {
+        Assert-StartupPortAvailable -Address $HostAddress -Port $FrontendPort -Service 'Frontend'
+    }
     foreach ($program in @('uv', 'node', 'npm.cmd')) {
         if (-not (Get-Command $program -ErrorAction SilentlyContinue)) { throw "$program is required" }
     }
@@ -34,16 +40,17 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' }
         }
         if (-not (Test-Path -LiteralPath 'frontend/dist/index.html')) { throw 'Build is missing; remove -SkipBuild' }
-        Write-Host "CellLens: http://127.0.0.1:$ApiPort/workbench"
+        Write-Host "Starting CellLens: http://127.0.0.1:$ApiPort/workbench"
     } else {
-        if ($ApiPort -eq $FrontendPort) { throw 'Development ports must be different' }
         $env:CELLLENS_API_PROXY_TARGET = "http://127.0.0.1:$ApiPort"
         $vitePath = Join-Path $repositoryPath 'frontend/node_modules/vite/bin/vite.js'
         $nodePath = (Get-Command node).Source
         $frontendArguments = @(('"{0}"' -f $vitePath), '--host', $HostAddress, '--port', $FrontendPort, '--strictPort')
+        Assert-StartupPortAvailable -Address $HostAddress -Port $FrontendPort -Service 'Frontend'
         $frontendProcess = Start-Process -FilePath $nodePath -ArgumentList $frontendArguments -WorkingDirectory (Join-Path $repositoryPath 'frontend') -WindowStyle Hidden -PassThru
         Write-Host "CellLens development: http://127.0.0.1:$FrontendPort/workbench"
     }
+    Assert-StartupPortAvailable -Address $HostAddress -Port $ApiPort -Service 'API'
     & uv run --no-sync uvicorn backend.app.main:app --host $HostAddress --port $ApiPort
     if ($LASTEXITCODE -ne 0) { throw 'API stopped with an error' }
 } finally {

@@ -77,8 +77,10 @@ def main() -> None:
         expect(page.get_by_role("heading", name="没有符合条件的实验")).to_be_visible()
         checks.append("combined gene/id search, status/source filters, empty result and reload")
 
-        page.locator("#manual-run-id").fill(run_id)
-        page.get_by_role("button", name="打开", exact=True).click()
+        page.locator("#record-search").fill(run_id)
+        page.get_by_role("button", name="检索", exact=True).click()
+        expect(page.locator(".records-table tbody tr")).to_have_count(1)
+        page.get_by_role("link", name="打开分析", exact=True).click()
         expect(page).to_have_url(base + "/workbench?run=" + run_id)
         expand_projection(page)
         expect(page.locator(".state-overview")).to_contain_text("64 个显示点")

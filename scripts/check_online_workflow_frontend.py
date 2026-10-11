@@ -18,6 +18,17 @@ def check(base: str, executable: str | None = None) -> None:
         page.on(
             "request", lambda request: auth_requests.append(request.url) if "/auth/" in request.url else None
         )
+        page.goto(base + "/records")
+        expect(page.get_by_role("heading", name="实验记录", exact=True)).to_be_visible()
+        expect(page.locator("#manual-run-id")).to_have_count(0)
+        records = page.request.get(base + "/api/v1/runs?limit=1").json()
+        if records["items"]:
+            run_id = records["items"][0]["run_id"]
+            page.locator("#record-search").fill(run_id)
+            page.get_by_role("button", name="检索", exact=True).click()
+            expect(page.locator(".records-table tbody tr")).to_have_count(1)
+            page.get_by_role("link", name="打开分析", exact=True).click()
+            expect(page).to_have_url(base + "/workbench?run=" + run_id)
         page.goto(base + "/workbench")
         expect(page.get_by_role("heading", name="实验工作台", exact=True)).to_be_visible()
         expect(page.locator('input[name="run-mode"]')).to_have_count(0)

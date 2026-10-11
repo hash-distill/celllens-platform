@@ -49,8 +49,10 @@ def main() -> None:
         results.append("empty state has no fabricated results or eagerly loaded 3D canvas")
 
         page.goto(base + "/records", wait_until="networkidle")
-        page.locator("#manual-run-id").fill(run_id)
-        page.get_by_role("button", name="打开", exact=True).click()
+        page.locator("#record-search").fill(run_id)
+        page.get_by_role("button", name="检索", exact=True).click()
+        expect(page.locator(".records-table tbody tr")).to_have_count(1)
+        page.get_by_role("link", name="打开分析", exact=True).click()
         expect(page).to_have_url(base + "/workbench?run=" + run_id)
         expect(page.locator(".gene-row").first).to_contain_text(expected_top_gene["gene"])
         expect(page.locator(".task-row").first).to_be_visible()
