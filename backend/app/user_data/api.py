@@ -1,20 +1,18 @@
-import hmac
 import importlib.util
 import json
 import logging
 import uuid
 from pathlib import Path
-from typing import Annotated, Any, NoReturn
+from typing import Annotated, NoReturn
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response, UploadFile
+from fastapi import APIRouter, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import ValidationError
 
 from backend.app.core.errors import ScientificContractError
 from backend.app.core.run_manifest import file_sha256
-from backend.app.user_data.auth import COOKIE_NAME
 from backend.app.user_data.datasets import inspect_hdf5, read_expression, state_compatibility
-from backend.app.user_data.schemas import AnalysisRequest, LoginRequest, UploadMetadata, UserCreateRequest
+from backend.app.user_data.schemas import AnalysisRequest, UploadMetadata
 
 router = APIRouter(tags=["user data"])
 logger = logging.getLogger(__name__)
@@ -22,68 +20,6 @@ logger = logging.getLogger(__name__)
 
 def fail(status: int, code: str, message: str) -> NoReturn:
     raise HTTPException(status_code=status, detail={"code": code, "message": message})
-
-
-def current_user(request: Request) -> dict[str, Any]:
-    store = request.app.state.container.user_store
-    user = store.authenticate(request.cookies.get(COOKIE_NAME, ""))
-    if user is None:
-        fail(401, "LOGIN_REQUIRED", "请登录后使用个人数据服务")
-    if request.method not in ("GET", "HEAD", "OPTIONS") and not hmac.compare_digest(
-        request.headers.get("X-CSRF-Token", "").encode(), user["csrf_token"].encode()
-    ):
-        fail(403, "CSRF_REQUIRED", "会话校验失败，请刷新页面后重试")
-    return user
-
-
-User = Annotated[dict[str, Any], Depends(current_user)]
-
-
-@router.post("/auth/login")
-def login(body: LoginRequest, request: Request, response: Response) -> dict:
-    # Browsers must not be able to log a victim into an attacker's account.
-    origin = request.headers.get("origin")
-    if origin and origin.rstrip("/") != str(request.base_url).rstrip("/"):
-        fail(403, "ORIGIN_REJECTED", "登录请求来源无效")
-    container = request.app.state.container
-    result = container.user_store.login(body.username, body.password, container.settings.session_ttl_seconds)
-    if result is None:
-        fail(401, "LOGIN_FAILED", "用户名或密码错误，或账号已暂时锁定")
-    token, user = result
-    response.set_cookie(
-        COOKIE_NAME,
-        token,
-        httponly=True,
-        secure=container.settings.session_cookie_secure,
-        samesite="strict",
-        max_age=container.settings.session_ttl_seconds,
-        path="/",
-    )
-    response.headers["Cache-Control"] = "no-store"
-    return user
-
-
-@router.get("/auth/me")
-def me(user: User, response: Response) -> dict:
-    response.headers["Cache-Control"] = "no-store"
-    return user
-
-
-@router.post("/auth/logout")
-def logout(request: Request, response: Response, user: User) -> dict:
-    request.app.state.container.user_store.logout(request.cookies.get(COOKIE_NAME, ""))
-    response.delete_cookie(COOKIE_NAME, path="/")
-    return {"ok": True}
-
-
-@router.post("/auth/users", status_code=201)
-def create_user(body: UserCreateRequest, request: Request, user: User) -> dict:
-    if user["role"] != "admin":
-        fail(403, "ADMIN_REQUIRED", "仅管理员可以创建科研用户")
-    try:
-        return request.app.state.container.user_store.create_user(body.username, body.password, body.role)
-    except ValueError as exc:
-        fail(409, "USERNAME_EXISTS", str(exc))
 
 
 @router.get("/data-capabilities")
@@ -126,23 +62,25 @@ def capabilities(request: Request) -> dict:
         "organisms": ["human"],
         "tasks": ["explore", "metabolism"],
         "max_upload_bytes": settings.max_upload_bytes,
-        "max_user_storage_bytes": settings.max_user_storage_bytes,
+        "max_workspace_storage_bytes": settings.max_workspace_storage_bytes,
         "max_cells": settings.max_dataset_cells,
         "max_genes": settings.max_dataset_genes,
         "max_matrix_values": settings.max_matrix_values,
         "state_user_prediction_enabled": False,
+        "access_mode": "shared_workspace",
+        "max_pending_analyses": 3,
     }
 
 
-def require_dataset(request: Request, user: dict, dataset_id: str) -> dict:
-    dataset = request.app.state.container.user_store.dataset(dataset_id, user["id"])
+def require_dataset(request: Request, dataset_id: str) -> dict:
+    dataset = request.app.state.container.user_store.dataset(dataset_id, None)
     if dataset is None:
         fail(404, "DATASET_NOT_FOUND", "数据集不存在")
     return dataset
 
 
-def require_analysis(request: Request, user: dict, analysis_id: str) -> dict:
-    analysis = request.app.state.container.user_store.analysis(analysis_id, user["id"])
+def require_analysis(request: Request, analysis_id: str) -> dict:
+    analysis = request.app.state.container.user_store.analysis(analysis_id, None)
     if analysis is None:
         fail(404, "ANALYSIS_NOT_FOUND", "分析任务不存在")
     return analysis
@@ -151,16 +89,16 @@ def require_analysis(request: Request, user: dict, analysis_id: str) -> dict:
 @router.get("/datasets")
 def datasets(
     request: Request,
-    user: User,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0, le=1_000_000),
+    q: str = Query("", max_length=128),
 ) -> dict:
-    return request.app.state.container.user_store.datasets(user["id"], limit, offset)
+    return request.app.state.container.user_store.datasets(None, limit, offset, q)
 
 
 @router.post("/datasets", status_code=201)
 def upload_dataset(
-    request: Request, user: User, file: UploadFile, metadata: Annotated[str, Form(max_length=5000)]
+    request: Request, file: UploadFile, metadata: Annotated[str, Form(max_length=5000)]
 ) -> dict:
     container = request.app.state.container
     settings = container.settings
@@ -175,9 +113,9 @@ def upload_dataset(
         filename = (file.filename or "").replace("\\", "/").split("/")[-1][:255]
         if not filename.lower().endswith(".h5ad"):
             fail(422, "INVALID_FORMAT", "仅支持 H5AD 文件")
-        # The owner lock serializes uploads and storage quota checks across processes.
-        with container.store.named_lock(f"celllens:upload:{user['id']}", timeout_seconds=10):
-            used = container.user_store.used_bytes(user["id"])
+        # Serialize shared uploads and storage quota checks across processes.
+        with container.store.named_lock("celllens:upload:shared", timeout_seconds=10):
+            used = container.user_store.used_bytes(None)
             settings.user_data_root.mkdir(parents=True, exist_ok=True)
             dataset_id = "ds_" + uuid.uuid4().hex
             source_path: Path = settings.user_data_root / (dataset_id + ".h5ad")
@@ -188,14 +126,14 @@ def upload_dataset(
                     size += len(chunk)
                     if size > settings.max_upload_bytes:
                         fail(413, "UPLOAD_TOO_LARGE", "文件超过上传大小上限")
-                    if used + size > settings.max_user_storage_bytes:
-                        fail(413, "STORAGE_QUOTA_EXCEEDED", "个人数据存储配额不足，请联系管理员")
+                    if used + size > settings.max_workspace_storage_bytes:
+                        fail(413, "STORAGE_QUOTA_EXCEEDED", "工作区源文件存储配额不足，请联系管理员")
                     target.write(chunk)
             inspect_hdf5(source_path, options, settings)
             data, summary = read_expression(source_path, options)
             summary["state_compatibility"] = state_compatibility(data, options, container.registry)
             result = container.user_store.add_dataset(
-                owner_id=user["id"],
+                owner_id=None,
                 dataset_id=dataset_id,
                 metadata=options.model_dump(),
                 summary=summary,
@@ -217,20 +155,20 @@ def upload_dataset(
 
 
 @router.get("/datasets/{dataset_id}")
-def dataset_detail(dataset_id: str, request: Request, user: User) -> dict:
-    return require_dataset(request, user, dataset_id)
+def dataset_detail(dataset_id: str, request: Request) -> dict:
+    return require_dataset(request, dataset_id)
 
 
 @router.post("/datasets/{dataset_id}/archive")
-def archive_dataset(dataset_id: str, request: Request, user: User) -> dict:
-    require_dataset(request, user, dataset_id)
-    request.app.state.container.user_store.archive(dataset_id, user["id"])
-    return require_dataset(request, user, dataset_id)
+def archive_dataset(dataset_id: str, request: Request) -> dict:
+    require_dataset(request, dataset_id)
+    request.app.state.container.user_store.archive(dataset_id, None)
+    return require_dataset(request, dataset_id)
 
 
 @router.get("/datasets/{dataset_id}/file")
-def download_dataset(dataset_id: str, request: Request, user: User) -> FileResponse:
-    dataset = require_dataset(request, user, dataset_id)
+def download_dataset(dataset_id: str, request: Request) -> FileResponse:
+    dataset = require_dataset(request, dataset_id)
     path = request.app.state.container.settings.user_data_root / (dataset["id"] + ".h5ad")
     if not path.is_file() or file_sha256(path) != dataset["sha256"]:
         fail(409, "SOURCE_UNAVAILABLE", "源数据缺失或 SHA-256 校验失败")
@@ -245,16 +183,17 @@ def download_dataset(dataset_id: str, request: Request, user: User) -> FileRespo
 @router.get("/analyses")
 def analyses(
     request: Request,
-    user: User,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0, le=1_000_000),
+    dataset_id: str | None = Query(None, pattern=r"^ds_[a-f0-9]{32}$"),
+    status: str | None = Query(None, pattern=r"^(queued|running|completed|failed)$"),
 ) -> dict:
-    return request.app.state.container.user_store.analyses(user["id"], limit, offset)
+    return request.app.state.container.user_store.analyses(None, limit, offset, dataset_id, status)
 
 
 @router.post("/analyses", status_code=202)
-def create_analysis(body: AnalysisRequest, request: Request, user: User) -> dict:
-    dataset = require_dataset(request, user, body.dataset_id)
+def create_analysis(body: AnalysisRequest, request: Request) -> dict:
+    dataset = require_dataset(request, body.dataset_id)
     if dataset["archived"]:
         fail(409, "DATASET_ARCHIVED", "数据集已归档；既有结果可以复查，不能再创建新任务")
     choices = dataset["summary"]["group_columns"]
@@ -268,7 +207,11 @@ def create_analysis(body: AnalysisRequest, request: Request, user: User) -> dict
     if not ready["expression_ready"] or (body.kind == "metabolism" and not ready["metabolism_ready"]):
         fail(503, "ANALYSIS_UNAVAILABLE", "分析依赖或冻结 scCellFie 数据库未就绪")
     try:
-        return request.app.state.container.user_store.create_analysis(user["id"], body.model_dump())
+        parameters = body.model_dump()
+        parameters["name"] = (
+            body.name or f"{dataset['name']} · {'代谢分析' if body.kind == 'metabolism' else '表达探索'}"
+        )
+        return request.app.state.container.user_store.create_analysis(None, parameters)
     except ScientificContractError as exc:
         fail(409, "DATASET_UNAVAILABLE", str(exc))
     except ValueError as exc:
@@ -276,8 +219,8 @@ def create_analysis(body: AnalysisRequest, request: Request, user: User) -> dict
 
 
 @router.get("/analyses/{analysis_id}")
-def analysis_detail(analysis_id: str, request: Request, user: User) -> dict:
-    return require_analysis(request, user, analysis_id)
+def analysis_detail(analysis_id: str, request: Request) -> dict:
+    return require_analysis(request, analysis_id)
 
 
 def artifact_path(request: Request, analysis: dict, filename: str) -> Path:
@@ -298,15 +241,15 @@ def artifact_path(request: Request, analysis: dict, filename: str) -> Path:
 
 
 @router.get("/analyses/{analysis_id}/report")
-def analysis_report(analysis_id: str, request: Request, response: Response, user: User) -> dict:
-    analysis = require_analysis(request, user, analysis_id)
+def analysis_report(analysis_id: str, request: Request, response: Response) -> dict:
+    analysis = require_analysis(request, analysis_id)
     response.headers["Cache-Control"] = "no-store"
     return json.loads(artifact_path(request, analysis, "report.json").read_text(encoding="utf-8"))
 
 
 @router.get("/analyses/{analysis_id}/files/{filename}")
-def analysis_file(analysis_id: str, filename: str, request: Request, user: User) -> FileResponse:
-    analysis = require_analysis(request, user, analysis_id)
+def analysis_file(analysis_id: str, filename: str, request: Request) -> FileResponse:
+    analysis = require_analysis(request, analysis_id)
     path = artifact_path(request, analysis, filename)
     return FileResponse(
         path,

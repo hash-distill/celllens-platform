@@ -29,7 +29,7 @@ class SessionModel(Base):
 class DatasetModel(Base):
     __tablename__ = "user_datasets"
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    owner_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -43,7 +43,7 @@ class DatasetModel(Base):
 class UserAnalysisModel(Base):
     __tablename__ = "user_analyses"
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    owner_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     dataset_id: Mapped[str] = mapped_column(ForeignKey("user_datasets.id"), nullable=False, index=True)
     kind: Mapped[str] = mapped_column(String(24), nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False, index=True)

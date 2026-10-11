@@ -27,17 +27,11 @@ def application(tmp_path):
             data_worker_enabled=False,
         )
     )
-    app.state.container.user_store.create_user("alice", "correct-password-123", "admin")
-    app.state.container.user_store.create_user("bob", "correct-password-456", "user")
     return app
 
 
-def login(client, username="alice", password="correct-password-123"):
-    response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
-    assert response.status_code == 200, response.text
-    assert "httponly" in response.headers["set-cookie"].lower()
-    assert "samesite=strict" in response.headers["set-cookie"].lower()
-    return {"X-CSRF-Token": response.json()["csrf_token"]}
+def request_headers(client):
+    return {}
 
 
 def h5ad_bytes(tmp_path, values=None, *, duplicate=False):
@@ -74,21 +68,20 @@ def upload(client, headers, payload, **changes):
     )
 
 
-def test_login_session_csrf_and_logout(application):
+def test_upload_workspace_requires_no_account(application, tmp_path):
     with TestClient(application) as client:
-        assert client.get("/api/v1/datasets").status_code == 401
-        wrong = client.post("/api/v1/auth/login", json={"username": "alice", "password": "wrong"})
-        assert wrong.status_code == 401
-        headers = login(client)
-        assert client.get("/api/v1/auth/me").json()["username"] == "alice"
-        assert client.post("/api/v1/auth/logout").status_code == 403
-        assert client.post("/api/v1/auth/logout", headers=headers).status_code == 200
-        assert client.get("/api/v1/datasets").status_code == 401
+        assert client.get("/api/v1/datasets").status_code == 200
+        assert client.get("/api/v1/analyses").status_code == 200
+        assert upload(client, {}, h5ad_bytes(tmp_path)).status_code == 201
+        assert not client.cookies
+        for endpoint in ["login", "logout", "users"]:
+            assert client.post("/api/v1/auth/" + endpoint, json={}).status_code == 404
+        assert client.get("/api/v1/auth/me").status_code == 404
 
 
-def test_private_data_files_and_analysis_are_owned(application, tmp_path):
+def test_shared_workspace_is_visible_from_another_browser(application, tmp_path):
     with TestClient(application) as alice, TestClient(application) as bob:
-        ah, bh = login(alice), login(bob, "bob", "correct-password-456")
+        ah = {}
         response = upload(alice, ah, h5ad_bytes(tmp_path))
         assert response.status_code == 201, response.text
         dataset = response.json()
@@ -98,9 +91,9 @@ def test_private_data_files_and_analysis_are_owned(application, tmp_path):
         assert len(dataset["sha256"]) == 64
         assert "path" not in dataset
         for suffix in ["", "/file"]:
-            assert bob.get(f"/api/v1/datasets/{dataset_id}{suffix}").status_code == 404
-        assert bob.get("/api/v1/datasets").json()["items"] == []
-        assert bob.post(f"/api/v1/datasets/{dataset_id}/archive", headers=bh).status_code == 404
+            assert bob.get(f"/api/v1/datasets/{dataset_id}{suffix}").status_code == 200
+        assert bob.get("/api/v1/datasets").json()["total"] == 1
+        assert bob.get(f"/api/v1/datasets/{dataset_id}").json()["archived"] is False
         assert alice.get(f"/api/v1/datasets/{dataset_id}/file").content == h5ad_bytes(tmp_path)
         assert (
             alice.post(
@@ -124,7 +117,7 @@ def test_private_data_files_and_analysis_are_owned(application, tmp_path):
 )
 def test_invalid_uploads_are_rejected_without_files(application, tmp_path, changes, values, duplicate):
     with TestClient(application) as client:
-        headers = login(client)
+        headers = request_headers(client)
         response = upload(client, headers, h5ad_bytes(tmp_path, values, duplicate=duplicate), **changes)
         assert response.status_code == 422, response.text
         assert client.get("/api/v1/datasets").json()["items"] == []
@@ -133,7 +126,7 @@ def test_invalid_uploads_are_rejected_without_files(application, tmp_path, chang
 
 def test_upload_resource_limits_and_corruption(application):
     with TestClient(application) as client:
-        headers = login(client)
+        headers = request_headers(client)
         assert upload(client, headers, b"not a HDF5 file").status_code == 422
         application.state.container.settings.max_upload_bytes = 100
         assert upload(client, headers, b"x" * 101).status_code == 413
@@ -141,7 +134,7 @@ def test_upload_resource_limits_and_corruption(application):
 
 def test_archive_keeps_download_and_disallows_new_jobs(application, tmp_path):
     with TestClient(application) as client:
-        headers = login(client)
+        headers = request_headers(client)
         dataset = upload(client, headers, h5ad_bytes(tmp_path)).json()
         dataset_id = dataset["id"]
         assert client.post(f"/api/v1/datasets/{dataset_id}/archive", headers=headers).status_code == 200
@@ -178,21 +171,11 @@ def test_exploration_uses_full_library_and_descriptive_group_difference(tmp_path
     assert report["qc"]["n_cells"] == 4
 
 
-def test_user_account_creation_is_admin_only(application):
-    with TestClient(application) as client:
-        headers = login(client, "bob", "correct-password-456")
-        body = {"username": "carol", "password": "correct-password-789", "role": "user"}
-        assert client.post("/api/v1/auth/users", json=body, headers=headers).status_code == 403
-        headers = login(client)
-        assert client.post("/api/v1/auth/users", json=body, headers=headers).status_code == 201
-        assert client.post("/api/v1/auth/users", json=body, headers=headers).status_code == 409
-
-
-def test_worker_result_download_ownership_hash_and_recovery(application, tmp_path):
+def test_worker_result_download_shared_hash_and_recovery(application, tmp_path):
     from backend.app.user_data.models import UserAnalysisModel
 
     with TestClient(application) as alice, TestClient(application) as bob:
-        ah, _ = login(alice), login(bob, "bob", "correct-password-456")
+        ah = {}
         source = upload(alice, ah, h5ad_bytes(tmp_path)).json()
         container = application.state.container
         container.settings.data_worker_enabled = True
@@ -218,7 +201,7 @@ def test_worker_result_download_ownership_hash_and_recovery(application, tmp_pat
         assert report["provenance"]["source_sha256"] == source["sha256"]
         assert report["provenance"]["analysis_version"] == "user-expression-v1"
         for suffix in ["", "/report", "/files/gene_summary.csv"]:
-            assert bob.get(f"/api/v1/analyses/{job_id}{suffix}").status_code == 404
+            assert bob.get(f"/api/v1/analyses/{job_id}{suffix}").status_code == 200
         downloaded = alice.get(f"/api/v1/analyses/{job_id}/files/gene_summary.csv")
         assert downloaded.status_code == 200
         assert downloaded.headers["cache-control"] == "no-store"
@@ -229,7 +212,7 @@ def test_worker_result_download_ownership_hash_and_recovery(application, tmp_pat
 
 def test_worker_rejects_changed_source_and_invalid_group(application, tmp_path):
     with TestClient(application) as client:
-        headers = login(client)
+        headers = request_headers(client)
         source = upload(client, headers, h5ad_bytes(tmp_path)).json()
         container = application.state.container
         container.settings.data_worker_enabled = True
@@ -257,36 +240,9 @@ def test_hdf5_external_links_rejected(application, tmp_path):
     with h5py.File(path, "a") as handle:
         handle["external"] = h5py.ExternalLink("other.h5ad", "X")
     with TestClient(application) as client:
-        response = upload(client, login(client), path.read_bytes())
+        response = upload(client, request_headers(client), path.read_bytes())
         assert response.status_code == 422
         assert "链接" in response.json()["detail"]["message"]
-
-
-def test_expired_session_and_login_lockout(application):
-    from datetime import timedelta
-
-    from sqlalchemy import select
-
-    from backend.app.user_data.models import SessionModel
-    from backend.app.user_data.store import now
-
-    with TestClient(application) as client:
-        login(client)
-        with application.state.container.user_store.sessions.begin() as session:
-            ticket = session.scalar(select(SessionModel))
-            ticket.expires_at = now() - timedelta(seconds=1)
-        assert client.get("/api/v1/auth/me").status_code == 401
-        for _ in range(5):
-            assert (
-                client.post("/api/v1/auth/login", json={"username": "alice", "password": "bad"}).status_code
-                == 401
-            )
-        assert (
-            client.post(
-                "/api/v1/auth/login", json={"username": "alice", "password": "correct-password-123"}
-            ).status_code
-            == 401
-        )
 
 
 def test_declared_layer_and_subset_library_denominator(tmp_path):
@@ -349,7 +305,7 @@ def test_metabolism_uses_complete_uploaded_panel_and_frozen_database(application
     settings = application.state.container.settings
     shutil.copytree(frozen, settings.sccellfie_database_root)
     with TestClient(application) as client:
-        headers = login(client)
+        headers = request_headers(client)
         dataset = upload(client, headers, path.read_bytes()).json()
         settings.data_worker_enabled = True
         response = client.post(
@@ -377,12 +333,15 @@ def test_metabolism_uses_complete_uploaded_panel_and_frozen_database(application
         assert report["metabolism"]["unscored_tasks"] == []
 
 
-def test_upload_requires_csrf_and_rejects_oversize_request_before_spooling(application):
+def test_cross_origin_mutation_and_oversize_body_are_rejected(application):
     with TestClient(application) as client:
-        login(client)
-        assert upload(client, {}, b"file").status_code == 403
+        assert upload(client, {"Origin": "https://elsewhere.example"}, b"file").status_code == 403
+        assert (
+            client.post("/api/v1/analyses", headers={"Sec-Fetch-Site": "cross-site"}, json={}).status_code
+            == 403
+        )
         application.state.container.settings.max_upload_bytes = 100
-        assert upload(client, {"X-CSRF-Token": "invalid"}, b"x" * 70000).status_code == 413
+        assert upload(client, {}, b"x" * 70000).status_code == 413
 
 
 def test_sparse_and_dense_expression_statistics_agree(tmp_path):
@@ -414,7 +373,7 @@ def test_upload_rejects_malformed_sparse_indices(application, tmp_path):
     with h5py.File(path, "a") as handle:
         handle["X/indices"][0] = -1
     with TestClient(application) as client:
-        assert upload(client, login(client), path.read_bytes()).status_code == 422
+        assert upload(client, request_headers(client), path.read_bytes()).status_code == 422
 
 
 def test_upload_rejects_complex_expression(application, tmp_path):
@@ -426,7 +385,7 @@ def test_upload_rejects_complex_expression(application, tmp_path):
     path = tmp_path / "complex.h5ad"
     data.write_h5ad(path)
     with TestClient(application) as client:
-        response = upload(client, login(client), path.read_bytes(), expression_scale="cp10k")
+        response = upload(client, request_headers(client), path.read_bytes(), expression_scale="cp10k")
         assert response.status_code == 422
 
 
@@ -438,3 +397,59 @@ def test_capabilities_require_complete_pinned_metabolic_database(application):
         capabilities = client.get("/api/v1/data-capabilities").json()
         assert not capabilities["metabolism_ready"]
         assert capabilities["state_user_prediction_enabled"] is False
+
+
+def test_workspace_search_filters_named_jobs_and_global_queue_limit(application, tmp_path):
+    with TestClient(application) as client:
+        dataset = upload(client, {}, h5ad_bytes(tmp_path), name="PBMC experiment").json()
+        assert client.get("/api/v1/datasets", params={"q": "PBMC"}).json()["total"] == 1
+        assert client.get("/api/v1/datasets", params={"q": "unknown"}).json()["total"] == 0
+        application.state.container.settings.data_worker_enabled = True
+        body = {"dataset_id": dataset["id"], "kind": "explore", "name": "First analysis"}
+        for _ in range(3):
+            response = client.post("/api/v1/analyses", json=body)
+            assert response.status_code == 202
+            assert response.json()["name"] == "First analysis"
+        assert client.post("/api/v1/analyses", json=body).status_code == 429
+        assert (
+            client.get("/api/v1/analyses", params={"dataset_id": dataset["id"], "status": "queued"}).json()[
+                "total"
+            ]
+            == 3
+        )
+        assert client.get("/api/v1/analyses", params={"status": "completed"}).json()["total"] == 0
+
+
+def test_legacy_owned_records_are_preserved_but_not_published(application, tmp_path):
+    from backend.app.user_data.models import DatasetModel, UserAnalysisModel, UserModel
+    from backend.app.user_data.store import now
+
+    store = application.state.container.user_store
+    with TestClient(application) as client:
+        dataset = upload(client, {}, h5ad_bytes(tmp_path)).json()
+        application.state.container.settings.data_worker_enabled = True
+        job = client.post("/api/v1/analyses", json={"dataset_id": dataset["id"]}).json()
+        with store.sessions.begin() as session:
+            session.add(
+                UserModel(
+                    id="legacy",
+                    username="legacy",
+                    password_hash="disabled",
+                    role="user",
+                    active=False,
+                    failed_logins=0,
+                    created_at=now(),
+                )
+            )
+            session.flush()
+            session.get(DatasetModel, dataset["id"]).owner_id = "legacy"
+            session.get(UserAnalysisModel, job["id"]).owner_id = "legacy"
+        assert client.get("/api/v1/datasets").json()["total"] == 0
+        assert client.get("/api/v1/analyses").json()["total"] == 0
+        for suffix in ["", "/file"]:
+            assert client.get("/api/v1/datasets/" + dataset["id"] + suffix).status_code == 404
+        for suffix in ["", "/report", "/files/report.json"]:
+            assert client.get("/api/v1/analyses/" + job["id"] + suffix).status_code == 404
+        with store.sessions() as session:
+            assert session.get(DatasetModel, dataset["id"]) is not None
+            assert session.get(UserAnalysisModel, job["id"]) is not None

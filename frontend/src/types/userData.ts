@@ -1,7 +1,6 @@
-export interface ResearchUser { id: string; username: string; role: 'admin' | 'user'; csrf_token: string }
 export interface DataCapabilities {
-  worker_enabled: boolean; expression_ready: boolean; metabolism_ready: boolean
-  max_upload_bytes: number; max_user_storage_bytes: number; max_cells: number; max_genes: number
+  access_mode: 'shared_workspace'; max_pending_analyses: number; worker_enabled: boolean; expression_ready: boolean; metabolism_ready: boolean
+  max_upload_bytes: number; max_workspace_storage_bytes: number; max_cells: number; max_genes: number
   max_matrix_values: number; state_user_prediction_enabled: boolean
 }
 export interface DatasetMetadata {
@@ -17,10 +16,12 @@ export interface UserDataset {
       matched_genes?: number; missing_genes: string[]; missing_columns: string[]} }
 }
 export interface UserAnalysisRequest {
+  name?: string;
   dataset_id: string; kind: 'explore' | 'metabolism'; group_key: string | null
   reference_group: string | null; seed: number
 }
 export interface UserAnalysis {
+  name: string;
   id: string; dataset_id: string; kind: 'explore' | 'metabolism'
   status: 'queued' | 'running' | 'completed' | 'failed'; request: UserAnalysisRequest
   error_message: string | null; artifacts: Record<string, {sha256: string; size_bytes: number}>

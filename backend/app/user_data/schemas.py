@@ -7,16 +7,6 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class LoginRequest(StrictModel):
-    username: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_.-]+$")
-    password: str = Field(min_length=1, max_length=256)
-
-
-class UserCreateRequest(LoginRequest):
-    password: str = Field(min_length=12, max_length=256)
-    role: Literal["admin", "user"] = "user"
-
-
 class UploadMetadata(StrictModel):
     name: str = Field(min_length=1, max_length=128)
     expression_scale: Literal["raw_counts", "cp10k", "log1p_cp10k"]
@@ -36,6 +26,7 @@ class UploadMetadata(StrictModel):
 
 
 class AnalysisRequest(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
     dataset_id: str = Field(pattern=r"^ds_[a-f0-9]{32}$")
     kind: Literal["explore", "metabolism"] = "explore"
     group_key: str | None = Field(default=None, max_length=128)
