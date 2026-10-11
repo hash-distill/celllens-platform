@@ -7,6 +7,7 @@
 | 文档 | 内容 |
 |---|---|
 | [上传数据与分析](guide/USER_DATA.md) | H5AD 格式、免登录共享管理、CPU 下游分析 |
+| [设置与辅助解读](guide/ASSISTANT_SETTINGS.md) | 外观、页面快捷工具、OpenAI 兼容连接与结果摘要解读 |
 | [使用指南](guide/USER_GUIDE.md) | 面向非生物专业用户：参数、运行流程、结果阅读 |
 | [功能前后对比](guide/FUNCTION_WORKSPACE.md) | 任务筛选、同布局网络、实测比较、节点证据和导出 |
 | [单细胞科研图](guide/SCIENTIFIC_CELL_STATE.md) | 共同 PCA、逐细胞着色、累积分布和 SVG/PDF/PNG 导出 |
@@ -30,6 +31,8 @@
 | [脚本索引](../scripts/README.md) | 启动、检查与资产处理脚本的用途 |
 
 ## 截图与检查记录
+
+- [2026-10-11 设置与辅助解读验收](verification/2026-10-11-assistant-settings.md)：主题、密钥范围、真实摘要与受控协议响应；未使用真实 API Key。
 
 - [2026-10-11 在线入口与上传验收](verification/2026-10-11-online-workflow.md)：移除回放与实测对照的新建入口，现有 8000 服务免登录上传、CPU 分析及下载。
 

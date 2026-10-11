@@ -1524,6 +1524,173 @@
           }
         }
       }
+    },
+    "/api/v1/assistant/capabilities": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Capabilities",
+        "operationId": "capabilities_api_v1_assistant_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Capabilities Api V1 Assistant Capabilities Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/context": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Context",
+        "operationId": "context_api_v1_assistant_context_get",
+        "parameters": [
+          {
+            "name": "source_kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "run",
+                "analysis"
+              ],
+              "type": "string",
+              "title": "Source Kind"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(run_[a-zA-Z0-9_-]{1,56}|ana_[a-f0-9]{32})$",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Context Api V1 Assistant Context Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/test": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Test Connection",
+        "operationId": "test_connection_api_v1_assistant_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Connection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Test Connection Api V1 Assistant Test Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/interpret": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Interpret",
+        "operationId": "interpret_api_v1_assistant_interpret_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterpretationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Interpret Api V1 Assistant Interpret Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1827,6 +1994,53 @@
           "missing_genes_essential"
         ],
         "title": "CompletenessRow"
+      },
+      "Connection": {
+        "properties": {
+          "base_url": {
+            "type": "string",
+            "maxLength": 512,
+            "title": "Base Url"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "api_key": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "format": "password",
+            "title": "Api Key",
+            "writeOnly": true
+          },
+          "max_tokens": {
+            "type": "integer",
+            "maximum": 8192.0,
+            "minimum": 256.0,
+            "title": "Max Tokens",
+            "default": 2048
+          },
+          "token_parameter": {
+            "type": "string",
+            "enum": [
+              "max_completion_tokens",
+              "max_tokens"
+            ],
+            "title": "Token Parameter",
+            "default": "max_completion_tokens"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_url",
+          "model",
+          "api_key"
+        ],
+        "title": "Connection"
       },
       "ContextItem": {
         "properties": {
@@ -2171,6 +2385,84 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InterpretationRequest": {
+        "properties": {
+          "base_url": {
+            "type": "string",
+            "maxLength": 512,
+            "title": "Base Url"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "api_key": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "format": "password",
+            "title": "Api Key",
+            "writeOnly": true
+          },
+          "max_tokens": {
+            "type": "integer",
+            "maximum": 8192.0,
+            "minimum": 256.0,
+            "title": "Max Tokens",
+            "default": 2048
+          },
+          "token_parameter": {
+            "type": "string",
+            "enum": [
+              "max_completion_tokens",
+              "max_tokens"
+            ],
+            "title": "Token Parameter",
+            "default": "max_completion_tokens"
+          },
+          "source_kind": {
+            "type": "string",
+            "enum": [
+              "run",
+              "analysis"
+            ],
+            "title": "Source Kind"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^(run_[a-zA-Z0-9_-]{1,56}|ana_[a-f0-9]{32})$",
+            "title": "Source Id"
+          },
+          "context_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Context Sha256"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "interpret",
+              "coverage",
+              "next_steps"
+            ],
+            "title": "Purpose",
+            "default": "interpret"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_url",
+          "model",
+          "api_key",
+          "source_kind",
+          "source_id",
+          "context_sha256"
+        ],
+        "title": "InterpretationRequest"
       },
       "RunListResponse": {
         "properties": {

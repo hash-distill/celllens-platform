@@ -1,6 +1,25 @@
 # 接口说明
 
-默认 API 前缀 `/api/v1`。模型定义在 `backend/app/schemas.py`，路由位于 `backend/app/api/` 与 `main.py`。完整结构见 [openapi.json](openapi.json)；服务的 `/openapi.json` 是实时契约。
+默认 API 前缀 `/api/v1`。运行模型定义在 `backend/app/schemas.py`，上传分析接口位于 `backend/app/user_data/`，辅助解读接口位于 `backend/app/assistant.py`。完整结构见 [openapi.json](openapi.json)；服务的 `/openapi.json` 是实时契约。
+
+## 大模型辅助解读
+
+所有辅助解读响应标记 `Cache-Control: no-store`；POST 拒绝跨站浏览器请求并限制请求体为 64 KiB。无需账户，密钥由调用者随请求提供，不保存到数据库。
+
+| 接口 | 行为 |
+|---|---|
+| `GET /assistant/capabilities` | 返回协议、允许的服务 origin、超时与只读标记 |
+| `GET /assistant/context?source_kind=run&source_id=run_...` | 根据已保存结果构建摘要；`source_kind` 也支持 `analysis`、对应 `ana_...` |
+| `POST /assistant/test` | 使用指定模型发送简短连接检查，可能消耗额度 |
+| `POST /assistant/interpret` | 校验预览摘要的哈希后调用模型；不更改科学结果 |
+
+连接请求字段：`base_url`（最多 512 字符）、`model`（1–128）、`api_key`（1–4096）、`max_tokens`（256–8192，默认 2048）、`token_parameter`（`max_completion_tokens` 默认，或 `max_tokens`）。额外字段拒绝，校验错误统一脱敏。
+
+解读请求增加 `source_kind`（run / analysis）、`source_id`、`context_sha256`（来自预览的 SHA-256）和 `purpose`（interpret / coverage / next_steps，默认 interpret）。客户端不能提交自定义科学上下文、文件路径或模型工具指令。
+
+响应包含 `text`、调用的 `model` / `base_url`、`finish_reason`、`generated_at`、服务返回的 token `usage`；解读另带来源、任务和摘要哈希。`length` 表示可能截断。未完成或改变的产物返回 409；缺失记录返回 404；不允许的地址返回 422；并发繁忙返回 429；上游错误返回 502；超时返回 504。不会自动重试。
+
+详情见 [设置与辅助解读](guide/ASSISTANT_SETTINGS.md)。
 
 ## 创建与查询运行
 

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -32,14 +33,16 @@ class Settings(BaseSettings):
     max_dataset_genes: int = 60_000
     max_matrix_values: int = 20_000_000
     max_decoded_bytes: int = 512 * 1024 * 1024
+    assistant_extra_origins: str = ""
+    assistant_timeout_seconds: int = Field(default=90, ge=5, le=90)
 
     @property
     def user_data_root(self) -> Path:
-        return self.project_root / 'data' / 'user_uploads'
+        return self.project_root / "data" / "user_uploads"
 
     @property
     def user_analysis_root(self) -> Path:
-        return self.project_root / 'data' / 'derived' / 'user_analyses'
+        return self.project_root / "data" / "derived" / "user_analyses"
 
     @property
     def registry_root(self) -> Path:

@@ -13,6 +13,7 @@ export const router = createRouter({
     { path: '/about', name: 'about', component: () => import('../views/AboutView.vue') },
     { path: '/login', redirect: '/datasets' },
     { path: '/datasets', name: 'datasets', component: () => import('../views/DatasetsView.vue') },
+    { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue') },
     { path: '/analyses/:analysisId', name: 'user-analysis', component: () => import('../views/UserAnalysisView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

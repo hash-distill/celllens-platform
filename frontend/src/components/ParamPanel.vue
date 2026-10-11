@@ -466,7 +466,7 @@ async function copySubmitDiagnostics(): Promise<void> {
   right: 0;
   max-height: 240px;
   overflow-y: auto;
-  background: #fff;
+  background:var(--card);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-lg);

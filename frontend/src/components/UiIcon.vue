@@ -18,6 +18,12 @@ const paths: Record<string, string> = {
   compare: 'M4 4h6v16H4V4Zm10 0h6v16h-6V4Z',
   search: 'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 6 6',
   check: 'm5 12 4 4 10-11',
+  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2',
+  moon: 'M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z',
+  settings: 'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1 1-3Zm3 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+  top: 'M5 4h14M12 20V8m-5 5 5-5 5 5',
+  bottom: 'M5 20h14M12 4v12m-5-5 5 5 5-5',
+  sparkle: 'm12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z',
 }
 </script>
 <template><svg :width="size" :height="size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="paths[name] ?? paths.cube" /></svg></template>

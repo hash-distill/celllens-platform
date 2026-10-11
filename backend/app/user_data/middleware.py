@@ -15,7 +15,7 @@ class UploadLimitMiddleware:
         data_request = scope["type"] == "http" and any(
             scope["path"] == self.settings.api_prefix + path
             or scope["path"].startswith(self.settings.api_prefix + path + "/")
-            for path in ("/datasets", "/analyses")
+            for path in ("/datasets", "/analyses", "/assistant")
         )
         bounded_receive = receive
         if data_request and scope["method"] not in ("GET", "HEAD", "OPTIONS"):
@@ -34,14 +34,22 @@ class UploadLimitMiddleware:
         if (
             data_request
             and scope["method"] == "POST"
-            and scope["path"] == self.settings.api_prefix + "/datasets"
+            and (
+                scope["path"] == self.settings.api_prefix + "/datasets"
+                or scope["path"].startswith(self.settings.api_prefix + "/assistant/")
+            )
         ):
+            limit = (
+                self.settings.max_upload_bytes + 65_536
+                if scope["path"] == self.settings.api_prefix + "/datasets"
+                else 65_536
+            )
             headers = dict(scope["headers"])
             try:
                 length = int(headers.get(b"content-length", b"-1"))
             except ValueError:
                 length = -1
-            status = 411 if length < 0 else 413 if length > self.settings.max_upload_bytes + 65_536 else 0
+            status = 411 if length < 0 else 413 if length > limit else 0
             if status:
                 message = "上传必须声明 Content-Length" if status == 411 else "上传请求超过大小上限"
                 await JSONResponse(
@@ -56,7 +64,7 @@ class UploadLimitMiddleware:
                 nonlocal received
                 message = await receive()
                 received += len(message.get("body", b""))
-                if received > self.settings.max_upload_bytes + 65_536:
+                if received > limit:
                     raise HTTPException(
                         status_code=413, detail={"code": "UPLOAD_LIMIT", "message": "上传请求超过大小上限"}
                     )

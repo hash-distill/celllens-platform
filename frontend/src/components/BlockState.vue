@@ -103,7 +103,7 @@ const rows = computed(() => Array.from({ length: props.skeletonRows }, (_, i) =>
   padding: 22px 18px;
   text-align: center;
   color: var(--muted);
-  background: #fbfcfe;
+  background:var(--surface-soft);
 }
 .state-title {
   margin: 0 0 4px;

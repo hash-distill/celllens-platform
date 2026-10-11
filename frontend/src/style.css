@@ -1,6 +1,8 @@
 /* ========== 细胞知镜 · 浅色科研风全局样式 ========== */
 
 :root {
+  color-scheme: light;
+  --surface-soft: #edf1ec;
   --bg: #f4f3ef;
   --card: #fcfcfa;
   --ink: #253437;
@@ -40,6 +42,33 @@
     'Segoe UI', sans-serif;
 }
 
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #142024;
+  --card: #1d2b30;
+  --surface-soft: #243439;
+  --ink: #e0e9e6;
+  --muted: #a8bab6;
+  --faint: #8b9d99;
+  --primary: #8acfc2;
+  --primary-strong: #b0e6da;
+  --primary-weak: #28423f;
+  --border: #39494b;
+  --border-strong: #536967;
+  --ok: #86d6b4;
+  --ok-bg: #203e34;
+  --warn: #e8c181;
+  --warn-bg: #453b29;
+  --danger: #f1a198;
+  --danger-bg: #482f30;
+  --info: #a4c7ee;
+  --info-bg: #293d52;
+  --delta-up: #e09d75;
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, .25);
+}
+
+:focus-visible {outline: 2px solid var(--primary);outline-offset: 3px}
+
 * {
   box-sizing: border-box;
 }
@@ -74,6 +103,10 @@ body {
 #app {
   min-height: 100vh;
 }
+
+@media(min-width:761px){body{padding-right:64px}}
+@media(max-width:760px){#app{padding-bottom:72px}}
+:root[data-theme='dark'] .btn-primary{background:#347f73;color:#fff}
 
 a {
   color: var(--primary);
@@ -135,7 +168,7 @@ code,
     border-color 0.15s ease;
 }
 .btn:hover:not(:disabled) {
-  background: #f8fafc;
+  background: var(--surface-soft);
   border-color: var(--faint);
 }
 .btn:disabled {
@@ -198,13 +231,13 @@ a:focus-visible,
   font-size: 14px;
   font-family: var(--font);
   color: var(--ink);
-  background: #fff;
+  background: var(--card);
 }
 .input::placeholder {
   color: var(--faint);
 }
 .input:disabled {
-  background: #f1f5f9;
+  background: var(--surface-soft);
   color: var(--muted);
 }
 .field-hint {
@@ -232,7 +265,7 @@ a:focus-visible,
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   cursor: pointer;
-  background: #fff;
+  background: var(--card);
 }
 .choice:hover {
   border-color: var(--faint);
@@ -243,7 +276,7 @@ a:focus-visible,
 }
 .choice.disabled {
   cursor: not-allowed;
-  background: #f8fafc;
+  background: var(--surface-soft);
   color: var(--muted);
 }
 .choice input {
@@ -286,7 +319,7 @@ a:focus-visible,
   color: var(--danger);
 }
 .pill-neutral {
-  background: #f1f5f9;
+  background: var(--surface-soft);
   color: var(--muted);
 }
 .pill-synthetic {
@@ -302,7 +335,7 @@ a:focus-visible,
   color: var(--warn);
 }
 .pill-ev-insufficient {
-  background: #f1f5f9;
+  background: var(--surface-soft);
   color: var(--muted);
 }
 
@@ -357,7 +390,7 @@ table.table {
   white-space: nowrap;
 }
 .table th {
-  background: #f8fafc;
+  background: var(--surface-soft);
   color: var(--muted);
   font-weight: 600;
   user-select: none;
@@ -369,7 +402,7 @@ table.table {
   color: var(--ink);
 }
 .table tbody tr:hover {
-  background: #f8fafc;
+  background: var(--surface-soft);
 }
 .table tbody tr.row-selected {
   background: var(--primary-weak);
@@ -575,7 +608,7 @@ table.table {
   padding: 10px 14px;
   font-size: 13px;
   box-shadow: var(--shadow-lg);
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--border);
   display: flex;
   gap: 10px;
@@ -602,7 +635,7 @@ table.table {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-  background: #fbfcfe;
+  background: var(--surface-soft);
 }
 .coverage-card .coverage-value {
   font-size: 20px;

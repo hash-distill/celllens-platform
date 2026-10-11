@@ -18,6 +18,7 @@
 
 | 脚本 | 环境 | 产物 |
 |---|---|---|
+| `check_assistant_frontend.py --base-url http://127.0.0.1:8000` | 亮暗/系统外观、快捷栏、设置、真实结果摘要、纯文本解读和下载；外部模型响应被拦截，不调用真实服务 | `reports/assistant-ui-2026-10-11/` |
 | `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用、免登录共享上传、CPU 开关和手机布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
 | `check_formal_frontend.py --url http://127.0.0.1:8001` | 2026-10-10 历史验收：旧回放/实测入口、科研图与布局；当前入口使用 check_online_workflow_frontend.py | `reports/formal-system-2026-10-10/browser/` |
 | `check_function_frontend.py` | 生产服务、真实保存结果、Playwright | `reports/function-visualization-2026-10-09/browser/` |

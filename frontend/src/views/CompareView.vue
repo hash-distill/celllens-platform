@@ -322,7 +322,7 @@ function sourceLabel(runId: string): string {
   margin: 0 0 6px;
 }
 .compare-table th[scope='row'] {
-  background: #f1f3ed;
+  background:var(--surface-soft);
   color: var(--muted);
   font-weight: 600;
   max-width: 260px;

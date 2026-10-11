@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ParamPanel from '../components/ParamPanel.vue'
 import StageProgress from '../components/StageProgress.vue'
 import EvidenceSidebar from '../components/EvidenceSidebar.vue'
+import AssistantPanel from '../components/AssistantPanel.vue'
 import ResponseWorkspace from '../components/response/ResponseWorkspace.vue'
 import MetabolismWorkspace from '../components/function/MetabolismWorkspace.vue'
 import CellStateTab from '../components/tabs/CellStateTab.vue'
@@ -53,6 +54,7 @@ async function resubmit() { if(!record.value || resubmitting.value)return;resubm
         <StageProgress v-if="record.status!=='completed'" :record="record" :poll-issue="entry?.pollIssue" />
         <div v-if="record.status==='failed'" class="card"><h2>本次分析失败</h2><p>{{ record.error_message || '请检查运行来源与错误记录。' }}</p><button class="btn btn-primary" :disabled="resubmitting" @click="resubmit">{{ resubmitting?'提交中…':'以相同参数重新运行' }}</button></div>
         <template v-if="record.status==='completed'"><div class="tabs result-tabs" role="tablist" aria-label="分析结果"><button v-for="tab in tabs" :key="tab.key" class="tab" :class="{active:activeTab===tab.key}" role="tab" :aria-selected="activeTab===tab.key" @click="selectTab(tab.key)">{{ tab.label }}</button></div><ResponseWorkspace v-if="activeTab==='response'" :key="runId" :run-id="runId" /><MetabolismWorkspace v-else-if="activeTab==='metabolism'" :key="runId" :run-id="runId" /><div v-else class="card analysis-panel"><CellStateTab v-if="activeTab==='cell'" :key="runId" :run-id="runId" /><GenesTab v-else-if="activeTab==='genes'" :run-id="runId" /><ValidationTab v-else :run-id="runId" /></div></template>
+        <AssistantPanel v-if="record.status === 'completed'" :key="runId" source-kind="run" :source-id="runId" />
         <details v-if="entry" class="run-evidence"><summary>运行来源、数据覆盖与解释边界</summary><EvidenceSidebar :entry="entry" /></details>
       </template>
     </section>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
 import AppHeader from './components/AppHeader.vue'
+import UtilityRail from './components/UtilityRail.vue'
 import ConnectionBanner from './components/ConnectionBanner.vue'
 import { isMockEnabled } from './api/mockFlag'
 import { useServiceStore } from './stores/service'
@@ -45,6 +46,7 @@ onBeforeUnmount(() => {
   <main>
     <RouterView />
   </main>
+  <UtilityRail />
 
   <!-- 轻量提示 -->
   <div class="toast-stack" aria-live="polite">

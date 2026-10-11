@@ -1,11 +1,15 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 
 from backend.app.api.catalog import router as catalog_router
 from backend.app.api.runs import router as runs_router
+from backend.app.assistant import AssistantService
+from backend.app.assistant import router as assistant_router
 from backend.app.config import Settings, get_settings
 from backend.app.container import build_container
 from backend.app.user_data.api import router as user_data_router
@@ -38,7 +42,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     application.state.container = container
+    application.state.assistant = AssistantService(resolved)
     application.add_middleware(UploadLimitMiddleware, settings=resolved)
+
+    @application.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError):
+        if request.url.path.startswith(resolved.api_prefix + "/assistant/"):
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "detail": {
+                        "code": "INVALID_ASSISTANT_REQUEST",
+                        "message": "请检查模型地址、模型名称、API Key 和摘要参数",
+                    }
+                },
+                headers={"Cache-Control": "no-store"},
+            )
+        return await request_validation_exception_handler(request, exc)
 
     @application.get(f"{resolved.api_prefix}/health", tags=["system"])
     def health() -> dict[str, str]:
@@ -68,6 +88,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(catalog_router, prefix=resolved.api_prefix)
     application.include_router(runs_router, prefix=resolved.api_prefix)
     application.include_router(user_data_router, prefix=resolved.api_prefix)
+    application.include_router(assistant_router, prefix=resolved.api_prefix)
 
     # Register after API routes; only known SPA paths receive the HTML fallback.
     dist = (resolved.project_root / "frontend" / "dist").resolve()
@@ -95,6 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get("/about", include_in_schema=False)
     @application.get("/login", include_in_schema=False)
     @application.get("/datasets", include_in_schema=False)
+    @application.get("/settings", include_in_schema=False)
     @application.get("/analyses/{analysis_id}", include_in_schema=False)
     @application.get("/runs/{run_id}", include_in_schema=False)
     def frontend_page(run_id: str | None = None) -> FileResponse:
