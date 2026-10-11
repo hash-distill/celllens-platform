@@ -4,7 +4,7 @@
 
 ## 创建与查询运行
 
-先查 catalog 获取模式就绪状态与支持扰动，再创建运行；取得编号后轮询状态，进入 completed 再读取产物。
+先查 catalog 获取在线就绪状态与支持扰动，再创建运行；取得编号后轮询状态，进入 completed 再读取产物。
 
 ```json
 {
@@ -20,17 +20,15 @@
 |---|---|
 | `cell_line` | K562、RPE1、Jurkat 或 HepG2；实际可用性由 catalog 与已校验资产决定 |
 | `perturbation` | 1–64 字符，字母/数字/下划线/点/连字符；自动转大写，在线请求须在支持列表 |
-| `mode` | online、validation、precomputed；默认 online |
+| `mode` | 新建运行仅接受 online（默认）；其他旧值返回 422 EXPERIMENT_MODE_REMOVED |
 | `n_cells` | 64–4096，默认 512；请求推理细胞数，不是质量指标 |
 | `seed` | 0–2147483647，默认 42 |
 
-额外字段被拒绝。POST /runs 成功返回 202 和 `run_id`、`status`、`cache_hit`。缓存或预计算可直接返回 completed，不一定经过可见的排队过程。
+额外字段被拒绝。POST /runs 成功返回 202 和 `run_id`、`status`、`cache_hit`。缓存命中可直接返回 completed，不一定经过可见的排队过程。
 
 | 模式 | 行为 | 依赖 |
 |---|---|---|
 | online | STATE 预测与转录/代谢分析，不读取匹配观测 | MySQL、worker、GPU、模型及对照 |
-| validation | 在线链路加实测样本诊断，非独立留出验收 | 在线依赖、观测哈希及冻结诊断协议名单 |
-| precomputed | 校验并复制现有预计算包，不调用模型 | MySQL、匹配目录中的摘要及清单 |
 
 运行查询返回请求、状态、`stage_progress`、时间、warnings 和错误信息。状态枚举为 queued、state_running、adapting、metabolic_running、validating、completed、failed。进度来自后端节点；completed/failed 为终态。
 
@@ -50,8 +48,8 @@
 |---|---|---|
 | GET | `/health` | 服务及数据库状态，需读取响应字段 |
 | GET | `/ready` | 数据库与 worker/GPU 开关；未全部满足返回 503 |
-| GET | `/catalog/contexts` | 三种模式就绪状态、模型 ID 及原因 |
-| GET | `/catalog/perturbations?cell_line=K562&mode=online` | `{cell_line, mode, items}`；online 为模型支持扰动，precomputed 为通过清单及哈希校验的组合，validation 为已校验诊断协议名单（当前四背景均 ALDOA） |
+| GET | `/catalog/contexts` | 在线就绪状态、模型 ID 及原因；旧 validation_ready / precomputed_ready 兼容字段固定 false |
+| GET | `/catalog/perturbations?cell_line=K562&mode=online` | `{cell_line, mode, items}`；online 为模型支持扰动；旧 precomputed / validation 查询返回空列表 |
 | GET | `/runs` | 服务器历史实验；按创建时间及编号倒序，返回 items/total/limit/offset，支持分页及检索筛选 |
 | POST | `/runs` | 创建运行，成功返回 202 |
 | GET | `/runs/{run_id}` | 请求、运行阶段与错误 |
@@ -69,9 +67,9 @@
 
 三类表格返回 `{items, limit, truncated}`，limit 均允许 1–10000。truncated=false 只表示接口未因 limit 截断，不证明摘要包含全部任务。真实基因表保持输出顺序，接口不会按效应大小排序。
 
-precomputed_ready 要求至少一个组合通过同一创建契约校验，包必须包含已登记哈希且有效的 projection.json，至少有对照与扰动后群体的有限坐标、来源和细胞序号。在线/诊断运行在发布前同样校验投影，并要求纳入产物清单；不完整缓存不得复用。validation_ready 要求在线依赖及冻结诊断协议有效；具体扰动还须在该名单中。不合规请求创建任务前返回 422 DIAGNOSTIC_UNAVAILABLE。
+新建运行仅支持 online。已移除的 precomputed / validation 请求在创建记录或入队前返回 422 `EXPERIMENT_MODE_REMOVED`，对应目录查询不再提供目标。历史记录保留原模式与来源，仍可按旧模式检索并读取已保存产物。在线运行发布前校验投影并登记哈希，不完整缓存不得复用。
 
-运行记录、历史列表及摘要新增可选 `result_kind`：`frozen_model_result` 为真实结果回放，`synthetic_demo` 为历史合成数据；旧包默认按合成来源识别。真实冻结包必须附原始 manifest、原运行编号及其输出哈希，数值产物逐文件核验；回放重绑定运行编号并重新登记全部产物。provenance 返回 `source_type=frozen_precomputed`、`source_run_id`、`original_manifest_sha256` 和包清单哈希，原模型/数据资产哈希保留。回放不执行推理，请求 n_cells/seed 不改变已保存结果。四背景已有 ALDOA 真实回放，K562/MYC 合成资产保留为历史来源；正式目录排除合成包，新建合成回放默认返回 422 `SYNTHETIC_RESULT_DISABLED`。开发检查可通过 `CELLLENS_ALLOW_SYNTHETIC_RESULTS=true` 显式开启，正式部署保持 false。
+历史运行的可选 `result_kind` 保留：`frozen_model_result` 为保存的真实结果，`synthetic_demo` 为历史合成数据。provenance 中的原运行编号、原始清单及资产哈希继续可查。读取这些记录不执行推理，不新增回放任务，也不修改保存结果。
 
 metabolic-tasks 另返回 scope、total；全量分支返回 excluded_count，排除预测变化为非有限数值的任务，绝不将其替换为零。scope=all 表示完整有效变化集合，覆盖摘要的任务计数仍包含证据不足或不可计算任务。
 

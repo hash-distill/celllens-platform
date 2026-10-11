@@ -22,7 +22,10 @@ class RunStatus(StrEnum):
 class CreateRunRequest(StrictModel):
     cell_line: Literal["K562", "RPE1", "Jurkat", "HepG2"]
     perturbation: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
-    mode: Literal["online", "precomputed", "validation"] = "online"
+    mode: Literal["online", "precomputed", "validation"] = Field(
+        default="online",
+        description="New runs only accept online. Other values are retained to read historical records.",
+    )
     n_cells: int = Field(default=512, ge=64, le=4096)
     seed: int = Field(default=42, ge=0, le=2_147_483_647)
 

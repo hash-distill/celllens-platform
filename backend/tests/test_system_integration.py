@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from backend.app.core.precomputed import available_bundles
 from backend.app.core.run_manifest import file_sha256
 from backend.app.main import create_app
 from backend.app.schemas import CreateRunRequest, RunStatus
@@ -51,9 +52,10 @@ def test_demo_catalog_only_lists_verified_combinations(tmp_path):
     app = create_app(_settings(tmp_path, allow_synthetic_results=True))
     with TestClient(app) as client:
         response = client.get("/api/v1/catalog/perturbations?cell_line=K562&mode=precomputed")
-        assert response.json()["items"] == ["MYC"]
+        assert response.json()["items"] == []
+        assert available_bundles(tmp_path / "data/demo", "K562", allow_synthetic=True) == ["MYC"]
         contexts = client.get("/api/v1/catalog/contexts").json()
-        assert contexts[0]["precomputed_ready"] is True
+        assert contexts[0]["precomputed_ready"] is False
         (tmp_path / "data/demo/K562/MYC/summary.json").write_text("{}", encoding="utf-8")
         assert client.get("/api/v1/catalog/contexts").json()[0]["precomputed_ready"] is False
 

@@ -2,11 +2,14 @@ import json
 
 import numpy as np
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from backend.app.core.run_manifest import file_sha256
 from backend.app.main import create_app
+from backend.app.schemas import CreateRunRequest
 from backend.app.services.scientific_analysis import _projection_document
+from backend.tests.historical_bundle import _create_precomputed_run
 from backend.tests.test_api_runs import _settings, _write_registry
 from backend.tests.test_system_integration import write_bundle
 from scripts import build_demo_bundle
@@ -49,11 +52,13 @@ def test_incomplete_projection_is_rejected_before_creating_precomputed_run(tmp_p
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     app = create_app(_settings(tmp_path))
     with TestClient(app) as client:
-        created = client.post(
-            "/api/v1/runs", json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"}
-        )
-        assert created.status_code == 500
-        assert created.json()["detail"]["code"] == "INVALID_PRECOMPUTED_RESULT"
+        with pytest.raises(HTTPException) as error:
+            _create_precomputed_run(
+                CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"),
+                app.state.container,
+            )
+        assert error.value.status_code == 500
+        assert error.value.detail["code"] == "INVALID_PRECOMPUTED_RESULT"
         assert client.get("/api/v1/runs").json()["total"] == 0
         assert client.get("/api/v1/catalog/contexts").json()[0]["precomputed_ready"] is False
 

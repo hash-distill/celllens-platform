@@ -18,7 +18,8 @@
 
 | 脚本 | 环境 | 产物 |
 |---|---|---|
-| `check_formal_frontend.py --url http://127.0.0.1:8001` | 正式构建与真实 API；文案、禁用 Mock、真实回放、科研图、实测对照、断网和手机布局 | `reports/formal-system-2026-10-10/browser/` |
+| `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用、免登录共享上传、CPU 开关和手机布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
+| `check_formal_frontend.py --url http://127.0.0.1:8001` | 2026-10-10 历史验收：旧回放/实测入口、科研图与布局；当前入口使用 check_online_workflow_frontend.py | `reports/formal-system-2026-10-10/browser/` |
 | `check_function_frontend.py` | 生产服务、真实保存结果、Playwright | `reports/function-visualization-2026-10-09/browser/` |
 | `check_frontend.py` | 后端与 Vite；显式 Mock 回归 | 终端检查结果 |
 | `check_3d_frontend.py` | 兼容入口，委托当前响应工作台/功能网络检查，须提供 --run-id | `reports/frontend/response/` |
@@ -28,7 +29,7 @@
 | `check_response_frontend.py` | 真实已完成运行，含冻结追溯；用独立浏览器上下文注入局部错误 | `reports/frontend/response/` |
 | `check_metabolism_frontend.py` | 单选覆盖等级、空分类、搜索、实际条形点击、真实与旧任务详情、缺失结果请求及手机布局 | `reports/frontend/metabolism-fix/` |
 | `check_completeness_frontend.py` | 四背景真实响应/代谢页的官方完整性、缺失基因、旧筛选隐藏、完整下载与旧演示兼容 | `reports/frontend/official-completeness/` |
-| `check_context_capabilities_frontend.py` | 四背景三模式、ALDOA 名单、诊断请求拦截、真实回放与观测、四章演示、旧合成兼容及 2×2/手机布局 | `reports/four-context-capabilities-2026-10-09/browser/` |
+| `check_context_capabilities_frontend.py` | 2026-10-09 历史验收：三模式与 ALDOA 诊断；已不适用于当前新建入口 | `reports/four-context-capabilities-2026-10-09/browser/` |
 
 生产检查示例：
 

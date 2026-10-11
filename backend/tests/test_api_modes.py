@@ -2,10 +2,14 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from backend.app.config import Settings
 from backend.app.main import create_app
+from backend.app.schemas import CreateRunRequest
+from backend.tests.historical_bundle import _create_precomputed_run
 
 
 def sha256(path: Path) -> str:
@@ -60,7 +64,7 @@ def test_online_request_is_rejected_when_worker_is_disabled(tmp_path):
     assert response.json()["detail"]["code"] == "WORKER_UNAVAILABLE"
 
 
-def test_precomputed_request_does_not_require_gpu_or_model_assets(tmp_path):
+def test_historical_bundle_import_does_not_require_gpu_or_model_assets(tmp_path):
     write_registry(tmp_path, valid=False)
     demo = tmp_path / "data" / "demo" / "K562" / "MYC"
     demo.mkdir(parents=True)
@@ -102,34 +106,34 @@ def test_precomputed_request_does_not_require_gpu_or_model_assets(tmp_path):
         ),
         encoding="utf-8",
     )
-    app = create_app(settings(
-            tmp_path, gpu_available=False, worker_enabled=False, allow_synthetic_results=True
-        ))
+    app = create_app(
+        settings(tmp_path, gpu_available=False, worker_enabled=False, allow_synthetic_results=True)
+    )
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/runs",
-            json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"},
+        response = _create_precomputed_run(
+            CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"),
+            app.state.container,
         )
-        assert response.status_code == 202
-        run_id = response.json()["run_id"]
-        assert response.json()["status"] == "completed"
+        run_id = response.run_id
+        assert response.status == "completed"
         assert client.get(f"/api/v1/runs/{run_id}/summary").json()["warnings"] == ["precomputed"]
 
 
-def test_precomputed_request_rejects_a_tampered_bundle(tmp_path):
+def test_historical_bundle_import_rejects_a_tampered_bundle(tmp_path):
     write_registry(tmp_path, valid=False)
     demo = tmp_path / "data" / "demo" / "K562" / "MYC"
     demo.mkdir(parents=True)
     (demo / "summary.json").write_text("{}", encoding="utf-8")
     (demo / "manifest.json").write_text(json.dumps({"files": {"summary.json": "0" * 64}}), encoding="utf-8")
     app = create_app(settings(tmp_path))
-    with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/runs",
-            json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"},
-        )
-    assert response.status_code == 500
-    assert response.json()["detail"]["code"] == "INVALID_PRECOMPUTED_RESULT"
+    with TestClient(app):
+        with pytest.raises(HTTPException) as error:
+            _create_precomputed_run(
+                CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"),
+                app.state.container,
+            )
+    assert error.value.status_code == 500
+    assert error.value.detail["code"] == "INVALID_PRECOMPUTED_RESULT"
 
 
 def test_catalog_reports_not_ready_when_registered_files_are_missing(tmp_path):
@@ -192,11 +196,11 @@ def test_completed_run_exposes_projection_tables_and_report(tmp_path):
 
     app = create_app(settings(tmp_path, allow_synthetic_results=True))
     with TestClient(app) as client:
-        created = client.post(
-            "/api/v1/runs",
-            json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"},
+        created = _create_precomputed_run(
+            CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"),
+            app.state.container,
         )
-        run_id = created.json()["run_id"]
+        run_id = created.run_id
         assert client.get(f"/api/v1/runs/{run_id}/projection").json()["seed"] == 42
         assert client.get(f"/api/v1/runs/{run_id}/genes").json()["items"][0]["gene"] == "MYC"
         tasks = client.get(f"/api/v1/runs/{run_id}/metabolic-tasks")

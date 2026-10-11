@@ -10,7 +10,7 @@ Windows 本机支持在线运行、手动服务入口及一键启动；Docker My
 |---|---|---|
 | 前后端开发 | MySQL + Uvicorn + Vite | `http://127.0.0.1:5173/workbench` |
 | 构建后运行完整系统 | MySQL + Uvicorn；Vue 构建产物由后端提供 | `http://127.0.0.1:8000/workbench` |
-| 无 GPU 结果回放 | MySQL + Uvicorn + 前端构建；关闭 worker/GPU | 同上，工作台选择「结果回放」 |
+| 无 GPU 历史查询与上传分析 | MySQL + Uvicorn + 前端构建；关闭 STATE worker/GPU，开启 DATA worker | 从实验记录打开结果或上传 H5AD 分析 |
 | Linux 内部服务器 | MySQL + 单进程 Uvicorn + 进程管理；可接入反向代理 | 取决于服务器域名与网关 |
 
 后端由 Uvicorn 运行，Vue 开发服务由 Vite 运行；PowerShell 只是 Windows 脚本的执行工具。Docker Compose 当前仅管理 MySQL，不会启动应用或下载科学资产。
@@ -76,7 +76,7 @@ CELLLENS_STATE_EXECUTABLE=state
 
 这是当前本机开发示例。其他机器使用自己的数据库地址和密码；连接 URL 中的特殊字符需要进行 URL 编码。表结构由 Alembic 管理，保持 `CELLLENS_CREATE_DATABASE_SCHEMA=false`。
 
-无 GPU 结果回放请编辑 `.env`，将以下两项设为 `false`：
+无 GPU 历史查询与上传分析请编辑 `.env`，将以下两项设为 `false`：
 
 ```dotenv
 CELLLENS_WORKER_ENABLED=false
@@ -144,7 +144,7 @@ uv run --no-sync python scripts/check_mysql.py
 
 Windows 一键脚本先检查连接，再执行迁移和完整结构检查，支持已有版本的表结构升级；数据库与应用账户仍需事先准备。
 
-## 6. 准备科学资产或真实回放结果
+## 6. 准备在线模型与数据或上传分析环境
 
 ### 6.1 在线计算
 
@@ -168,11 +168,13 @@ uv run --no-sync state --help
 
 资产哈希失败时先确认实际文件、版本和来源，不要通过随意改哈希绕过检查。资产准备与科学解释见 [模型与数据](MODEL_AND_DATA.md)。当前没有自动下载完整模型和输入数据的安装步骤。
 
-### 6.2 无 GPU 结果回放
+### 6.2 无 GPU 历史查询与上传分析
 
-使用已完成真实运行冻结的回放包，目录为 `data/demo/{背景}/{扰动}/`。当前四背景均提供 ALDOA；部署时同时迁移完整包、原运行清单和哈希记录。关闭 worker/GPU 后选择“结果回放”，后端核验来源和全部文件，再建立可追溯的回放记录，不调用 STATE 或 scCellFie。
+已有结果从“实验记录”直接读取。迁移部署时需一并迁移数据库记录和对应文件产物，保持路径与哈希一致。无需创建回放任务。
 
-正式配置保持 `CELLLENS_ALLOW_SYNTHETIC_RESULTS=false`。合成资产只供开发契约检查，不能代替真实回放包。生产前端始终调用真实 API，不提供浏览器 Mock 开关。
+上传分析需要科学计算与报告依赖，设置 `CELLLENS_DATA_WORKER_ENABLED=true` 启动独立 CPU 工作进程。可关闭 STATE worker/GPU。完整上传格式、资源限制与共享管理说明见 [上传分析](guide/USER_DATA.md)。修改代码或环境配置后需重启 Uvicorn，确认 `/api/v1/data-capabilities` 中 `worker_enabled=true`，且匿名访问 `/api/v1/datasets` 返回 200。
+
+正式配置保持 `CELLLENS_ALLOW_SYNTHETIC_RESULTS=false`；历史合成记录保留来源说明。新建实验只接受在线推演。
 
 ## 7. 手动启动
 
@@ -211,7 +213,7 @@ Windows PowerShell 若拦截 `npm.ps1`，使用 `npm.cmd --prefix frontend ...`�
 
 ## 8. Windows 一键启动
 
-先完成依赖、配置、首次数据库迁移和科学资产或真实回放结果准备。
+先完成依赖、配置、首次数据库迁移和在线模型与数据或上传分析环境准备。
 
 构建并运行：
 
@@ -301,7 +303,7 @@ sudo journalctl -u celllens -n 100 --no-pager
 |---|---|
 | `/workbench` | 构建后页面可打开，浏览器无整体渲染错误 |
 | `/api/v1/health` | `status=ok`、`database=ok`；不要只看 HTTP 200 |
-| `/api/v1/ready` | 在线环境检查数据库与 worker/GPU 开关；仅回放环境 503 可符合配置 |
+| `/api/v1/ready` | 在线环境检查数据库与 worker/GPU 开关；仅历史查询或上传分析环境的 503 可符合 STATE worker/GPU 配置；另检查 data-capabilities |
 | `/api/v1/catalog/contexts` | 所选细胞系、所选模式可用 |
 | 已完成运行详情 | 基因、代谢及报告按实际产物可访问，详情刷新正常 |
 

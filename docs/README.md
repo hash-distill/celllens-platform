@@ -1,11 +1,12 @@
 # CellLens 文档目录
 
-更新日期：2026-10-10。项目概览和快速启动见 [项目 README](../README.md)。
+更新日期：2026-10-11。项目概览和快速启动见 [项目 README](../README.md)。
 
 ## 先了解和使用系统
 
 | 文档 | 内容 |
 |---|---|
+| [上传数据与分析](guide/USER_DATA.md) | H5AD 格式、免登录共享管理、CPU 下游分析 |
 | [使用指南](guide/USER_GUIDE.md) | 面向非生物专业用户：参数、运行流程、结果阅读 |
 | [功能前后对比](guide/FUNCTION_WORKSPACE.md) | 任务筛选、同布局网络、实测比较、节点证据和导出 |
 | [单细胞科研图](guide/SCIENTIFIC_CELL_STATE.md) | 共同 PCA、逐细胞着色、累积分布和 SVG/PDF/PNG 导出 |
@@ -29,6 +30,8 @@
 | [脚本索引](../scripts/README.md) | 启动、检查与资产处理脚本的用途 |
 
 ## 截图与检查记录
+
+- [2026-10-11 在线入口与上传验收](verification/2026-10-11-online-workflow.md)：移除回放与实测对照的新建入口，现有 8000 服务免登录上传、CPU 分析及下载。
 
 - [2026-10-10 正式操作修订](verification/2026-10-10-formal-operation.md)：正式入口、生产数据来源、现行说明及实际验证范围。
 

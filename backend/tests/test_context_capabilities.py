@@ -1,10 +1,15 @@
 import json
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
 from backend.app.core.run_manifest import file_sha256
 from backend.app.main import create_app
+from backend.app.schemas import CreateRunRequest
+from backend.tests.historical_bundle import _create_precomputed_run
 from backend.tests.test_api_modes import settings, write_registry
 
 
@@ -50,18 +55,22 @@ def test_validation_without_registered_protocol_rejects_before_job_creation(tmp_
             "/api/v1/runs", json={"cell_line": "K562", "perturbation": "MYC", "mode": "validation"}
         )
         assert response.status_code == 422
-        assert response.json()["detail"]["code"] == "DIAGNOSTIC_UNAVAILABLE"
+        assert response.json()["detail"]["code"] == "EXPERIMENT_MODE_REMOVED"
         assert client.get("/api/v1/runs").json()["total"] == 0
 
 
-def test_diagnostic_catalog_only_exposes_valid_frozen_protocol(tmp_path: Path):
+def test_historical_diagnostic_protocol_is_checked_but_not_advertised(tmp_path: Path):
     protocol = protocol_registry(tmp_path)
     app = create_app(settings(tmp_path, worker_enabled=True, gpu_available=True))
     with TestClient(app) as client:
-        assert client.get("/api/v1/catalog/contexts").json()[0]["validation_ready"] is True
-        assert client.get("/api/v1/catalog/perturbations?cell_line=K562&mode=validation").json()["items"] == [
-            "MYC"
-        ]
+        registry = app.state.container.registry
+        assert load_diagnostic_protocol(registry.dataset_for("K562"), registry.model_for("K562"))[
+            "perturbations"
+        ] == ["MYC"]
+        assert client.get("/api/v1/catalog/contexts").json()[0]["validation_ready"] is False
+        assert (
+            client.get("/api/v1/catalog/perturbations?cell_line=K562&mode=validation").json()["items"] == []
+        )
         protocol.write_text("{}")
         assert client.get("/api/v1/catalog/contexts").json()[0]["validation_ready"] is False
         assert (
@@ -103,10 +112,12 @@ def test_frozen_kind_without_original_manifest_is_rejected(tmp_path: Path):
     )
     app = create_app(settings(tmp_path))
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/runs", json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"}
-        )
-        assert response.status_code == 500
+        with pytest.raises(HTTPException) as error:
+            _create_precomputed_run(
+                CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"),
+                app.state.container,
+            )
+        assert error.value.status_code == 500
         assert client.get("/api/v1/runs").json()["total"] == 0
 
 
@@ -164,11 +175,10 @@ def test_frozen_replay_preserves_values_and_rebinds_run_identity(tmp_path: Path)
     )
     app = create_app(settings(tmp_path))
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/runs", json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"}
+        response = _create_precomputed_run(
+            CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"), app.state.container
         )
-        assert response.status_code == 202, response.text
-        run_id = response.json()["run_id"]
+        run_id = response.run_id
         assert client.get(f"/api/v1/runs/{run_id}").json()["result_kind"] == "frozen_model_result"
         assert client.get("/api/v1/runs").json()["items"][0]["result_kind"] == "frozen_model_result"
         assert client.get(f"/api/v1/runs/{run_id}/provenance").json()["source_type"] == "frozen_precomputed"

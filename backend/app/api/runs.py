@@ -1,9 +1,7 @@
 import csv
-import html
 import json
 import math
 import random
-import shutil
 from pathlib import Path
 from typing import Any, Literal
 
@@ -12,11 +10,9 @@ from fastapi.responses import FileResponse, Response
 from pydantic import ValidationError
 
 from backend.app.core.cache import build_cache_key, code_fingerprint
-from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
 from backend.app.core.errors import AssetNotReadyError, CellLensError, RegistryError
-from backend.app.core.precomputed import load_bundle
 from backend.app.core.projection import validate_projection
-from backend.app.core.run_manifest import atomic_write_json, file_sha256, manifest_hash
+from backend.app.core.run_manifest import file_sha256, manifest_hash
 from backend.app.schemas import (
     CompletenessResponse,
     CreateRunRequest,
@@ -29,7 +25,6 @@ from backend.app.schemas import (
 )
 from backend.app.services.cell_state import CellStateUnavailable, cell_state_document
 from backend.app.services.cell_state_figure import render_cell_state
-from backend.app.services.pipeline import _artifact_kind, _mime_type, _render_report
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -109,8 +104,14 @@ def list_runs(
 @router.post("", response_model=CreateRunResponse, status_code=status.HTTP_202_ACCEPTED)
 async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunResponse:
     container = request.app.state.container
-    if payload.mode == "precomputed":
-        return _create_precomputed_run(payload, container)
+    if payload.mode != "online":
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "EXPERIMENT_MODE_REMOVED",
+                "message": "新建实验仅支持在线推演；请从实验记录查看已有结果。",
+            },
+        )
 
     try:
         model = container.registry.model_for(payload.cell_line)
@@ -129,15 +130,6 @@ async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunRe
                 "supported_alternatives": sorted(supported)[:20],
             },
         )
-    if payload.mode == "validation":
-        try:
-            protocol = load_diagnostic_protocol(dataset, model)
-            if payload.perturbation not in protocol["perturbations"]:
-                raise ValueError("This perturbation has no registered measured diagnostic")
-        except (OSError, ValueError, RegistryError) as exc:
-            raise HTTPException(
-                status_code=422, detail={"code": "DIAGNOSTIC_UNAVAILABLE", "message": str(exc)}
-            ) from exc
     if not container.settings.worker_enabled:
         raise HTTPException(
             status_code=503,
@@ -164,13 +156,6 @@ async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunRe
         ):
             if entry.payload.get(path_field):
                 asset_hashes[hash_field] = container.registry.verify_entry(entry, path_field, hash_field)
-        if payload.mode == "validation":
-            asset_hashes["validation_protocol_sha256"] = container.registry.verify_entry(
-                dataset, "validation_protocol_path", "validation_protocol_sha256"
-            )
-            asset_hashes["observed_sha256"] = container.registry.verify_entry(
-                dataset, "observed_path", "observed_sha256"
-            )
     except (AssetNotReadyError, RegistryError) as exc:
         raise HTTPException(status_code=503, detail={"code": exc.code, "message": str(exc)}) from exc
 
@@ -198,103 +183,6 @@ async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunRe
     record = container.store.create(run_id, payload, cache_key=cache_key)
     await container.queue.submit(run_id)
     return CreateRunResponse(run_id=record.run_id, status=record.status, cache_hit=False)
-
-
-def _create_precomputed_run(payload: CreateRunRequest, container: Any) -> CreateRunResponse:
-    source = container.settings.demo_root / payload.cell_line / payload.perturbation
-    summary_source = source / "summary.json"
-    source_manifest = source / "manifest.json"
-    if not summary_source.is_file() or not source_manifest.is_file():
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "code": "PRECOMPUTED_NOT_FOUND",
-                "message": f"No precomputed result for {payload.cell_line}/{payload.perturbation}",
-            },
-        )
-    try:
-        template, manifest = load_bundle(source, payload.cell_line, payload.perturbation)
-    except (OSError, ValueError, KeyError, TypeError) as exc:
-        raise HTTPException(
-            status_code=500,
-            detail={"code": "INVALID_PRECOMPUTED_RESULT", "message": str(exc)},
-        ) from exc
-    if template.result_kind != "frozen_model_result" and not container.settings.allow_synthetic_results:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "SYNTHETIC_RESULT_DISABLED",
-                "message": "Result replay requires saved real model results",
-            },
-        )
-    run_id = container.pipeline.allocate_run_id()
-    container.store.create(run_id, payload)
-    destination = container.settings.derived_root / run_id
-    destination.mkdir(parents=True, exist_ok=False)
-    for relative_name in manifest["files"]:
-        if relative_name in {"summary.json", "manifest.json"}:
-            continue
-        target = destination / relative_name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source / relative_name, target)
-    summary = template.model_copy(update={"run_id": run_id})
-    frozen = summary.result_kind == "frozen_model_result"
-    if frozen:
-        for name in ("task_trace.json", "official_completeness.json", "expression_contract.json"):
-            path = destination / name
-            document = _json_artifact(path)
-            document["run_id"] = run_id
-            atomic_write_json(path, document)
-        report = _render_report(summary)
-        notice = (
-            "<aside><strong>真实结果回放（本次未重新计算）</strong>"
-            f"<p>原始运行：{html.escape(str(manifest['source_run_id']))}。"
-            "实测比较属于样本诊断，尚未核实训练排除，不能视为独立留出验收。</p></aside>"
-        )
-        (destination / "report.html").write_text(
-            report.replace("<body>", "<body>" + notice, 1), encoding="utf-8"
-        )
-    atomic_write_json(destination / "summary.json", summary.model_dump(mode="json"))
-    atomic_write_json(
-        destination / "manifest.json",
-        {
-            "request": payload.model_dump(mode="json"),
-            "source": str(source.relative_to(container.settings.project_root)),
-            "source_type": "frozen_precomputed" if frozen else "synthetic_precomputed",
-            "source_run_id": manifest.get("source_run_id"),
-            "original_manifest_sha256": manifest.get("source_manifest_sha256") if frozen else None,
-            "source_manifest_sha256": file_sha256(source_manifest),
-            "bundle_files": manifest["files"],
-            "assets": _json_artifact(destination / "source_manifest.json").get("assets", {})
-            if frozen
-            else {},
-            "outputs": {
-                p.name: {"sha256": file_sha256(p), "size_bytes": p.stat().st_size}
-                for p in destination.iterdir()
-                if p.is_file()
-            },
-        },
-    )
-    validate_projection(destination / "projection.json")
-    for path in destination.iterdir():
-        if not path.is_file():
-            continue
-        container.store.register_artifact(
-            run_id,
-            _artifact_kind(path),
-            str(path.relative_to(container.settings.project_root)),
-            file_sha256(path),
-            path.stat().st_size,
-            _mime_type(path),
-        )
-    record = container.store.transition(
-        run_id,
-        RunStatus.COMPLETED,
-        100,
-        warnings=summary.warnings,
-        message="precomputed result with required single-cell projection materialized",
-    )
-    return CreateRunResponse(run_id=run_id, status=record.status, cache_hit=False)
 
 
 @router.get("/{run_id}", response_model=RunRecord)

@@ -7,12 +7,12 @@ import { useRunStore } from '../stores/run'
 import { useUiStore } from '../stores/ui'
 import { isIntegerInRange } from '../utils/number'
 import { buildDiagnostics, copyText, diagnosticsFromError } from '../utils/diagnostics'
-import type { CellLine, RunMode } from '../types/run'
+import type { CellLine } from '../types/run'
 
 /**
  * 实验参数面板。
  * 运行开始后，本表单作为「下一次实验草稿」独立编辑，不改变当前结果标题。
- * 不静默替换不可用模式；预计算模式隐藏并锁定 n_cells / seed。
+ * 新建实验统一执行在线推演；已有结果从实验记录读取。
  */
 
 const router = useRouter()
@@ -23,30 +23,31 @@ const runs = useRunStore()
 const ui = useUiStore()
 
 onMounted(() => {
+  draft.mode = 'online'
   if (catalog.contexts.length === 0 && !catalog.loading) void catalog.load()
-  if (draft.cellLine) void catalog.loadPerturbations(draft.cellLine, draft.mode)
+  if (draft.cellLine) void catalog.loadPerturbations(draft.cellLine, 'online')
 })
 
 watch(
-  () => [draft.cellLine, draft.mode] as const,
-  ([cellLine, mode]) => {
+  () => draft.cellLine,
+  (cellLine) => {
     perturbationQuery.value = draft.perturbation
     runs.clearSubmitState()
-    void catalog.loadPerturbations(cellLine, mode)
+    void catalog.loadPerturbations(cellLine, 'online')
   },
 )
 
 // ---------- 细胞背景 ----------
 const cellOptions = computed(() =>
   catalog.contexts.map((ctx) => {
-    const anyReady = ctx.online_ready || ctx.precomputed_ready || ctx.validation_ready
-    const reason = !anyReady
+    const ready = ctx.online_ready
+    const reason = !ready
       ? (ctx.disabled_reason ??
         (ctx.readiness_reasons.length > 0
           ? ctx.readiness_reasons.join('；')
           : '接口报告该背景当前不可用'))
       : null
-    return { value: ctx.cell_line as CellLine, disabled: !anyReady, reason }
+    return { value: ctx.cell_line as CellLine, disabled: !ready, reason }
   }),
 )
 
@@ -58,7 +59,7 @@ const highlightIndex = ref(-1)
 let dropdownCloseTimer: number | undefined
 onBeforeUnmount(() => window.clearTimeout(dropdownCloseTimer))
 
-const perturbationState = computed(() => catalog.perturbations[`${draft.cellLine}:${draft.mode}`] ?? null)
+const perturbationState = computed(() => catalog.perturbations[`${draft.cellLine}:online`] ?? null)
 
 const filteredPerturbations = computed(() => {
   const items = perturbationState.value?.items ?? []
@@ -116,63 +117,16 @@ function onQueryKeydown(event: KeyboardEvent): void {
   }
 }
 
-// ---------- 运行模式 ----------
-const modeOptions = computed(() => {
-  const ctx = catalog.contextFor(draft.cellLine)
-  const reasons = ctx?.readiness_reasons ?? []
-  const demoContexts = catalog.contexts.filter((item) => item.precomputed_ready).map((item) => item.cell_line)
-  return [
-    {
-      value: 'online' as RunMode,
-      label: '在线推演',
-      ready: ctx?.online_ready ?? false,
-      reason:
-        ctx === null
-          ? '细胞背景可用性尚未加载'
-          : ctx.online_ready
-            ? null
-            : reasons.length > 0
-              ? reasons.join('；')
-              : '接口报告在线推演不可用',
-    },
-    {
-      value: 'precomputed' as RunMode,
-      label: '结果回放',
-      ready: ctx?.precomputed_ready ?? false,
-      reason:
-        ctx === null
-          ? '细胞背景可用性尚未加载'
-          : ctx.precomputed_ready
-            ? '读取已保存的真实模型结果，本次不重新计算'
-            : `${draft.cellLine} 暂无可回放结果${demoContexts.length > 0 ? `；可切换至 ${demoContexts.join('、')} 使用结果回放` : ''}`,
-    },
-    {
-      value: 'validation' as RunMode,
-      label: '实测对照',
-      ready: ctx?.validation_ready ?? false,
-      reason: ctx?.validation_ready
-        ? '仅开放有匹配实测数据的扰动；生成新预测并与登记观测比较'
-        : '当前背景暂无已核验的实测对照数据与名单；已有结果可在实验记录查看',
-    },
-  ]
-})
-
-const unavailableModes = computed(() => modeOptions.value.filter((mode) => !mode.ready))
-
-const selectedModeOption = computed(
-  () => modeOptions.value.find((m) => m.value === draft.mode) ?? null,
-)
-
-const isPrecomputed = computed(() => draft.mode === 'precomputed')
+// ---------- 在线服务可用性 ----------
+const onlineReady = computed(() => catalog.contextFor(draft.cellLine)?.online_ready ?? false)
+const onlineReason = computed(() => catalog.contextFor(draft.cellLine)?.readiness_reasons.join('；') || '在线推演服务暂不可用')
 
 // ---------- 高级参数校验 ----------
 const nCellsError = computed(() => {
-  if (isPrecomputed.value) return null
   if (!isIntegerInRange(draft.nCells, 64, 4096)) return 'n_cells 需为 64–4096 的整数'
   return null
 })
 const seedError = computed(() => {
-  if (isPrecomputed.value) return null
   if (!isIntegerInRange(draft.seed, 0, 2147483647)) return 'seed 需为 0–2147483647 的整数'
   return null
 })
@@ -180,16 +134,16 @@ const seedError = computed(() => {
 const perturbationError = computed(() => {
   if (!draft.perturbation) return '请从列表中选择一个扰动基因'
   const items = perturbationState.value?.items ?? []
-  if (!perturbationState.value || perturbationState.value.loading) return '正在读取该模式可用的扰动'
+  if (!perturbationState.value || perturbationState.value.loading) return '正在读取在线推演可用的扰动'
   if (perturbationState.value.error) return '扰动目录读取失败，请重试'
-  if (!items.includes(draft.perturbation)) return '请从当前模式的可用列表重新选择扰动'
+  if (!items.includes(draft.perturbation)) return '请从当前背景的可用列表重新选择扰动'
   return null
 })
 
 const canSubmit = computed(() => {
   if (runs.submitting) return false
   if (catalog.contexts.length === 0) return false
-  if (!selectedModeOption.value?.ready) return false
+  if (!onlineReady.value) return false
   if (perturbationError.value) return false
   if (nCellsError.value || seedError.value) return false
   return true
@@ -207,9 +161,9 @@ async function submit(): Promise<void> {
   const payload = {
     cell_line: draft.cellLine,
     perturbation: draft.perturbation.trim().toUpperCase(),
-    mode: draft.mode,
-    n_cells: isPrecomputed.value ? 512 : Number(draft.nCells),
-    seed: isPrecomputed.value ? 42 : Number(draft.seed),
+    mode: 'online' as const,
+    n_cells: Number(draft.nCells),
+    seed: Number(draft.seed),
   }
   const res = await runs.createRun(payload)
   if (!res) return
@@ -234,7 +188,7 @@ async function copySubmitDiagnostics(): Promise<void> {
     ? diagnosticsFromError(runs.submitError, undefined, {
         cell_line: draft.cellLine,
         perturbation: draft.perturbation,
-        mode: draft.mode,
+        mode: 'online',
         n_cells: draft.nCells,
         seed: draft.seed,
       })
@@ -243,7 +197,7 @@ async function copySubmitDiagnostics(): Promise<void> {
         params: {
           cell_line: draft.cellLine,
           perturbation: draft.perturbation,
-          mode: draft.mode,
+          mode: 'online',
           n_cells: draft.nCells,
           seed: draft.seed,
         },
@@ -350,7 +304,7 @@ async function copySubmitDiagnostics(): Promise<void> {
           </div>
           <p v-if="perturbationState?.error" class="field-error">
             扰动列表加载失败：{{ perturbationState.error.message }}
-            <button class="btn btn-ghost btn-sm" @click="catalog.loadPerturbations(draft.cellLine, draft.mode, true)">
+            <button class="btn btn-ghost btn-sm" @click="catalog.loadPerturbations(draft.cellLine, 'online', true)">
               重试
             </button>
           </p>
@@ -359,41 +313,9 @@ async function copySubmitDiagnostics(): Promise<void> {
           </p>
         </div>
 
-        <!-- 运行模式 -->
-        <div class="field">
-          <span class="label" id="mode-label">运行模式</span>
-          <div class="choice-group" role="radiogroup" aria-labelledby="mode-label">
-            <label
-              v-for="opt in modeOptions"
-              :key="opt.value"
-              class="choice"
-              :class="{ selected: draft.mode === opt.value, disabled: !opt.ready }"
-              :title="!opt.ready ? (opt.reason ?? '不可用') : undefined"
-            >
-              <input
-                type="radio"
-                name="run-mode"
-                :value="opt.value"
-                :checked="draft.mode === opt.value"
-                :disabled="!opt.ready"
-                :aria-describedby="!opt.ready ? `mode-unavailable-${opt.value}` : undefined"
-                @change="draft.mode = opt.value"
-              />
-              <span>
-                <span class="choice-name">{{ opt.label }}</span>
-                <span v-if="opt.ready && opt.reason && (!horizontal || draft.mode === opt.value)" class="choice-reason"><br />{{ opt.reason }}</span>
-              </span>
-            </label>
-          </div>
-          <ul v-if="unavailableModes.length" class="mode-availability" aria-label="模式可用性说明">
-            <li v-for="opt in unavailableModes" :id="`mode-unavailable-${opt.value}`" :key="opt.value">
-              <strong>{{ opt.label }}：</strong>{{ opt.reason }}。
-            </li>
-          </ul>
-          <p v-if="selectedModeOption && !selectedModeOption.ready" class="field-error">
-            当前选择的模式不可用：{{ selectedModeOption.reason }}。模式不会被自动替换，请手动调整。
-          </p>
-        </div>
+        <p v-if="!onlineReady" class="notice notice-warn">
+          {{ onlineReason }}。<RouterLink to="/records">查看实验记录</RouterLink>
+        </p>
 
         <!-- 高级参数 -->
         <div class="field advanced-field">
@@ -406,43 +328,35 @@ async function copySubmitDiagnostics(): Promise<void> {
             {{ draft.advancedOpen ? '收起高级参数' : '展开高级参数' }}
           </button>
           <div v-if="draft.advancedOpen" class="advanced">
-            <template v-if="isPrecomputed">
-              <p class="notice notice-info">
-                结果回放读取既有结果文件：n_cells 与 seed 不改变既有结果，已锁定。
-                这些是请求参数，不代表已保存结果最初生成参数；本次包的哈希见证据栏。
-              </p>
-            </template>
-            <template v-else>
-              <div>
-              <label class="label" for="n-cells-input">采样细胞数</label>
-              <input
-                id="n-cells-input"
-                v-model="draft.nCells"
-                class="input"
-                type="number"
-                min="64"
-                max="4096"
-                step="1"
-                inputmode="numeric"
-              />
-              <p v-if="nCellsError" class="field-error">{{ nCellsError }}</p>
-              <p class="field-hint">可选范围 64–4096。</p>
-              </div><div>
-              <label class="label" for="seed-input" style="margin-top: 10px">随机种子</label>
-              <input
-                id="seed-input"
-                v-model="draft.seed"
-                class="input"
-                type="number"
-                min="0"
-                max="2147483647"
-                step="1"
-                inputmode="numeric"
-              />
-              <p v-if="seedError" class="field-error">{{ seedError }}</p>
-              <p class="field-hint">固定种子便于重现。</p>
-              </div>
-            </template>
+            <div>
+            <label class="label" for="n-cells-input">采样细胞数</label>
+            <input
+              id="n-cells-input"
+              v-model="draft.nCells"
+              class="input"
+              type="number"
+              min="64"
+              max="4096"
+              step="1"
+              inputmode="numeric"
+            />
+            <p v-if="nCellsError" class="field-error">{{ nCellsError }}</p>
+            <p class="field-hint">可选范围 64–4096。</p>
+            </div><div>
+            <label class="label" for="seed-input" style="margin-top: 10px">随机种子</label>
+            <input
+              id="seed-input"
+              v-model="draft.seed"
+              class="input"
+              type="number"
+              min="0"
+              max="2147483647"
+              step="1"
+              inputmode="numeric"
+            />
+            <p v-if="seedError" class="field-error">{{ seedError }}</p>
+            <p class="field-hint">固定种子便于重现。</p>
+            </div>
           </div>
         </div>
 
@@ -495,11 +409,11 @@ async function copySubmitDiagnostics(): Promise<void> {
               错误码：{{ runs.submitError.code }}
             </p>
             <p
-              v-if="runs.submitError.status === 503 && draft.mode === 'online'"
+              v-if="runs.submitError.status === 503"
               class="small"
               style="margin: 6px 0 0"
             >
-              在线推演暂时不可用。参数已保留；也可以选择结果回放模式查看已保存的真实结果。
+              在线推演暂时不可用。参数已保留；可从<RouterLink to="/records">实验记录</RouterLink>查看已保存结果。
             </p>
           </template>
           <div class="btn-row" style="margin-top: 8px">

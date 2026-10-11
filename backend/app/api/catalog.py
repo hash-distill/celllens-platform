@@ -2,9 +2,6 @@ from typing import Literal
 
 from fastapi import APIRouter, Request
 
-from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
-from backend.app.core.errors import RegistryError
-from backend.app.core.precomputed import available_bundles
 from backend.app.schemas import ContextItem
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
@@ -29,7 +26,6 @@ def contexts(request: Request) -> list[ContextItem]:
         if row.get("config_path"):
             model_ready = model_ready and model_entry.asset_is_valid("config_path", "config_sha256")
         dataset_ready = False
-        validation_ready = False
         if dataset:
             dataset_entry = registry.dataset_for(row["cell_line"], require_enabled=False)
             dataset_ready = bool(dataset.get("enabled")) and dataset_entry.asset_is_valid(
@@ -37,24 +33,11 @@ def contexts(request: Request) -> list[ContextItem]:
             )
             if dataset.get("split_path"):
                 dataset_ready = dataset_ready and dataset_entry.asset_is_valid("split_path", "split_sha256")
-            try:
-                load_diagnostic_protocol(dataset_entry, model_entry)
-                validation_ready = model_ready and dataset_ready
-            except (OSError, ValueError, RegistryError):
-                validation_ready = False
         online_ready = (
             model_ready
             and dataset_ready
             and container.settings.worker_enabled
             and container.settings.gpu_available
-        )
-        validation_ready = validation_ready and online_ready
-        precomputed_ready = bool(
-            available_bundles(
-                container.settings.demo_root,
-                row["cell_line"],
-                allow_synthetic=container.settings.allow_synthetic_results,
-            )
         )
         reasons = []
         if not model_ready:
@@ -69,8 +52,8 @@ def contexts(request: Request) -> list[ContextItem]:
             ContextItem(
                 cell_line=row["cell_line"],
                 online_ready=online_ready,
-                validation_ready=validation_ready,
-                precomputed_ready=precomputed_ready,
+                validation_ready=False,
+                precomputed_ready=False,
                 model_id=row.get("id"),
                 disabled_reason=None if model_ready else row.get("disabled_reason"),
                 readiness_reasons=reasons,
@@ -86,20 +69,6 @@ def perturbations(
     mode: Literal["online", "precomputed", "validation"] = "online",
 ) -> dict[str, object]:
     container = request.app.state.container
-    if mode == "precomputed":
-        items = available_bundles(
-            container.settings.demo_root,
-            cell_line,
-            allow_synthetic=container.settings.allow_synthetic_results,
-        )
-    elif mode == "validation":
-        try:
-            protocol = load_diagnostic_protocol(
-                container.registry.dataset_for(cell_line), container.registry.model_for(cell_line)
-            )
-            items = protocol["perturbations"]
-        except (OSError, ValueError, RegistryError):
-            items = []
-    else:
-        items = container.registry.supported_perturbations(cell_line)
+    # Legacy modes remain readable in stored records, but cannot start experiments.
+    items = container.registry.supported_perturbations(cell_line) if mode == "online" else []
     return {"cell_line": cell_line, "mode": mode, "items": items}

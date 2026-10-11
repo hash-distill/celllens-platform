@@ -31,7 +31,7 @@ export const useDraftStore = defineStore('draft', {
     }): void {
       this.cellLine = req.cell_line
       this.perturbation = req.perturbation
-      this.mode = req.mode
+      this.mode = 'online'
       this.nCells = String(req.n_cells)
       this.seed = String(req.seed)
     },

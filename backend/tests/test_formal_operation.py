@@ -3,6 +3,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from backend.app.main import create_app
+from backend.app.schemas import CreateRunRequest
+from backend.tests.historical_bundle import _create_precomputed_run
 from backend.tests.test_api_runs import _settings, _write_registry
 from backend.tests.test_system_integration import write_bundle
 
@@ -20,7 +22,7 @@ def test_formal_mode_excludes_synthetic_catalog_and_rejects_creation(tmp_path: P
             "/api/v1/runs", json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"}
         )
         assert response.status_code == 422
-        assert response.json()["detail"]["code"] == "SYNTHETIC_RESULT_DISABLED"
+        assert response.json()["detail"]["code"] == "EXPERIMENT_MODE_REMOVED"
         assert client.get("/api/v1/runs").json()["total"] == 0
         assert not app.state.container.settings.derived_root.exists()
 
@@ -31,11 +33,10 @@ def test_formal_mode_preserves_readable_historical_synthetic_records(tmp_path: P
     original = (source / "manifest.json").read_bytes()
     app = create_app(_settings(tmp_path, allow_synthetic_results=True))
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/runs", json={"cell_line": "K562", "perturbation": "MYC", "mode": "precomputed"}
+        response = _create_precomputed_run(
+            CreateRunRequest(cell_line="K562", perturbation="MYC", mode="precomputed"), app.state.container
         )
-        assert response.status_code == 202
-        run_id = response.json()["run_id"]
+        run_id = response.run_id
         app.state.container.settings.allow_synthetic_results = False
         assert client.get(f"/api/v1/runs/{run_id}").json()["result_kind"] == "synthetic_demo"
         assert client.get(f"/api/v1/runs/{run_id}/summary").status_code == 200
