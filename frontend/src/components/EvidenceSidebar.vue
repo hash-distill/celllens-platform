@@ -71,9 +71,9 @@ async function copyDiagnostics(): Promise<void> {
         <span
           v-if="isSyntheticResult(record?.request.mode, record?.run_id, record?.result_kind)"
           class="pill pill-synthetic"
-          title="此历史记录来源为合成数据，不能作为真实模型预测"
+          title="此历史记录展示的是示例数据，用于预览页面与结果结构"
         >
-          合成数据（历史记录）
+          示例数据（历史记录）
         </span>
       </div>
 

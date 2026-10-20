@@ -103,7 +103,7 @@ const rows = computed(() => Array.from({ length: props.skeletonRows }, (_, i) =>
   padding: 22px 18px;
   text-align: center;
   color: var(--muted);
-  background: #fbfcfe;
+  background: var(--coverage-bg);
 }
 .state-title {
   margin: 0 0 4px;
@@ -111,14 +111,14 @@ const rows = computed(() => Array.from({ length: props.skeletonRows }, (_, i) =>
   color: var(--ink);
 }
 .state-unavailable {
-  border-color: #fde68a;
+  border-color: var(--warn-border);
   background: var(--warn-bg);
 }
 .state-unavailable .state-title {
   color: var(--warn);
 }
 .state-error {
-  border-color: #fecaca;
+  border-color: var(--danger-border);
   background: var(--danger-bg);
 }
 .state-error .state-title {

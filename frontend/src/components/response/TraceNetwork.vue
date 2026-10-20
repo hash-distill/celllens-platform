@@ -18,12 +18,19 @@ let scene: THREE.Scene
 let controls: OrbitControls
 let group: THREE.Group
 let resizeObserver: ResizeObserver
+let themeObserver: MutationObserver | undefined
 let frame = 0
 let disposed = false
 const clickable: THREE.Mesh[] = []
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
 let start = { x: 0, y: 0 }
+
+function cssVar(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
 
 function draw() {
   if (disposed || !renderer || !host.value) return
@@ -69,8 +76,8 @@ function build() {
   function node(id: string, label: string, value: number | null, kind: 'gene' | 'reaction' | 'task', position: THREE.Vector3) {
     const key = kind + ':' + id
     points.set(key, position)
-    const neutral = new THREE.Color('#aab6b0')
-    const color = value === null ? neutral : neutral.clone().lerp(new THREE.Color(value > 0 ? '#c47654' : '#247a70'), Math.abs(value) / maxima[kind])
+    const neutral = new THREE.Color(cssVar('--scene-node-neutral', '#aab6b0'))
+    const color = value === null ? neutral : neutral.clone().lerp(new THREE.Color(value > 0 ? cssVar('--delta-up', '#c47654') : cssVar('--primary', '#247a70')), Math.abs(value) / maxima[kind])
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(kind === 'task' ? .26 : kind === 'reaction' ? .14 : .075, 18, 12), new THREE.MeshBasicMaterial({color}))
     mesh.position.copy(position)
     if (kind === 'reaction' && id === props.selectedReaction) mesh.scale.setScalar(1.4)
@@ -84,7 +91,7 @@ function build() {
     const from = points.get(a), to = points.get(b)
     if (!from || !to) return
     const geometry = new THREE.BufferGeometry().setFromPoints([from,to])
-    group.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:highlighted ? '#247a70' : '#a5b6ac',transparent:true,opacity:highlighted ? .75 : .3})))
+    group.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:highlighted ? cssVar('--primary', '#247a70') : cssVar('--scene-line-idle', '#a5b6ac'),transparent:true,opacity:highlighted ? .75 : .3})))
   }
   for (const r of reactions) {
     edge('reaction:'+r.id,'task:'+props.data.task.id,r.id === props.selectedReaction)
@@ -111,7 +118,7 @@ watch(() => [props.data,props.selectedReaction], build)
 onMounted(() => {
   try {
     if (!host.value) return
-    scene = new THREE.Scene(); scene.background = new THREE.Color('#f4f6f0')
+    scene = new THREE.Scene(); scene.background = new THREE.Color(cssVar('--figure-soft-bg', '#f4f6f0'))
     camera = new THREE.PerspectiveCamera(43,1,.1,100)
     renderer = new THREE.WebGLRenderer({antialias:true})
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
@@ -133,11 +140,17 @@ onMounted(() => {
       draw()
     })
     resizeObserver.observe(host.value)
+    themeObserver = new MutationObserver(() => {
+      if (!scene) return
+      scene.background = new THREE.Color(cssVar('--figure-soft-bg', '#f4f6f0'))
+      build()
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
     reset();build();frame=requestAnimationFrame(draw)
   } catch { error.value = '当前设备不支持三维视图，请使用下方关联列表。' }
 })
 onBeforeUnmount(() => {
-  disposed=true;cancelAnimationFrame(frame);resizeObserver?.disconnect();controls?.dispose()
+  disposed=true;cancelAnimationFrame(frame);resizeObserver?.disconnect();themeObserver?.disconnect();controls?.dispose()
   renderer?.domElement.removeEventListener('pointerdown',down)
   renderer?.domElement.removeEventListener('pointerup',pick)
   renderer?.domElement.removeEventListener('webglcontextlost',contextLost)
@@ -154,5 +167,5 @@ onBeforeUnmount(() => {
   </div>
 </template>
 <style scoped>
-.spatial-trace{border:1px solid var(--border);margin:20px 0;background:#f4f6f0;min-width:0}.spatial-heading{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;font-size:11px;color:var(--primary)}.spatial-canvas{height:350px;width:100%;overflow:hidden;position:relative}.spatial-canvas :deep(canvas){display:block;touch-action:none}.node-label{position:absolute;z-index:1;pointer-events:none;transform:translateX(-50%);font:10px Consolas,monospace;color:var(--ink);text-align:center;max-width:130px;line-height:1.4;background:#f4f6f0d9;padding:2px 4px}.node-label.task{font-family:var(--font);font-size:11px}.spatial-description{font-size:12px;padding:12px 18px;margin:0;border-top:1px solid var(--border);overflow-wrap:anywhere}.spatial-note{font-size:10px;color:var(--muted);padding:0 18px 14px;line-height:1.8;margin:0}@media(max-width:600px){.spatial-canvas{height:260px}}
+.spatial-trace{border:1px solid var(--border);margin:20px 0;background:var(--figure-soft-bg);min-width:0}.spatial-heading{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;font-size:11px;color:var(--primary)}.spatial-canvas{height:350px;width:100%;overflow:hidden;position:relative}.spatial-canvas :deep(canvas){display:block;touch-action:none}.node-label{position:absolute;z-index:1;pointer-events:none;transform:translateX(-50%);font:10px Consolas,monospace;color:var(--ink);text-align:center;max-width:130px;line-height:1.4;background:color-mix(in srgb, var(--figure-soft-bg) 86%, transparent);padding:2px 4px}.node-label.task{font-family:var(--font);font-size:11px}.spatial-description{font-size:12px;padding:12px 18px;margin:0;border-top:1px solid var(--border);overflow-wrap:anywhere}.spatial-note{font-size:10px;color:var(--muted);padding:0 18px 14px;line-height:1.8;margin:0}@media(max-width:600px){.spatial-canvas{height:260px}}
 </style>

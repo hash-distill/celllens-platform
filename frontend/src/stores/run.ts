@@ -443,8 +443,9 @@ export const useRunStore = defineStore('run', {
         entry.recordError = null
         entry.notFound = false
         useRecentStore().updateStatus(runId, record.status)
-        if (record.status === 'completed' && entry.summary.status === 'idle') {
-          void this.loadSummary(runId)
+        if (record.status === 'completed') {
+          if (entry.summary.status !== 'ok') void this.loadSummary(runId)
+          if (entry.provenance.status !== 'ok') void this.loadProvenance(runId)
         }
       } catch (err) {
         if (err instanceof ApiError) {

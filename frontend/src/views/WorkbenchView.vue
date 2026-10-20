@@ -18,6 +18,7 @@ import { api } from '../api/client'
 import { downloadBlob } from '../utils/csv'
 import { runSourceLabel } from '../utils/source'
 import { STATUS_LABEL, fmtServerTime } from '../utils/format'
+
 const route = useRoute(), router = useRouter()
 const runs = useRunStore(), recent = useRecentStore(), candidates = useCandidatesStore()
 const draft = useDraftStore(), ui = useUiStore()
@@ -30,7 +31,10 @@ const tabs = [{key:'response',label:'响应概览'},{key:'cell',label:'单细胞
 const activeTab = computed(() => route.query.tab === 'function' ? 'metabolism' : tabs.some(tab => tab.key === route.query.tab) ? String(route.query.tab) : 'response')
 watch(() => route.query.tab, tab => { if(tab==='function') void router.replace({path:route.path,query:{...route.query,tab:'metabolism',view:'function'}}) }, {immediate:true})
 watch(runId, id => { editing.value=!id; reportNote.value=''; if(id) runs.openRun(id); else runs.leaveRun() }, {immediate:true})
-watch(record, rec => { if(rec) recent.add({run_id:rec.run_id,cell_line:rec.request.cell_line,perturbation:rec.request.perturbation,mode:rec.request.mode,status:rec.status}) }, {immediate:true})
+watch(() => record.value?.run_id, () => {
+  const rec = record.value
+  if(rec) recent.add({run_id:rec.run_id,cell_line:rec.request.cell_line,perturbation:rec.request.perturbation,mode:rec.request.mode,status:rec.status})
+}, {immediate:true})
 watch([() => record.value?.status, activeTab], ([status,tab]) => {if(status==='completed' && tab!=='response' && tab!=='cell') runs.ensureTabData(runId.value,tab)}, {immediate:true})
 onBeforeUnmount(() => runs.leaveRun())
 function selectTab(tab:string) { void router.replace({path:'/workbench',query:{run:runId.value,tab:tab==='response'?undefined:tab}}) }
@@ -52,7 +56,7 @@ async function resubmit() { if(!record.value || resubmitting.value)return;resubm
         <p v-if="entry?.recordError" class="notice notice-warn">{{ entry.recordError.message }}</p><p v-if="reportNote" class="notice notice-warn">{{ reportNote }}</p>
         <StageProgress v-if="record.status!=='completed'" :record="record" :poll-issue="entry?.pollIssue" />
         <div v-if="record.status==='failed'" class="card"><h2>本次分析失败</h2><p>{{ record.error_message || '请检查运行来源与错误记录。' }}</p><button class="btn btn-primary" :disabled="resubmitting" @click="resubmit">{{ resubmitting?'提交中…':'以相同参数重新运行' }}</button></div>
-        <template v-if="record.status==='completed'"><div class="tabs result-tabs" role="tablist" aria-label="分析结果"><button v-for="tab in tabs" :key="tab.key" class="tab" :class="{active:activeTab===tab.key}" role="tab" :aria-selected="activeTab===tab.key" @click="selectTab(tab.key)">{{ tab.label }}</button></div><ResponseWorkspace v-if="activeTab==='response'" :key="runId" :run-id="runId" /><MetabolismWorkspace v-else-if="activeTab==='metabolism'" :key="runId" :run-id="runId" /><div v-else class="card analysis-panel"><CellStateTab v-if="activeTab==='cell'" :key="runId" :run-id="runId" /><GenesTab v-else-if="activeTab==='genes'" :run-id="runId" /><ValidationTab v-else :run-id="runId" /></div></template>
+        <template v-if="record.status==='completed'"><div class="tabs result-tabs" role="tablist" aria-label="分析结果"><button v-for="tab in tabs" :key="tab.key" class="tab" :class="{active:activeTab===tab.key}" role="tab" :aria-selected="activeTab===tab.key" @click="selectTab(tab.key)">{{ tab.label }}</button></div><ResponseWorkspace v-if="activeTab==='response'" :key="runId" :run-id="runId" /><MetabolismWorkspace v-else-if="activeTab==='metabolism'" :key="runId" :run-id="runId" /><div v-else class="card analysis-panel"><CellStateTab v-if="activeTab==='cell'" :key="runId" :run-id="runId" /><GenesTab v-else-if="activeTab==='genes'" :key="runId" :run-id="runId" /><ValidationTab v-else :key="runId" :run-id="runId" /></div></template>
         <details v-if="entry" class="run-evidence"><summary>运行来源、数据覆盖与解释边界</summary><EvidenceSidebar :entry="entry" /></details>
       </template>
     </section>

@@ -3,9 +3,12 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useServiceStore } from '../stores/service'
 import { useCandidatesStore } from '../stores/candidates'
+import { useThemeStore } from '../stores/theme'
+import UiIcon from './UiIcon.vue'
 const route = useRoute()
 const service = useServiceStore()
 const candidates = useCandidatesStore()
+const theme = useThemeStore()
 const runId = computed(() => typeof route.query.run === 'string' ? route.query.run : '')
 const demoTarget = computed(() => ({path:'/demo',query:runId.value ? {run:runId.value} : {}}))
 </script>
@@ -20,9 +23,21 @@ const demoTarget = computed(() => ({path:'/demo',query:runId.value ? {run:runId.
       <RouterLink :to="demoTarget" :class="{active:route.path==='/demo'}">结果解读</RouterLink>
       <RouterLink to="/about" :class="{active:route.path==='/about'}">使用说明</RouterLink>
     </nav>
-    <RouterLink to="/about" class="service-indicator" :title="'服务状态：'+service.levelLabel"><i :style="{background:service.level==='ok'?'var(--ok)':service.level==='down'?'var(--danger)':service.level==='degraded'?'var(--warn)':'var(--faint)'}"></i><span>{{ service.levelLabel }}</span></RouterLink>
+    <div class="header-actions">
+      <button
+        class="theme-toggle"
+        type="button"
+        :aria-label="theme.current === 'dark' ? '切换到明亮模式' : '切换到深色模式'"
+        :title="theme.current === 'dark' ? '切换到明亮模式' : '切换到深色模式'"
+        @click="theme.toggle()"
+      >
+        <UiIcon :name="theme.current === 'dark' ? 'sun' : 'moon'" :size="16" />
+        <span>{{ theme.current === 'dark' ? '明亮模式' : '深色模式' }}</span>
+      </button>
+      <RouterLink to="/about" class="service-indicator" :title="'服务状态：'+service.levelLabel"><i :style="{background:service.level==='ok'?'var(--ok)':service.level==='down'?'var(--danger)':service.level==='degraded'?'var(--warn)':'var(--faint)'}"></i><span>{{ service.levelLabel }}</span></RouterLink>
+    </div>
   </div></header>
 </template>
 <style scoped>
-.app-header{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}.header-inner{max-width:1360px;margin:auto;padding:0 32px;display:flex;align-items:center;gap:30px;min-height:70px}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;flex:none}.brand strong{font-size:17px}.brand>span{font:15px Georgia,serif}.header-nav{display:flex;align-self:stretch;gap:22px;flex:1}.header-nav>a{display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;font-size:12px;color:var(--muted);white-space:nowrap;text-decoration:none}.header-nav>a.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}.nav-count{font-size:9px;background:var(--primary-weak);border-radius:50%;padding:0 5px}.service-indicator{display:flex;gap:6px;align-items:center;white-space:nowrap;color:var(--muted);font-size:10px}.service-indicator i{width:6px;height:6px;border-radius:50%}@media(max-width:1100px){.service-indicator{display:none}.header-inner{gap:24px}}@media(max-width:760px){.header-inner{padding:14px 16px 0;gap:12px;flex-wrap:wrap}.brand{padding-bottom:5px}.header-nav{order:3;flex-basis:100%;overflow-x:auto;gap:24px;height:43px;scrollbar-width:none}.header-nav>a{font-size:11px}.brand strong{font-size:16px}.service-indicator{display:flex;margin-left:auto;padding-bottom:5px}}
+.app-header{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}.header-inner{max-width:1360px;margin:auto;padding:0 32px;display:flex;align-items:center;gap:30px;min-height:70px}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;flex:none}.brand strong{font-size:17px}.brand>span{font:15px Georgia,serif}.header-nav{display:flex;align-self:stretch;gap:22px;flex:1}.header-nav>a{display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;font-size:12px;color:var(--muted);white-space:nowrap;text-decoration:none}.header-nav>a.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}.nav-count{font-size:9px;background:var(--primary-weak);border-radius:50%;padding:0 5px}.header-actions{display:flex;align-items:center;gap:12px;margin-left:auto}.theme-toggle{appearance:none;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--card-soft);color:var(--ink);cursor:pointer;font:12px var(--font);transition:background .2s ease,border-color .2s ease,color .2s ease}.theme-toggle:hover{background:var(--btn-hover-bg);border-color:var(--border-strong)}.service-indicator{display:flex;gap:6px;align-items:center;white-space:nowrap;color:var(--muted);font-size:10px}.service-indicator i{width:6px;height:6px;border-radius:50%}@media(max-width:1100px){.service-indicator{display:none}.header-inner{gap:24px}.theme-toggle span{display:none}.theme-toggle{padding:8px}}@media(max-width:760px){.header-inner{padding:14px 16px 0;gap:12px;flex-wrap:wrap}.brand{padding-bottom:5px}.header-nav{order:3;flex-basis:100%;overflow-x:auto;gap:24px;height:43px;scrollbar-width:none}.header-nav>a{font-size:11px}.brand strong{font-size:16px}.header-actions{margin-left:auto;padding-bottom:5px}.service-indicator{display:flex}}
 </style>

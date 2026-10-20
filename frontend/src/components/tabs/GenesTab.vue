@@ -284,12 +284,12 @@ function exportCsv(): void {
 <style scoped>
 .gene-analysis-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,1fr);gap:12px}
 .gene-analysis-grid .chart-card{margin:12px 0 0}
-.gene-analysis-grid .gene-detail{margin:12px 0 0;align-self:stretch;border-color:var(--border);background:#f6f7f2;padding:20px 16px}
+.gene-analysis-grid .gene-detail{margin:12px 0 0;align-self:stretch;border-color:var(--border);background:var(--figure-soft-bg);padding:20px 16px}
 .gene-detail strong{font-size:21px;font-weight:500}
 .expression-values{margin:24px 0 14px;display:grid;gap:16px}
 .expression-value{display:grid;grid-template-columns:28px 1fr 48px;gap:8px;align-items:center;font-size:10px}
 .expression-value strong{font-size:11px;font-weight:400;text-align:right}
-.expression-track{height:5px;background:#e4e8e0}.expression-track i{display:block;height:100%}
+.expression-track{height:5px;background:var(--figure-track-bg)}.expression-track i{display:block;height:100%}
 .gene-detail .evidence-list{font-size:11px}
 .gene-detail-empty{color:var(--muted);font-size:12px}
 @media(max-width:1100px){.gene-analysis-grid{grid-template-columns:1fr}.expression-values{max-width:420px;margin-top:14px}}

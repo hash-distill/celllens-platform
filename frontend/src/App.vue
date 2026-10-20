@@ -7,11 +7,15 @@ import { useServiceStore } from './stores/service'
 import { useCatalogStore } from './stores/catalog'
 import { useRunStore } from './stores/run'
 import { useUiStore } from './stores/ui'
+import { useThemeStore } from './stores/theme'
 
 const service = useServiceStore()
 const catalog = useCatalogStore()
 const runs = useRunStore()
 const ui = useUiStore()
+const theme = useThemeStore()
+
+theme.init()
 
 /** 开发数据来源标记（生产构建不启用） */
 const mockOn = isMockEnabled()
@@ -39,7 +43,7 @@ onBeforeUnmount(() => {
 <template>
   <AppHeader />
   <div v-if="mockOn" class="mock-banner" role="status">
-    开发数据模式 · 当前数据为合成数据。请关闭开发开关后连接正式服务。
+    当前为示例数据预览，页面内容用于展示分析流程与交互效果。
   </div>
   <ConnectionBanner />
   <main>
@@ -67,9 +71,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mock-banner {
-  background: #fef3c7;
-  color: #92400e;
-  border-bottom: 1px solid #fde68a;
+  background: var(--mock-banner-bg);
+  color: var(--mock-banner-ink);
+  border-bottom: 1px solid var(--mock-banner-border);
   padding: 7px 24px;
   font-size: 13px;
   font-weight: 600;

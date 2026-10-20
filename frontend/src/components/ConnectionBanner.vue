@@ -24,7 +24,7 @@ async function reconnect(): Promise<void> {
 .connection-banner {
   background: var(--danger-bg);
   color: var(--danger);
-  border-bottom: 1px solid #fecaca;
+  border-bottom: 1px solid var(--danger-border);
   padding: 8px 24px;
   display: flex;
   align-items: center;

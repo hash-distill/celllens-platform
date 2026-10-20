@@ -310,7 +310,7 @@ function sourceLabel(runId: string): string {
 .comparison-actions{justify-content:flex-end}.comparison-column-actions{margin-top:8px}
 .comparison-title{font-size:13px;margin-bottom:5px;color:var(--ink)}
 .comparison-selection{font-size:12px;color:var(--muted);line-height:1.8;margin:0 0 14px}
-.remove-comparison,.clear-comparison{color:#a64839;border:1px solid #dcc1bb}
+.remove-comparison,.clear-comparison{color:var(--danger-soft-ink);border:1px solid var(--danger-soft-border);background:var(--danger-soft-bg)}
 @media(max-width:650px){.comparison-actions{justify-content:flex-start;margin-top:12px}.flex-between{flex-wrap:wrap;gap:12px}}
 .empty-card {
   text-align: center;
@@ -322,7 +322,7 @@ function sourceLabel(runId: string): string {
   margin: 0 0 6px;
 }
 .compare-table th[scope='row'] {
-  background: #f1f3ed;
+  background: var(--figure-soft-bg);
   color: var(--muted);
   font-weight: 600;
   max-width: 260px;

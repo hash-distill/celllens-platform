@@ -101,8 +101,8 @@ function retry(): void {
       本次为在线预测，未关联匹配观测。可选择“实测对照”或打开含匹配观测的已完成实验查看比较结果。
     </div>
     <div v-else-if="isPrecomputed" class="notice notice-warn">
-      <span class="pill pill-synthetic">合成参考值</span>
-      此历史记录的观测数据为合成数据，不能用于实测比较。
+      <span class="pill pill-synthetic">示例参考值</span>
+      此历史记录展示的是示例观测数据，可用于查看页面效果，但不作为实测比较依据。
     </div>
 
     <!-- 指标卡：禁止前端计算指标 -->
@@ -244,7 +244,7 @@ function retry(): void {
   border-radius: var(--radius-sm);
   padding: 20px;
   text-align: center;
-  background: #fbfcfe;
+  background: var(--coverage-bg);
 }
 .state-empty-title {
   margin: 0 0 4px;
