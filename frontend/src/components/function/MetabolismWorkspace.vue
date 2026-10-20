@@ -19,5 +19,5 @@ function select(view: 'function'|'data') { void router.replace({path:route.path,
   </section>
 </template>
 <style scoped>
-.metabolism-views{display:flex;gap:8px;flex-wrap:wrap}.metabolism-views button[aria-pressed=true]{background:var(--primary);color:var(--bg);border-color:var(--primary)}
+.metabolism-views{display:flex;gap:8px;flex-wrap:wrap}.metabolism-views button[aria-pressed=true]{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
 </style>

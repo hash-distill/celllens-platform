@@ -244,7 +244,7 @@ function retry(): void {
   border-radius: var(--radius-sm);
   padding: 20px;
   text-align: center;
-  background:var(--surface-soft);
+  background: var(--coverage-bg);
 }
 .state-empty-title {
   margin: 0 0 4px;

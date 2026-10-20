@@ -67,9 +67,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mock-banner {
-  background: #fef3c7;
-  color: #92400e;
-  border-bottom: 1px solid #fde68a;
+  background: var(--mock-banner-bg);
+  color: var(--mock-banner-ink);
+  border-bottom: 1px solid var(--mock-banner-border);
   padding: 7px 24px;
   font-size: 13px;
   font-weight: 600;

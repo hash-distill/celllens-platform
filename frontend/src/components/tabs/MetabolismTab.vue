@@ -329,15 +329,15 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
 }
 .task-level-filter { display: flex; flex-wrap: wrap; gap: 12px; }
 .filter-check { padding: 5px 7px; border: 1px solid transparent; border-radius: 5px; }
-.filter-check.active { border-color: var(--border-strong); background: #edf3ec; }
+.filter-check.active { border-color: var(--border-strong); background: var(--surface-tint-hover); }
 .task-filter-status { margin: 0 0 12px; }
-.task-detail { padding: 16px; margin: 14px 0; border: 1px solid var(--border-strong); background: #f5f8f3; }
+.task-detail { padding: 16px; margin: 14px 0; border: 1px solid var(--border-strong); background: var(--figure-soft-bg); }
 .task-detail h4 { margin: 0 0 8px; font-size: 14px; }
 .task-detail dl { display: flex; flex-wrap: wrap; gap: 28px; }
 .task-detail dt { color: var(--muted); font-size: 11px; }
 .task-detail dd { margin: 5px 0 0; font-variant-numeric: tabular-nums; }
 .task-name-button { border: 0; background: transparent; color: var(--primary); text-align: left; cursor: pointer; font: inherit; padding: 3px 0; text-decoration: underline; text-underline-offset: 3px; }
-.selected-task-row { background: #edf3ec; }
+.selected-task-row { background: var(--surface-tint-hover); }
 .spacer {
   flex: 1;
 }

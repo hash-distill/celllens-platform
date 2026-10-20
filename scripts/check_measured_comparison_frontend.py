@@ -105,12 +105,15 @@ def main():
             else:
                 expect(panel.locator("[data-comparison-unavailable]")).to_be_visible()
                 assert page.locator(".metric-card").count() == 0
-                assert doc.get("available_measured_cells") == 0
-                expect(
-                    panel.get_by_text(
-                        "该固定数据版本中的匹配测量数为 0，不能据此推断模型准确率。", exact=True
-                    )
-                ).to_be_visible()
+                expect(panel.get_by_text(doc["reason"], exact=True)).to_be_visible()
+                zero_note = panel.get_by_text(
+                    "该固定数据版本中的匹配测量数为 0，不能据此推断模型准确率。", exact=True
+                )
+                if doc.get("available_measured_cells") == 0:
+                    expect(zero_note).to_be_visible()
+                else:
+                    # A comparison may be absent or preparing without a measured-count claim.
+                    expect(zero_note).to_have_count(0)
             for width in [1500, 768, 390]:
                 page.set_viewport_size({"width": width, "height": 1050})
                 page.wait_for_timeout(250)
