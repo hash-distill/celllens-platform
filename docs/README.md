@@ -1,6 +1,6 @@
 # CellLens 文档目录
 
-更新日期：2026-10-15。项目概览和快速启动见 [项目 README](../README.md)。
+更新日期：2026-10-20。项目概览和快速启动见 [项目 README](../README.md)。
 
 ## 先了解和使用系统
 
@@ -13,7 +13,6 @@
 | [单细胞科研图](guide/SCIENTIFIC_CELL_STATE.md) | 共同 PCA、逐细胞着色、累积分布和 SVG/PDF/PNG 导出 |
 | [模型说明](guide/MODELS.md) | STATE、scCellFie 的原始任务、输入输出与项目边界 |
 | [响应工作台说明](guide/RESPONSE_WORKBENCH.md) | 单细胞状态、表达与功能联读、冻结关联与科学解释 |
-| [结果讲解参考](guide/DEMO_SCRIPT.md) | 四章结果解读的操作与讲解 |
 
 ## 开发、部署与科学解释
 
@@ -29,8 +28,11 @@
 | [前端说明](FRONTEND.md) | 页面、状态、来源标记与开发代理 |
 | [第三方说明](THIRD_PARTY_NOTICES.md) | 上游许可与引用 |
 | [脚本索引](../scripts/README.md) | 启动、检查与资产处理脚本的用途 |
+| [仓库维护](MAINTENANCE.md) | 目录保留规则、过时材料清理和恢复方法 |
 
 ## 截图与检查记录
+
+- [2026-10-20 前端主题整合](verification/2026-10-20-frontend-theme-integration.md)：现有逻辑保留、资源路径、主题和 80 组页面检查。
 
 - [2026-10-15 实测对比验收](verification/2026-10-15-measured-comparison.md)：627 个真实观测细胞、四背景新推理、五个当前比较、官方指标核对与页面验收。
 
@@ -46,7 +48,7 @@
 
 - [2026-10-09 表达尺度修正与诊断](verification/2026-10-09-expression-scale-and-validation.md)：CP10K/log 契约、11 个历史运行重算、表达/DE/不变化基线、K562 与 Jurkat 实测诊断及训练判断。
 
-- [页面截图](screenshots/README.md)：2026-10-10 正式页面与真实结果回放，另保留历史版本说明。
+- [页面截图](screenshots/README.md)：保留日期明确的真实页面；最新主题检查见上方整合记录。
 - [2026-10-09 官方完整性验收](verification/2026-10-09-official-completeness.md)：直接调用 scCellFie 官方 API、四背景真实报告、缺失基因及科学解释限制。
 - [2026-10-09 SE 全覆盖推进](verification/2026-10-09-se-full-coverage.md)：HGNC 身份适配、真实四背景 SE 预测、完整查询、原始坐标保全及校准限制。
 - [二维投影修复](verification/2026-10-08-required-projection.md)：投影完成契约、历史演示补齐及新旧实验显示检查。

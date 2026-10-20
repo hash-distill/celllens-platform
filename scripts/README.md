@@ -21,28 +21,23 @@
 
 | 脚本 | 环境 | 产物 |
 |---|---|---|
+| `check_theme_frontend.py` | 生产 API；主题、系统偏好、静态资源、80 组页面/窗口布局和已有实验；不提交推理 | `reports/frontend-integration-2026-10-20/browser/` |
+| `check_records_status_frontend.py` | 真实实验历史、结果直达与刷新、服务状态及响应式布局 | `reports/records-status-2026-10-11/` |
+| `check_measured_comparison_frontend.py` | 已保存真实预测与实测比较、缺失状态、导出及助手摘要 | `reports/measured-comparison-2026-10-15/browser/` |
+| `check_provider_frontend.py` | 大模型提供方选择与设置交互；实际调用范围以脚本内拦截规则为准 | 终端检查结果 |
 | `check_assistant_frontend.py --base-url http://127.0.0.1:8000` | 亮暗/系统外观、快捷栏、设置、真实结果摘要、纯文本解读和下载；外部模型响应被拦截，不调用真实服务 | `reports/assistant-ui-2026-10-11/` |
 | `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用和手机布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
-| `check_formal_frontend.py --url http://127.0.0.1:8001` | 2026-10-10 历史验收：旧回放/实测入口、科研图与布局；当前入口使用 check_online_workflow_frontend.py | `reports/formal-system-2026-10-10/browser/` |
-| `check_function_frontend.py` | 生产服务、真实保存结果、Playwright | `reports/function-visualization-2026-10-09/browser/` |
 | `check_frontend.py` | 后端与 Vite；显式 Mock 回归 | 终端检查结果 |
-| `check_3d_frontend.py` | 兼容入口，委托当前响应工作台/功能网络检查，须提供 --run-id | `reports/frontend/response/` |
-| `check_navigation_frontend.py` | 真实 API；首页、服务器记录、分页筛选、导航、预计算提交与响应式检查，须提供 --run-id | `reports/frontend/navigation/` |
-| `check_production_frontend.py` | 已构建前端、由后端提供页面 | `reports/frontend/production/` |
-| `check_required_projection_frontend.py` | 真实 API；遍历全部完成实验、旧/新预计算投影、并排/叠加、刷新与手机布局 | `reports/frontend/projection/` |
-| `check_response_frontend.py` | 真实已完成运行，含冻结追溯；用独立浏览器上下文注入局部错误 | `reports/frontend/response/` |
 | `check_metabolism_frontend.py` | 单选覆盖等级、空分类、搜索、实际条形点击、真实与旧任务详情、缺失结果请求及手机布局 | `reports/frontend/metabolism-fix/` |
 | `check_coverage_frontend.py` | 仅显示覆盖数量与清单、真实四背景、双语基因分类筛选、七项任务介绍与来源、覆盖项下载、扰动选择与移动布局；不创建记录 | `reports/gene-education-2026-10-11/` |
-| `check_completeness_frontend.py` | 兼容入口，委托当前独立覆盖目录验收 | `reports/gene-education-2026-10-11/` |
-| `check_context_capabilities_frontend.py` | 2026-10-09 历史验收：三模式与 ALDOA 诊断；已不适用于当前新建入口 | `reports/four-context-capabilities-2026-10-09/browser/` |
 
 生产检查示例：
 
 ```bash
-python scripts/check_production_frontend.py --url http://127.0.0.1:8000 --smoke
+python scripts/check_theme_frontend.py --url http://127.0.0.1:8000
 ```
 
-浏览器脚本需要其 Python 环境中的 Playwright 与 Chromium。`check_production_frontend.py` 由原 `inspect_3d_frontend.py` 更名，保留原生产页面检查功能。
+浏览器脚本需要其 Python 环境中的 Playwright 与 Chromium。旧章节播放、预计算新建、旧投影与三维兼容入口的验收脚本已退休；当前命令以上表为准，历史代码可从提交 `9ba57c7` 恢复。
 
 ## 资产准备与契约导出
 
@@ -71,7 +66,6 @@ python scripts/check_production_frontend.py --url http://127.0.0.1:8000 --smoke
 | `audit_supervision_sources.py` | 检查上游 .X/.raw/layers 特征轴与 HGNC 覆盖；不给缺测基因补零，不读取表达值 |
 | `smoke_contexts.py` | 三个新增背景的 MySQL + CUDA + STATE + scCellFie 真实运行；要求新推理，核验 H5AD、预测群体、清单和结果接口 |
 | `backfill_official_completeness.py` | 用官方 scCellFie API 给已完成真实运行添加完整性报告；验证冻结来源和原文件哈希，仅新增报告与登记 |
-| `check_contexts_frontend.py` | 核验四背景选择、扰动列表及三个真实结果页面；使用 `--runs reports/context-integration-2026-10-08/real_runs.json` 读取运行编号 |
 | `attach_replogle_hvg.py` | 给已有 H5AD 补齐注册面板矩阵 |
 | `register_assets.py` | 计算注册所需哈希；`--write` 会更新注册表 |
 | `build_demo_bundle.py` | 生成明确标注的合成演示包，含单细胞表达矩阵与二维投影 |

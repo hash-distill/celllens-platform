@@ -1,57 +1,41 @@
 # 前端工作台
 
-前端源码统一位于 frontend/，采用 Vue 3、TypeScript、Pinia、Vue Router、ECharts 和 Three.js。启动与构建见 [部署与启动](DEPLOYMENT.md)，检查与排错见 [运行文档](OPERATIONS.md)，接口语义见 [API](API.md)。
+前端位于 `frontend/`，采用 Vue 3、TypeScript、Pinia、Vue Router、ECharts 和 Three.js。启动与构建见 [部署与启动](DEPLOYMENT.md)，接口语义见 [API](API.md)，当前验收入口见 [脚本索引](../scripts/README.md)。
 
-## 页面设计整合（2026-10-20）
+## 页面与实验流程
 
-首页背景、分段介绍、入口卡片和全局浅深色样式来自 `new_frontend` 的 `3da8883`，与本地现有实验工作流整合。继续使用原有外观偏好与“跟随系统”设置，保留 AI 解读、模型连接设置、快捷工具、覆盖目录和实测比较。首页在线背景数由接口返回的可用状态决定；新建实验仍只提交在线推演。
+首页介绍研究流程；`/workbench` 创建实验；`/records` 检索服务器历史；`/demo?run=<run_id>` 直接分析选定实验；`/compare` 管理比较候选；`/coverage` 查看模型覆盖；`/status` 查看服务与环境；`/settings` 管理外观与大模型连接；`/about` 提供使用说明。
 
-五张设计图片位于 `src/assets/theme/`，经构建生成带哈希的 `/assets/` 地址，由现有后端资源接口提供。验收使用 `python scripts/check_theme_frontend.py`；来源、保护检查和验证范围见 [整合验收记录](verification/2026-10-20-frontend-theme-integration.md)。
+新建、参数复用和重试统一提交在线推演。已有结果从实验记录打开，不重新创建回放或实测对照任务。结果页按运行 ID 绑定响应概览、单细胞状态、基因响应、代谢功能和实测比较；旧记录可以保留原始来源与历史指标。结果解读入口复用当前结果工作区，旧四章自动播放器已退休。
 
-## 扰动响应工作台（2026-10-08）
+实验记录通过 `GET /api/v1/experiments` 读取当前在线实验列表，保留检索、状态筛选和分页。浮动 AI 解读绑定当前实验，未完成实验不生成结果解读；模型连接由设置页管理。页面快捷工具和服务状态入口继续保留。
 
-独立首页介绍 STATE → 单细胞状态 → 表达与代谢分析的流程，不放实验表单。顶部统一提供首页、实验工作台、实验记录、实验比较、结果解读、使用说明六个入口。工作台将参数、进度和分析集中在同一页：上方横向表单，下方运行及结果；分析已有实验时折叠下一次实验草稿。所有主页面使用相同的 1360px 最大宽度与移动端边距。细胞器结构视窗及其专用场景状态、侧栏已删除，原项目 logo 保留。新工作流见 [改造与创新说明](guide/RESPONSE_WORKBENCH.md)。
+## 页面设计与资源
 
-`/workbench?run=<run_id>` 默认打开响应概览。五个主标签为响应概览、单细胞状态、基因响应、代谢功能、预测验证。代谢功能内部由 `MetabolismWorkspace.vue` 集中提供功能前后对比和任务分数与数据覆盖；旧 `tab=function` 自动进入 `tab=metabolism&view=function`。`/runs/:runId` 重定向至工作台，旧 `tab=structure` 回到响应概览。详见 [功能前后对比](guide/FUNCTION_WORKSPACE.md)。
+2026-10-20 的首页背景、分段介绍、入口卡片与浅深色样式来自 `new_frontend` 提交 `3da8883`，已与本地工作流整合。`stores/preferences.ts` 统一管理页头、快捷栏、设置页、跟随系统和图表主题，不维护第二套外观状态。
 
-单细胞状态已改为后端共同对照 PCA、指标着色与 ECDF 科研图，页面使用真实 SVG，同时支持 SVG/PDF/300 dpi PNG/JSON 导出；通过独立只读 `/cell-state` 和 `/cell-state/figure` 接口准备数据。`CellStateTab.vue` 取消旧请求、防止切换时旧图覆盖新图，并释放 Blob URL。指标选择通过 `feature_kind=gene|task&feature_id=...` 可分享；基因和任务视图提供对应的逐细胞图链接。旧 `/projection` 及历史产物保持兼容，但不作为新的单细胞主图。真实来源无法核对或旧合成示例时明确不可用，见 [科研图说明](guide/SCIENTIFIC_CELL_STATE.md)。基因条形和表格选择联动，数值检查器展示实际平均表达；缺少观测时标“未提供”。
+五张设计图片位于 `src/assets/theme/`，经 Vite 构建生成带哈希的 `/assets/` 地址，由现有后端资源接口提供。图标保存在 `public/favicon.png`，页头、标签页和 README 共用原图。首页可用背景数以接口状态为准。来源与验证范围见 [主题整合记录](verification/2026-10-20-frontend-theme-integration.md)。
 
-代谢功能页的覆盖等级为互斥单选：全部、覆盖支持、探索性、证据不足。计数仅统计已加载结果；选择零记录等级或无匹配搜索时显示对应范围的空态。条形、纵轴任务名和表格任务名可选择任务，更新分数详情与已有冻结追溯。先读取任务列表提供的可用性，再请求反应与追溯；已知缺失直接说明，未知或损坏继续显示真实请求错误。
+## 代码与数据流
 
-`/demo?run=<run_id>&step=0` 展示实验问题、表达响应、代谢功能、证据与验证四章；`step` 范围 0–3，刷新保留章节与运行。自动播放每章 10 秒，标题下方显示进度条与倒计时，可暂停、回退；页面隐藏后停止自动推进。方向键切章、空格播放/暂停（输入框及原生按钮操作除外）、Esc 返回该运行。未指定运行时展示分析流程介绍与结果空态，不创建任务、不生成替代结果。结果页的“解读本次实验”自动绑定该运行。
+`src/api/` 负责请求和数值转换，`src/stores/` 管理运行及分块结果，`src/components/tabs/` 展示结果，`src/charts/` 只绘制接口数据。前端不解析 H5AD，也不重新计算科研指标。页面路由和部分图表模块懒加载。
 
-功能网络代码和结果解读路由懒加载。功能网络依赖 chunk 约 545 kB（gzip 约 137 kB），构建会报告大 chunk 提示。三维功能网络展示冻结知识关联；当前没有三维表达坐标、形态预测或区室因果关系。
+请求默认 30 秒超时，覆盖响应头与正文；创建不自动重发。轮询串行执行，网络中断与超时退避重试，终态或离开详情后停止；局部结果失败只影响对应区域。科研图与覆盖目录按需使用更长的超时。过期请求通过 AbortController 取消，图像 Blob URL 在切换或卸载时释放。
 
-验证：在后端与 Vite 启动后执行 `python scripts/check_frontend.py`（原 9 项回归）和 `python scripts/check_response_frontend.py --run-id <运行编号>`（真实结果、冻结知识关联与 WebGL 功能网络检查）以及 `python scripts/check_navigation_frontend.py --run-id <运行编号>`（首页、记录、导航、提交与响应式检查）。浏览器脚本需安装 Playwright。新截图和检查结果写入 `reports/frontend/`；精选 [页面截图](screenshots/README.md) 和 [历史检查记录](verification/2026-10-04/README.md) 单独维护。生产入口可使用 `python scripts/check_production_frontend.py --url http://127.0.0.1:8000 --smoke` 检查，生产直达和刷新 `/demo` 由后端 SPA 路由支持。
+开发代理目标由 `frontend/.env.local` 的 `CELLLENS_API_PROXY_TARGET` 控制，浏览器保留 `VITE_API_BASE=/api`。生产页面和 API 同源。真实 API 是默认数据源，生产构建忽略 Mock 开关；开发 Mock 必须显式启用，不会因请求失败自动切换。Mock 与真实记录和比较候选分别存储。
 
-## 页面与数据流
+## 结果展示与解释边界
 
-项目图标统一保存在 `frontend/public/favicon.png`，使用交付的透明 PNG 原图。网页页头、浏览器标签页、Apple 触屏书签图标和 README 共用该文件。Vite 开发服务直接提供 public 文件，生产构建会复制到 dist；后端提供 `/favicon.png` 并兼容 `/favicon.ico`，均以 PNG 内容返回，更新时要求浏览器重新验证缓存。
+单细胞状态由后端生成共同对照 PCA、逐细胞指标着色和 ECDF 科研图，支持 SVG、PDF、300 dpi PNG 和 JSON 导出。`CellStateTab.vue` 不用旧浏览器随机投影替代实际科研图；无法核对来源时明确不可用，见 [科研图说明](guide/SCIENTIFIC_CELL_STATE.md)。
 
-首页说明产品与研究流程；工作台提交参数并展示阶段、投影、基因、代谢、匹配观测和证据；实验记录从 `GET /api/v1/runs` 读取数据库中的全部历史实验，可分页及按目标/编号、状态、来源筛选；实验比较最多并列四个本机保存的候选；使用说明解释来源与服务状态。
+`FunctionWorkspace.vue` 默认展示逐细胞代谢任务空间的 UMAP，可切换 PCA，并按所选任务着色；任务列表、反应、关联基因和分数详情仍取自本次冻结结果。原独立 SVG 节点组件和每实验重复完整性面板已移除，模型覆盖集中在独立目录。详见 [代谢功能说明](guide/FUNCTION_WORKSPACE.md)。
 
-src/api/ 统一请求和数值转换，src/stores/ 管理运行及分块结果，src/components/tabs/ 展示各结果，src/charts/ 只绘制接口数据。页面路由懒加载，ECharts 按需注册。基因、任务和反应表每页 50 条；搜索/排序后回到第一页。基因 CSV 导出全部已加载接口行，包含来源和截断说明，不限于当前分页。
+响应概览中的 `TaskTrace.vue` / `TraceNetwork.vue` 展示冻结知识关联，三维图不表示细胞器空间、形态或因果贡献。真实来源与历史合成来源分别标识；缺失、未知与零不能互换。证据读取本次历史 manifest，不能用当前 catalog 替代历史版本。
 
-请求默认 30 秒超时，覆盖响应头和正文；创建不自动重发。轮询串行执行，网络中断与超时退避重试，终态或离开详情后停止；局部结果失败只影响对应区域。
+实测比较仅展示已有匹配观测，不填补观测值，也不将匹配比较称为独立留出验证。scCellFie 分数不是通量、浓度或 ATP 产量；覆盖不是准确率，知识关联不是驱动归因。训练排除关系、缺失源数据等限制以当前结果与 [模型与数据](MODEL_AND_DATA.md) 为准。
 
-## 来源与本机记录
+## 检查与产物
 
-真实 API 是默认模式。生产构建始终连接真实 API，忽略 VITE_ENABLE_MOCK 和浏览器旧 Mock 开关；正式界面不提供 Mock 入口。开发服务可使用显式 VITE_ENABLE_MOCK 开关，失败不会自动切换。详情、证据栏、候选比较及导出文件标明来源。
+当前主题与页面综合检查使用 `python scripts/check_theme_frontend.py`；历史与服务状态使用 `check_records_status_frontend.py`；在线提交契约使用 `check_online_workflow_frontend.py`（拦截新预测请求）；AI、实测比较、覆盖目录与科研图检查见 [脚本索引](../scripts/README.md)。前端工具计算可分别运行 `node scripts/test-function-network.mjs` 与 `node scripts/check-prediction-evidence.mjs`。
 
-Mock 运行持久保存在本浏览器的独立存储中，编号不会因刷新复用；Mock 实验记录与真实服务器实验记录相互隔离，比较候选按 Mock/API 分开保存。浏览器禁止存储时降级为会话内记录。新建实验只提交 online；结果回放和实测对照已移除。历史结果从服务器实验记录打开，保留 `frozen_model_result` / `synthetic_demo` 等原始来源；复用参数或重试旧记录会创建在线推演。
-
-扰动选项按 cell_line 和 mode 读取，预计算只显示通过校验的组合，切换模式后无效的旧选择会阻止提交。开发代理目标由 frontend/.env.local 的 CELLLENS_API_PROXY_TARGET 控制；浏览器保留 VITE_API_BASE=/api。生产页面由后端同源提供。
-
-## 科学解释边界
-
-证据栏读取本次历史 manifest 的模型、数据和哈希，不用当前 catalog 代替历史版本。代谢页请求完整有效任务，旧产物缺失或合成预计算包时标明读取 Top 摘要；无有效预测变化的任务排除并提示，不能补零。
-
-验证页只读取后端已有指标，不重算或填样例数值。不提供新建实测对照；仅历史记录可展示已有观测指标。训练排除关系未核实，指标范围限于匹配观测比较。页面显示表达/DE/不变化基线及代谢指标，始终保留非独立留出说明。真实任务 determinant_genes 仍为空；已实现的任务—反应—基因图来自冻结知识库，不表示评分决定基因归因。候选比较未自动核验版本，不输出实验优先级评分。
-
-## 功能前后对比组件
-
-`FunctionWorkspace.vue` 复用本次任务、完整性与冻结追溯接口，`getFunctionTrace` 读取 `scope=all`；不重新计算或覆写科学产物。`FunctionNetwork.vue` 以原生 SVG 表示一个任务、当前选中反应及全部关联基因；数值与布局函数位于 `utils/functionNetwork.ts`。对照、预测、可用实测共享节点坐标和各类色标；变化量采用正负对称色标。缺失与零分别显示，绝对分数颜色不表达相对对照的升降。任务/反应按 50 项分页，图和详情保留全部关联基因。
-
-任务与官方完整性请求使用 AbortController，过期响应不得覆盖新选中任务。历史合成记录保留分数和来源标签，不生成真实知识网络；失败可局部重试。解读第三章复用功能组件，SVG 空格键操作不会触发自动播放。图示不是空间结构、通量或因果贡献。
-
-检查：frontend 下 `node scripts/test-function-network.mjs`，根目录 `python scripts/check_function_frontend.py`（需 Playwright 和已启动的生产服务）。
+新截图、日志、下载和检查 JSON 写入 Git 忽略的 `reports/`。日期明确的精选证据见 [页面截图](screenshots/README.md) 和 `docs/verification/`；历史检查记录中的已退休脚本不再作为当前命令。归档与恢复规则见 [仓库维护](MAINTENANCE.md)。

@@ -22,3 +22,7 @@ frontend/dist/
 reports/
 output/
 torchinductor*/
+
+# Root-level temporary test files and one-off design review exports.
+/tmp????????
+/DESIGN-IS-*/
