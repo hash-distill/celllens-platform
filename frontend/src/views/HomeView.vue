@@ -29,7 +29,7 @@ const storySections = [
   {
     key: 'predict',
     eyebrow: 'PERTURBATION FORECAST',
-    title: '从一次基因扰动开始，把变化先看见。',
+    title: '从一次基因扰动开始，把变化先看见',
     body:
       '选择细胞背景与目标基因后，CellLens 会把在线预测流程组织成一条清晰的实验路径；已有结果可以从实验记录继续阅读。',
     metrics: ['背景可用性以服务目录为准', '64–4,096 个预测细胞', '在线推演 · 历史结果查询'],
@@ -39,7 +39,7 @@ const storySections = [
   {
     key: 'state',
     eyebrow: 'CELL STATE',
-    title: '不只给结果，也把细胞状态的空间关系展开。',
+    title: '不只给结果，也把细胞状态的空间关系展开',
     body:
       '在共同对照坐标下比较对照、预测与可用观测，结合基因或代谢任务着色，把群体迁移、分布偏移和不同区域的变化放到同一视图里阅读。',
     metrics: ['共同坐标', '逐细胞散点', '表达与任务着色'],
@@ -49,7 +49,7 @@ const storySections = [
   {
     key: 'metabolism',
     eyebrow: 'FUNCTION LAYERS',
-    title: '把表达变化一路追到代谢功能。',
+    title: '把表达变化一路追到代谢功能',
     body:
       '基因响应、代谢任务、反应网络与 GPR 关系被组织成连续的解释层，帮助核对变化方向与知识关联。关联不等于因果，代谢分数不代表真实通量。',
     metrics: ['基因响应', '任务与反应评分', '任务-反应-基因关联'],
@@ -59,7 +59,7 @@ const storySections = [
   {
     key: 'evidence',
     eyebrow: 'TRACEABILITY',
-    title: '关键结果可以回看来源、覆盖范围与导出记录。',
+    title: '关键结果可以回看来源、覆盖范围与导出记录',
     body:
       '参数、版本、文件哈希、完整性信息和导出能力被放在同一条证据链里，让展示页面不只是好看，也能真正支撑研究讨论与复核。',
     metrics: ['来源记录', '完整性信息', 'CSV / JSON / SVG / PDF / PNG 导出'],
@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
         <h1>
           从扰动输入开始，
           <br />
-          读懂细胞状态与功能变化。
+          读懂细胞状态与功能变化
         </h1>
         <p class="hero-lead">
           CellLens 将单细胞状态预测、基因响应分析、代谢功能解读与结果溯源整合在同一条阅读路径里，帮助你从一个扰动条件出发，逐步看到细胞如何变化、哪些功能受到影响，以及这些结果来自哪里。
@@ -247,7 +247,7 @@ onBeforeUnmount(() => {
     <section class="intro-strip">
       <div class="intro-copy">
         <span class="section-kicker">PLATFORM OVERVIEW</span>
-        <h2>沿着一次实验的路径，认识系统的核心能力。</h2>
+        <h2>沿着一次实验的路径，认识系统的核心能力</h2>
       </div>
       <p>
         从实验输入、单细胞状态到代谢功能与证据核对，下面几部分对应的是研究中最常被反复查看的几个层面。
@@ -292,7 +292,7 @@ onBeforeUnmount(() => {
     <section ref="browseSection" class="browse-section" data-key="browse" aria-label="进入系统">
       <div class="browse-header">
         <span class="section-kicker">START EXPLORING</span>
-        <h2>选择你要进入的部分，继续查看实验与结果。</h2>
+        <h2>选择你要进入的部分，继续查看实验与结果</h2>
         <p>你可以直接进入实验工作台开始分析，也可以浏览历史记录、比较不同实验，或按章节阅读一次完整结果。</p>
       </div>
 
