@@ -48,13 +48,13 @@ const loadMock = import.meta.env.DEV
   : () => Promise.reject(new Error('Development data are disabled in production'))
 
 export const api = {
-  async getCellState(runId: string, kind: 'gene'|'task', feature: string, signal?: AbortSignal): Promise<ScientificCellState> {
+  async getCellState(runId: string, kind: 'gene'|'task', feature: string, signal?: AbortSignal, embedding: 'pca'|'umap' = 'pca', space: 'expression'|'metabolic' = 'expression'): Promise<ScientificCellState> {
     if (isMockEnabled()) throw new ApiError({kind:'http',status:409,code:'CELL_STATE_UNAVAILABLE',message:'Mock 未提供可核验的逐细胞表达。',endpoint:'/cell-state'})
-    return apiFetch<ScientificCellState>(`/runs/${encodeURIComponent(runId)}/cell-state`, {query:{feature_kind:kind,feature_id:feature},signal,timeoutMs:120000})
+    return apiFetch<ScientificCellState>(`/runs/${encodeURIComponent(runId)}/cell-state`, {query:{feature_kind:kind,feature_id:feature,embedding,space},signal,timeoutMs:120000})
   },
-  async getCellStateFigure(runId: string, kind: 'gene'|'task', feature: string, format: 'svg'|'pdf'|'png', signal?: AbortSignal): Promise<Blob> {
+  async getCellStateFigure(runId: string, kind: 'gene'|'task', feature: string, format: 'svg'|'pdf'|'png', signal?: AbortSignal, embedding: 'pca'|'umap' = 'pca', space: 'expression'|'metabolic' = 'expression'): Promise<Blob> {
     if (isMockEnabled()) throw new Error('Mock 未提供科研图')
-    const response = await window.fetch(apiUrl(`/runs/${encodeURIComponent(runId)}/cell-state/figure`,{feature_kind:kind,feature_id:feature,file_format:format}),{signal})
+    const response = await window.fetch(apiUrl(`/runs/${encodeURIComponent(runId)}/cell-state/figure`,{feature_kind:kind,feature_id:feature,file_format:format,embedding,space}),{signal})
     if (!response.ok) {
       const body = await response.json().catch(() => null)
       throw new Error(parseDetail(body?.detail,`科研图请求失败：HTTP ${response.status}`).message)
@@ -233,7 +233,9 @@ export const api = {
   /** 报告下载：成功返回 Blob；404 表示未提供报告 */
   async downloadReport(runId: string): Promise<{ blob: Blob; filename: string }> {
     if (isMockEnabled()) return (await loadMock()).downloadReport(runId)
-    const raw = await apiFetchRaw(`/runs/${encodeURIComponent(runId)}/report`, { timeoutMs: 60000 })
+    const raw = await apiFetchRaw(`/runs/${encodeURIComponent(runId)}/report`, {
+      timeoutMs: 60000, responseType: 'blob',
+    })
     if (!raw.ok) {
       const detail =
         raw.data && typeof raw.data === 'object' && 'detail' in (raw.data as Record<string, unknown>)
@@ -252,10 +254,14 @@ export const api = {
         detail,
       })
     }
-    const body = typeof raw.data === 'string' ? raw.data : JSON.stringify(raw.data, null, 2)
+    if (!(raw.data instanceof Blob) || !raw.data.type.startsWith('application/pdf') ||
+        await raw.data.slice(0, 5).text() !== '%PDF-') {
+      throw new ApiError({kind:'http',status:raw.status,code:'INVALID_REPORT',
+        message:'报告未生成有效 PDF，请重试',endpoint:`/runs/${runId}/report`})
+    }
     return {
-      blob: new Blob([body], { type: 'text/html;charset=utf-8' }),
-      filename: `celllens-${runId}.html`,
+      blob: raw.data,
+      filename: `celllens-${runId}.pdf`,
     }
   },
 }

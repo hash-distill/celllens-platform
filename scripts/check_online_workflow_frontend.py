@@ -1,4 +1,4 @@
-"""Check the running online-only workbench and anonymous upload workspace.
+"""Check the running online workbench and stored results.
 
 Run with playwright installed. New online submissions are intercepted; no GPU job is created.
 """
@@ -27,8 +27,8 @@ def check(base: str, executable: str | None = None) -> None:
             page.locator("#record-search").fill(run_id)
             page.get_by_role("button", name="检索", exact=True).click()
             expect(page.locator(".records-table tbody tr")).to_have_count(1)
-            page.get_by_role("link", name="打开分析", exact=True).click()
-            expect(page).to_have_url(base + "/workbench?run=" + run_id)
+            page.get_by_role("link", name="实验分析", exact=True).click()
+            expect(page).to_have_url(base + "/demo?run=" + run_id)
         page.goto(base + "/workbench")
         expect(page.get_by_role("heading", name="实验工作台", exact=True)).to_be_visible()
         expect(page.locator('input[name="run-mode"]')).to_have_count(0)
@@ -65,16 +65,10 @@ def check(base: str, executable: str | None = None) -> None:
         for width in (390, 768, 1280):
             page.set_viewport_size({"width": width, "height": 900})
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
-        page.goto(base + "/datasets")
-        expect(page.get_by_role("heading", name="上传数据与分析", exact=True)).to_be_visible()
-        expect(page.get_by_text("请登录后使用个人数据服务", exact=True)).to_have_count(0)
-        for endpoint in ("datasets", "analyses"):
-            assert page.request.get(base + "/api/v1/" + endpoint).status == 200
-        assert page.request.get(base + "/api/v1/data-capabilities").json()["worker_enabled"] is True
         assert not errors and not auth_requests, (errors, auth_requests)
         assert not page.context.cookies()
         browser.close()
-    print("Online-only workbench, historical parameter reuse and anonymous upload access: OK")
+    print("Online workbench and historical parameter reuse: OK")
 
 
 if __name__ == "__main__":

@@ -1,12 +1,11 @@
 import json
-from types import SimpleNamespace
 
 import httpx
 import pytest
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from backend.app.assistant import AssistantService, Connection, build_context
+from backend.app.assistant import AssistantService, Connection
 from backend.app.config import Settings
 from backend.app.core.run_manifest import file_sha256
 from backend.app.main import create_app
@@ -66,8 +65,80 @@ async def test_completion_is_bounded_and_read_only(token_parameter):
 
 
 @pytest.mark.asyncio
+async def test_gemini_uses_official_compatible_endpoint_and_budget():
+    async def handler(request):
+        assert request.url == "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+        assert request.headers["authorization"] == "Bearer secret-key"
+        body = json.loads(request.content)
+        assert body["max_tokens"] == 2048 and "max_completion_tokens" not in body
+        assert body["messages"][0] == {"role": "system", "content": "scientific boundary"}
+        return httpx.Response(
+            200, json={"choices": [{"message": {"content": "Gemini text"}, "finish_reason": "stop"}]}
+        )
+
+    result = await AssistantService(Settings(_env_file=None), httpx.MockTransport(handler)).complete(
+        connection(provider="gemini", base_url="https://generativelanguage.googleapis.com/v1beta/openai"),
+        [{"role": "system", "content": "scientific boundary"}, {"role": "user", "content": "summary"}],
+    )
+    assert result["provider"] == "gemini" and result["text"] == "Gemini text"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "reason,normalized",
+    [
+        ("end_turn", "stop"),
+        ("stop_sequence", "stop"),
+        ("max_tokens", "length"),
+        ("refusal", "content_filter"),
+    ],
+)
+async def test_claude_native_headers_system_text_and_usage(reason, normalized):
+    async def handler(request):
+        assert request.url == "https://api.anthropic.com/v1/messages"
+        assert request.headers["x-api-key"] == "secret-key"
+        assert request.headers["anthropic-version"] == "2023-06-01"
+        assert "authorization" not in request.headers
+        body = json.loads(request.content)
+        assert body["system"] == "scientific boundary"
+        assert body["messages"] == [{"role": "user", "content": "summary"}]
+        assert body["max_tokens"] == 2048 and "max_completion_tokens" not in body
+        assert not body["stream"] and "tools" not in body
+        return httpx.Response(
+            200,
+            json={
+                "content": [
+                    {"type": "thinking", "thinking": "private reasoning"},
+                    {"type": "text", "text": "Claude text"},
+                    {"type": "text", "text": "secret-key"},
+                ],
+                "stop_reason": reason,
+                "usage": {
+                    "input_tokens": 20,
+                    "output_tokens": 4,
+                    "cache_creation_input_tokens": 5,
+                    "cache_read_input_tokens": 3,
+                },
+            },
+        )
+
+    result = await AssistantService(Settings(_env_file=None), httpx.MockTransport(handler)).complete(
+        connection(provider="anthropic", base_url="https://api.anthropic.com/v1"),
+        [{"role": "system", "content": "scientific boundary"}, {"role": "user", "content": "summary"}],
+    )
+    assert result["provider"] == "anthropic"
+    assert result["text"] == "Claude text\n\n[REDACTED]"
+    assert result["finish_reason"] == normalized
+    assert result["usage"] == {"prompt_tokens": 28, "completion_tokens": 4, "total_tokens": 32}
+    assert "private reasoning" not in json.dumps(result)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "provider,url", [("custom", "https://api.openai.com/v1"), ("anthropic", "https://api.anthropic.com/v1")]
+)
 @pytest.mark.parametrize("mode", ["error", "redirect", "large", "invalid", "empty", "timeout"])
-async def test_upstream_errors_do_not_leak(mode):
+async def test_upstream_errors_do_not_leak(mode, provider, url):
     async def handler(request):
         if mode == "timeout":
             raise httpx.ReadTimeout("secret-key")
@@ -83,43 +154,10 @@ async def test_upstream_errors_do_not_leak(mode):
 
     service = AssistantService(Settings(_env_file=None), transport=httpx.MockTransport(handler))
     with pytest.raises(HTTPException) as error:
-        await service.complete(connection(), [])
+        await service.complete(connection(provider=provider, base_url=url), [])
     assert "secret-key" not in str(error.value.detail)
 
 
-def test_context_is_filtered_and_tampering_rejected(tmp_path):
-    settings = Settings(_env_file=None, project_root=tmp_path)
-    analysis_id = "ana_" + "a" * 32
-    root = settings.user_analysis_root / analysis_id
-    root.mkdir(parents=True)
-    report = {
-        "analysis_id": analysis_id,
-        "dataset_id": "ds_" + "b" * 32,
-        "qc": {"n_cells": 32, "n_genes": 6546, "groups": {"a": 16, "b": 16}},
-        "genes": [{"gene": "MYC", "group": "a", "mean_log1p_cp10k": 2}],
-        "projection": {"points": [{"cell_id": "private-cell"}]},
-        "provenance": {
-            "source_sha256": "c" * 64,
-            "metadata": {"description": "private-description", "expression_scale": "raw_counts"},
-        },
-    }
-    path = root / "report.json"
-    path.write_text(json.dumps(report), encoding="utf-8")
-    analysis = {
-        "id": analysis_id,
-        "status": "completed",
-        "artifacts": {"report.json": {"sha256": file_sha256(path)}},
-    }
-    container = SimpleNamespace(settings=settings, user_store=SimpleNamespace(analysis=lambda *_: analysis))
-    request = Request({"type": "http", "app": SimpleNamespace(state=SimpleNamespace(container=container))})
-    context = build_context(request, "analysis", analysis_id)
-    text = json.dumps(context)
-    assert "private-cell" not in text and "private-description" not in text
-    assert context["data"]["qc"]["n_cells"] == 32
-    assert len(context["context_sha256"]) == 64
-    path.write_text("{}", encoding="utf-8")
-    with pytest.raises(HTTPException):
-        build_context(request, "analysis", analysis_id)
 
 
 def test_assistant_api_limits_and_validation_redaction(tmp_path):
@@ -146,9 +184,19 @@ def test_assistant_api_limits_and_validation_redaction(tmp_path):
         response = client.post("/api/v1/assistant/test", content=b"s" * 70_000)
         assert response.status_code == 413
         assert client.get("/api/v1/assistant/capabilities").json()["protocol"] == "chat/completions"
+        providers = client.get("/api/v1/assistant/capabilities").json()["providers"]
+        assert {provider["id"] for provider in providers} == {
+            "openai",
+            "gemini",
+            "anthropic",
+            "deepseek",
+            "siliconflow",
+            "custom",
+        }
 
 
-def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_path):
+@pytest.mark.parametrize("provider", ["custom", "gemini", "anthropic"])
+def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_path, provider):
     registry = tmp_path / "data" / "registry"
     registry.mkdir(parents=True)
     for name in ["models", "datasets"]:
@@ -194,9 +242,12 @@ def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_pat
     async def upstream(request):
         calls.append(json.loads(request.content))
         assert "private/path" not in request.content.decode()
-        return httpx.Response(
-            200, json={"choices": [{"message": {"content": "解读"}, "finish_reason": "stop"}]}
+        response = (
+            {"content": [{"type": "text", "text": "解读"}], "stop_reason": "end_turn", "usage": {}}
+            if provider == "anthropic"
+            else {"choices": [{"message": {"content": "解读"}, "finish_reason": "stop"}]}
         )
+        return httpx.Response(200, json=response)
 
     app.state.assistant = AssistantService(settings, httpx.MockTransport(upstream))
     with TestClient(app) as client:
@@ -205,7 +256,12 @@ def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_pat
         ).json()
         assert preview["data"]["top_genes"][0]["predicted_delta"] == -1
         assert "历史结果" in preview["data"]["expression_contract"]
-        body = connection().model_dump(mode="json") | {
+        urls = {
+            "custom": "https://api.openai.com/v1",
+            "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
+            "anthropic": "https://api.anthropic.com/v1",
+        }
+        body = connection(provider=provider, base_url=urls[provider]).model_dump(mode="json") | {
             "api_key": "secret-key",
             "source_kind": "run",
             "source_id": "run_fixture",
@@ -216,8 +272,12 @@ def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_pat
         body["context_sha256"] = preview["context_sha256"]
         response = client.post("/api/v1/assistant/interpret", json=body)
         assert response.status_code == 200 and response.json()["context_sha256"] == preview["context_sha256"]
-        assert calls[0]["messages"][0]["role"] == "system"
-        assert "不等于" in calls[0]["messages"][0]["content"]
+        if provider == "anthropic":
+            assert "不等于" in calls[0]["system"]
+            assert calls[0]["messages"][0]["role"] == "user"
+        else:
+            assert calls[0]["messages"][0]["role"] == "system"
+            assert "不等于" in calls[0]["messages"][0]["content"]
         # Interpretations never mutate source files or the run record.
         assert json.loads((root / "summary.json").read_text()) == docs["summary.json"]
         assert store.get("run_fixture").status == RunStatus.COMPLETED
@@ -238,3 +298,15 @@ def test_local_origin_requires_explicit_deployer_configuration():
     assert local.endpoint("http://127.0.0.1:11434/v1") == "http://127.0.0.1:11434/v1/chat/completions"
     with pytest.raises(HTTPException):
         local.endpoint("http://127.0.0.1:8000/v1")
+
+
+def test_provider_origin_mismatch_is_rejected_before_sending_key():
+    service = AssistantService(Settings(_env_file=None))
+    with pytest.raises(HTTPException) as error:
+        service.endpoint("https://api.openai.com/v1", "anthropic")
+    assert error.value.detail["code"] == "PROVIDER_MISMATCH"
+    proxy = AssistantService(Settings(_env_file=None, assistant_extra_origins="https://models.example.org"))
+    assert (
+        proxy.endpoint("https://models.example.org/v1", "anthropic")
+        == "https://models.example.org/v1/messages"
+    )

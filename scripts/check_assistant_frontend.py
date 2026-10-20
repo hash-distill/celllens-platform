@@ -20,6 +20,15 @@ def main() -> None:
         context = browser.new_context(viewport={"width": 1440, "height": 1000}, reduced_motion="reduce")
         page = context.new_page()
         errors = []
+        assistant_requests = []
+        page.on(
+            "request",
+            lambda request: (
+                assistant_requests.append(request.url)
+                if "/assistant/context" in request.url or "/assistant/interpret" in request.url
+                else None
+            ),
+        )
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(base + "/settings")
         expect(page.get_by_role("heading", name="系统设置", exact=True)).to_be_visible()
@@ -64,17 +73,19 @@ def main() -> None:
         assert page.evaluate("window.scrollY") == 0
 
         runs = page.request.get(base + "/api/v1/runs?status=completed&limit=1").json()["items"]
-        analyses = page.request.get(base + "/api/v1/analyses?status=completed&limit=1").json()["items"]
-        targets = [("run", runs[0]["run_id"], "/workbench?run=" + runs[0]["run_id"])] if runs else []
-        if analyses:
-            targets.append(("analysis", analyses[0]["id"], "/analyses/" + analyses[0]["id"]))
-        assert len(targets) == 2, "Both completed source types are required for this acceptance"
+        targets = [("run", runs[0]["run_id"], "/demo?run=" + runs[0]["run_id"])] if runs else []
+        assert targets, "A completed experiment is required for this acceptance"
         checked = []
         for kind, identifier, path in targets:
-            page.goto(base + path)
+            page.goto(base + path, wait_until="networkidle")
+            expect(page.locator("main h1")).to_be_visible(timeout=20000)
+            page.get_by_role("button", name="AI 解读", exact=True).click()
+            expect(page.get_by_role("dialog", name="AI 实验解读")).to_be_visible()
+            expect(page.locator("main .assistant-panel")).to_have_count(0)
             panel = page.get_by_role("region", name="大模型辅助解读")
             expect(panel).to_be_visible()
             expect(panel.locator(".generated-result")).to_have_count(0)
+            assert not assistant_requests, "Opening the floating tool must not send a summary"
             panel.get_by_role("button", name="预览发送内容", exact=True).click()
             expect(panel.locator(".context-preview")).to_be_visible()
             preview = json.loads(panel.locator("pre").inner_text())
@@ -105,7 +116,11 @@ def main() -> None:
             panel.get_by_role("button", name="发送摘要并生成解读", exact=True).click()
             expect(panel.locator(".generated-text")).to_contain_text("协议校验文本")
             expect(panel.locator(".generated-text img")).to_have_count(0)
-            expect(panel.get_by_text("输出达到预算上限", exact=False)).to_be_visible()
+            page.get_by_role("button", name="收起 AI 解读", exact=True).click()
+            expect(panel).to_be_hidden()
+            page.get_by_role("button", name="AI 解读", exact=True).click()
+            expect(panel.locator(".generated-text")).to_contain_text("协议校验文本")
+            expect(panel.get_by_text("输出达到长度上限", exact=False)).to_be_visible()
             assert page.evaluate("window.unsafeModel === undefined")
             with page.expect_download() as downloaded:
                 panel.get_by_role("button", name="下载解读与来源 JSON", exact=True).click()
@@ -113,14 +128,50 @@ def main() -> None:
             checked.append(
                 {"source_kind": kind, "source_id": identifier, "context_sha256": preview["context_sha256"]}
             )
+            page.screenshot(path=str(output / (kind + "-floating-dark.png")), full_page=True)
             page.unroute("**/api/v1/assistant/interpret")
+            assistant_requests.clear()
+
+        # Navigate without reload: the floating tool stays open but resets to the new source.
+        page.get_by_role("link", name="实验记录", exact=True).first.click()
+        expect(page.locator(".assistant-empty")).to_be_visible()
+        page.locator(f'tr[data-run-id="{targets[0][1]}"]').get_by_role(
+            "link", name="实验分析", exact=True
+        ).click()
+        expect(page.locator(".floating-source code")).to_have_text(targets[0][1])
+        expect(page.locator(".context-preview")).to_have_count(0)
+        expect(page.locator(".generated-result")).to_have_count(0)
+        page.keyboard.press("Escape")
+        expect(page.get_by_role("button", name="AI 解读", exact=True)).to_be_focused()
 
         for width in (390, 768, 1280):
             page.set_viewport_size({"width": width, "height": 900})
-            for path in ("/", "/settings", "/records", "/datasets", targets[0][2], targets[1][2]):
-                page.goto(base + path)
+            for path in ("/", "/settings", "/records", targets[0][2]):
+                page.goto(base + path, wait_until="networkidle")
+                expect(page.locator("main h1")).to_be_visible(timeout=20000)
                 expect(page.locator(".utility-rail")).to_be_visible()
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, path)
+                page.get_by_role("button", name="AI 解读", exact=True).click()
+                dialog = page.get_by_role("dialog", name="AI 实验解读")
+                expect(dialog).to_be_visible()
+                bounds = dialog.bounding_box()
+                assert bounds and bounds["x"] >= 0 and bounds["y"] >= 0
+                assert bounds["x"] + bounds["width"] <= width
+                rail = page.locator(".utility-rail").bounding_box()
+                launcher = page.locator(".assistant-launcher").bounding_box()
+                assert (
+                    rail
+                    and launcher
+                    and (
+                        rail["x"] + rail["width"] <= launcher["x"]
+                        or rail["y"] + rail["height"] <= launcher["y"]
+                    )
+                )
+                if path in ("/", "/settings", "/records"):
+                    expect(page.locator(".assistant-empty")).to_be_visible()
+                    expect(page.locator(".assistant-panel")).to_have_count(0)
+                if width == 390 and path == targets[0][2]:
+                    page.screenshot(path=str(output / "run-floating-mobile.png"), full_page=True)
         page.set_viewport_size({"width": 1440, "height": 1000})
         page.goto(base + "/settings")
         page.get_by_label("页面主题").select_option("light")
@@ -128,7 +179,9 @@ def main() -> None:
         expect(page.get_by_label("API Key", exact=True)).to_have_value("")
         assert page.evaluate("sessionStorage.getItem('celllens.api-key') === null")
         page.screenshot(path=str(output / "settings-light.png"), full_page=True)
-        page.goto(base + targets[0][2])
+        page.goto(base + targets[0][2], wait_until="networkidle")
+        expect(page.locator("main h1")).to_be_visible(timeout=20000)
+        page.get_by_role("button", name="AI 解读", exact=True).click()
         panel = page.get_by_role("region", name="大模型辅助解读")
         panel.get_by_role("button", name="预览发送内容", exact=True).click()
         expect(panel.get_by_role("button", name="发送摘要并生成解读", exact=True)).to_be_disabled()
@@ -149,6 +202,8 @@ def main() -> None:
                         "plain text rendering",
                         "JSON download",
                         "responsive layouts",
+                        "floating-only panels, minimize preserves result, source switch clears result",
+                        "Escape restores focus and mobile launcher avoids utility rail",
                     ],
                 },
                 ensure_ascii=False,

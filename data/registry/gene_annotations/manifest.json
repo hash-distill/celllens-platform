@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "annotation_version": "PANTHER 19.0 / Protein Class 17.0",
+  "created_at": "2026-10-11T13:40:47.101278+00:00",
+  "source_url": "https://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR19.0_human",
+  "sources": [
+    {
+      "url": "https://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR19.0_human",
+      "sha256": "0635357eeae76cb6dce8ce498f20e7ad5e101fe5a81717003c97acb2ed009b32"
+    },
+    {
+      "url": "https://data.pantherdb.org/PANTHER19.0/ontology/Protein_Class_19.0",
+      "sha256": "97deb45bdb68bb90e18ed66cfa929803cd8d3903f46874bd9225c00c9a31b0ce"
+    },
+    {
+      "url": "https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt",
+      "sha256": "64fcdfcdf9bc0853ec502e0e4c7d6eb12647b2ca8b0e635ea04bdb584856baf7"
+    }
+  ],
+  "files": {
+    "human.json.gz": "c34ae37f021c18d6f5cfca96e041cf9d99f308d12b4d9f7b4feea489e84774cb"
+  },
+  "policy": "Explicit HGNC ID; approved symbol before unique previous/alias; PANTHER hierarchy; enzyme subclasses; multi-label; no name-based functional inference"
+}

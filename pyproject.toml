@@ -14,7 +14,6 @@ dependencies = [
   "pydantic>=2.11,<3",
   "pydantic-settings>=2.10,<3",
   "pymysql>=1.1,<2",
-  "python-multipart>=0.0.22,<0.1",
   "pyyaml>=6.0,<7",
   "sqlalchemy>=2.0.43,<3",
   "uvicorn[standard]>=0.35,<1",
@@ -29,7 +28,7 @@ model = [
   "torch==2.14.0",
   "transformers>=4.52.3,<5",
 ]
-report = ["jinja2>=3.1,<4", "pyarrow>=20,<24", "matplotlib>=3.10,<4", "scikit-learn>=1.6,<2"]
+report = ["jinja2>=3.1,<4", "pyarrow>=20,<24", "matplotlib>=3.10,<4", "scikit-learn>=1.6,<2", "umap-learn>=0.5.8,<0.6", "reportlab>=4.4,<5", "pypdf>=5,<8"]
 
 [dependency-groups]
 dev = [

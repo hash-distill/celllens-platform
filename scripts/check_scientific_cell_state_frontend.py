@@ -48,7 +48,7 @@ def main():
             "aria-pressed", "true"
         )
         checks.append("five main tabs; legacy function route redirects into metabolism")
-        page.get_by_role("button", name="任务分数与数据覆盖", exact=True).click()
+        page.get_by_role("button", name="任务与反应分数", exact=True).click()
         expect(page.locator(".metabolism")).to_be_visible(timeout=15000)
         page.get_by_role("button", name="功能前后对比", exact=True).click()
         expect(page.locator(".function-node").first).to_be_visible(timeout=15000)
@@ -70,7 +70,7 @@ def main():
         expect(page.get_by_label("选择逐细胞指标")).to_have_value("ENO1")
         expect(page.locator(".state-source-legend")).to_contain_text("n=1024")
         expect(page.locator(".state-source-legend")).to_contain_text("n=64")
-        expect(page.locator(".state-evidence-note")).to_contain_text("未提供扰动后实测")
+        expect(page.locator(".state-evidence-note")).to_have_count(0)
         page.locator(".scientific-cell-state").screenshot(path=str(output / "ACD-gene-desktop.png"))
         checks.append("ACD real gene view: 1024 control, 64 predicted, no invented observed")
         for format in ("SVG", "PDF", "PNG", "JSON"):

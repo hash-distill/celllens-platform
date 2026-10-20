@@ -216,4 +216,5 @@ def test_completed_run_exposes_projection_tables_and_report(tmp_path):
         assert len(reactions.content) < 200_000
         report = client.get(f"/api/v1/runs/{run_id}/report")
         assert report.status_code == 200
-        assert "CellLens report" in report.text
+        assert report.headers["content-type"].startswith("application/pdf")
+        assert report.content.startswith(b"%PDF-")

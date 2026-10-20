@@ -7,9 +7,9 @@ import pandas as pd
 @dataclass(frozen=True)
 class EvidenceMetrics:
     spearman: float | None
-    mae: float
-    direction_agreement: float
-    top_k_overlap: float
+    mae: float | None
+    direction_agreement: float | None
+    top_k_overlap: float | None
     table: pd.DataFrame
     valid_task_count: int
     excluded_task_count: int
@@ -42,15 +42,15 @@ def compare_task_deltas(
         spearman = float(np.corrcoef(predicted_rank, observed_rank)[0, 1])
     actual_k = min(top_k, len(frame))
     if actual_k == 0:
-        overlap = 0.0
+        overlap = None
     else:
         predicted_top = set(frame["predicted_delta"].abs().nlargest(actual_k).index)
         observed_top = set(frame["observed_delta"].abs().nlargest(actual_k).index)
         overlap = len(predicted_top & observed_top) / actual_k
     return EvidenceMetrics(
         spearman=spearman,
-        mae=float(frame["absolute_error"].mean()) if len(frame) else 0.0,
-        direction_agreement=float(frame["direction_match"].mean()) if len(frame) else 0.0,
+        mae=float(frame["absolute_error"].mean()) if len(frame) else None,
+        direction_agreement=float(frame["direction_match"].mean()) if len(frame) else None,
         top_k_overlap=overlap,
         table=frame,
         valid_task_count=len(frame),

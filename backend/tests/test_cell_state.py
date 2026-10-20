@@ -14,6 +14,8 @@ from backend.app.services.cell_state import (
     cell_state_document,
     distribution,
     frozen_inputs,
+    joint_umap,
+    metabolic_matrices,
     reference_pca,
 )
 from backend.app.services.cell_state_figure import render_cell_state
@@ -62,7 +64,14 @@ def fixture_container(tmp_path):
     means.to_csv(root / "gene_deltas.csv")
     combined = _combine_sources(ad, control, selected, None)
     scores = pd.DataFrame(
-        {"T": [1, 2, 3, 4, 6, 8], "source": combined.obs.celllens_source.to_numpy()}, index=combined.obs_names
+        {
+            "T": [1, 2, 3, 4, 6, 8],
+            "U": [20, 50, 10, 40, 70, 90],
+            "incomplete": [np.nan, 1, 2, 3, 4, 5],
+            "constant": [0, 0, 0, 0, 3, 4],
+            "source": combined.obs.celllens_source.to_numpy(),
+        },
+        index=combined.obs_names,
     )
     scores.iloc[::-1].to_csv(root / "metabolic_task_scores.csv")  # ID join must recover original ordering.
     assets = {
@@ -160,6 +169,62 @@ def test_cache_does_not_bypass_frozen_input_hashes(tmp_path):
         cell_state_document(container, "run_cells", "gene", "MYC")
 
 
+def test_umap_keeps_cell_identity_feature_values_and_pca_separate(tmp_path):
+    container, root, _ = fixture_container(tmp_path)
+    before = {path.name: file_sha256(path) for path in root.iterdir()}
+    pca = cell_state_document(container, "run_cells", "gene", "MYC")
+    gene = cell_state_document(container, "run_cells", "gene", "MYC", "umap")
+    task = cell_state_document(container, "run_cells", "task", "T", "umap")
+    assert gene["method"] == "joint-umap" and gene["fit_source"] == "joint"
+    assert gene["explained_variance_ratio"] == []
+    assert gene["embedding_parameters"]["fit_sources"] == ["control", "predicted"]
+    assert gene["embedding_parameters"]["preprocessing"]["n_components"] == 3
+    assert gene["embedding_parameters"]["n_neighbors"] == 5
+    assert gene["distributions"] == pca["distributions"]
+    assert [(p["cell_id"], p["source"], p["value"]) for p in gene["points"]] == [
+        (p["cell_id"], p["source"], p["value"]) for p in pca["points"]
+    ]
+    assert [(p["x"], p["y"]) for p in gene["points"]] == [(p["x"], p["y"]) for p in task["points"]]
+    assert task["distributions"]["predicted"]["mean"] == 7
+    again = cell_state_document(container, "run_cells", "gene", "MYC")
+    assert again == pca
+    assert {path.name: file_sha256(path) for path in root.iterdir()} == before
+    image = render_cell_state(gene, "svg")
+    assert b"UMAP 1" in image and b"UMAP 2" in image and b"Joint UMAP" in image
+    assert b"control variance" not in image
+    json.dumps(gene, allow_nan=False)
+    with (root / "metabolic_task_scores.csv").open("a") as stream:
+        stream.write("tampered")
+    with pytest.raises(CellStateUnavailable, match="changed"):
+        cell_state_document(container, "run_cells", "gene", "MYC", "umap")
+
+
+def test_joint_umap_is_reproducible_and_includes_observed_cells():
+    rng = np.random.default_rng(14)
+    matrices = {
+        "control": rng.normal(size=(25, 8)),
+        "predicted": rng.normal(size=(10, 8)) + 0.7,
+        "observed": rng.normal(size=(5, 8)) + 0.2,
+    }
+    coordinates, parameters = joint_umap(matrices)
+    repeated, repeated_parameters = joint_umap(matrices)
+    assert parameters == repeated_parameters
+    assert parameters["fit_sources"] == ["control", "predicted", "observed"]
+    assert parameters["preprocessing"]["n_components"] == 8
+    for source in matrices:
+        assert coordinates[source].shape == (len(matrices[source]), 2)
+        assert np.isfinite(coordinates[source]).all()
+        np.testing.assert_array_equal(coordinates[source], repeated[source])
+
+
+@pytest.mark.parametrize(
+    "matrix", [np.ones((4, 2)), np.ones((2, 3)), np.array([[1, 2], [3, np.inf], [4, 5]])]
+)
+def test_umap_rejects_invalid_expression(matrix):
+    with pytest.raises(CellStateUnavailable):
+        joint_umap({"control": matrix})
+
+
 def test_wrong_saved_means_are_rejected_even_with_resealed_manifest(tmp_path):
     container, root, registered = fixture_container(tmp_path)
     genes = pd.read_csv(root / "gene_deltas.csv", index_col=0)
@@ -218,4 +283,78 @@ def test_cell_state_api_preserves_unavailable_and_validation_states(tmp_path):
             == "CELL_STATE_UNAVAILABLE"
         )
         assert client.get("/api/v1/runs/run_trace/cell-state?feature_kind=umap").status_code == 422
+        assert client.get("/api/v1/runs/run_trace/cell-state?embedding=random").status_code == 422
+        assert client.get("/api/v1/runs/run_trace/cell-state/figure?embedding=random").status_code == 422
         assert client.get("/api/v1/runs/run_trace/cell-state/figure?file_format=exe").status_code == 422
+        assert client.get("/api/v1/runs/run_trace/cell-state?space=invalid").status_code == 422
+        assert client.get("/api/v1/runs/run_trace/cell-state/figure?space=invalid").status_code == 422
+
+
+def test_metabolic_preprocessing_excludes_missing_and_constant_controls_without_imputation():
+    scores = pd.DataFrame(
+        {
+            "T": [0, 1, 2, 3, 5],
+            "U": [20, 30, 50, 10, 90],
+            "missing": [1, 2, 3, np.nan, 5],
+            "constant": [0, 0, 0, 9, 12],
+            "source": ["control"] * 3 + ["predicted", "observed"],
+        }
+    )
+    before = scores.copy(deep=True)
+    matrices, metadata = metabolic_matrices(scores)
+    assert metadata["feature_ids"] == ["T", "U"]
+    assert metadata["excluded_incomplete"] == ["missing"]
+    assert metadata["excluded_constant_control"] == ["constant"]
+    np.testing.assert_allclose(matrices["control"].mean(axis=0), 0, atol=1e-14)
+    np.testing.assert_allclose(matrices["control"].std(axis=0), 1)
+    raw = scores[["T", "U"]].to_numpy()
+    expected = (raw - raw[:3].mean(0)) / raw[:3].std(0)
+    np.testing.assert_allclose(np.concatenate(list(matrices.values())), expected)
+    pd.testing.assert_frame_equal(scores, before)
+    with pytest.raises(CellStateUnavailable, match="至少两个"):
+        metabolic_matrices(scores.drop(columns="U"))
+
+
+@pytest.mark.parametrize("embedding", ["pca", "umap"])
+def test_metabolic_coordinates_use_scores_and_feature_changes_only_recolor(tmp_path, embedding):
+    container, root, _ = fixture_container(tmp_path)
+    before = {path.name: file_sha256(path) for path in root.iterdir()}
+    original = cell_state_document(container, "run_cells", "task", "T", embedding)
+    task = cell_state_document(container, "run_cells", "task", "T", embedding, "metabolic")
+    other = cell_state_document(container, "run_cells", "task", "U", embedding, "metabolic")
+    assert task["embedding_space"] == "metabolic"
+    assert task["embedding_preprocessing"]["feature_ids"] == ["T", "U"]
+    assert task["embedding_preprocessing"]["scaling"] == "control-zscore"
+
+    def xy(doc):
+        return [(p["x"], p["y"]) for p in doc["points"]]
+
+    assert xy(task) == xy(other) and xy(task) != xy(original)
+    assert task["distributions"] == original["distributions"]
+    assert [(p["cell_id"], p["source"], p["value"]) for p in task["points"]] == [
+        (p["cell_id"], p["source"], p["value"]) for p in original["points"]
+    ]
+    if embedding == "pca":
+        combined = _combine_sources(
+            ad,
+            ad.read_h5ad(container.settings.project_root / "control.h5ad"),
+            _select_prediction_population(ad.read_h5ad(root / "predicted.h5ad"), "gene", "MYC")[0],
+            None,
+        )
+        scores = aligned_task_scores(
+            pd.read_csv(root / "metabolic_task_scores.csv", index_col=0),
+            combined.obs_names.tolist(),
+            combined.obs.celllens_source.tolist(),
+        )
+        expected, variance = reference_pca(metabolic_matrices(scores)[0])
+        np.testing.assert_allclose(xy(task), np.concatenate(list(expected.values())))
+        assert task["explained_variance_ratio"] == variance
+    image = render_cell_state(task, "svg")
+    assert b"metabolic tasks" in image and b"control z-score scaling" in image
+    assert b"3 genes" not in image
+    if embedding == "umap":
+        assert b"UMAP 1" in image and b"control variance" not in image
+    assert {path.name: file_sha256(path) for path in root.iterdir()} == before
+    json.dumps(task, allow_nan=False)
+    with pytest.raises(CellStateUnavailable, match="任务分数着色"):
+        cell_state_document(container, "run_cells", "gene", "MYC", embedding, "metabolic")

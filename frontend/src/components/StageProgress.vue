@@ -28,7 +28,7 @@ const STAGE_HINT: Partial<Record<RunStatus, string>> = {
   state_running: '仅显示后端返回的阶段进度',
   adapting: '该阶段可能很快，不要求每步都被轮询捕获',
   metabolic_running: '可能产出转录结果及代谢降级警告',
-  validating: '此阶段也会出现在在线推演，不代表真实验证通过',
+  validating: '正在核对来源、计算 PCA / UMAP 并保存默认科研图；图形准备完成后才显示分析完成，不代表实测验证通过',
 }
 
 const currentIndex = computed(() => {

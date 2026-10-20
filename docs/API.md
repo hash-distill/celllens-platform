@@ -1,6 +1,14 @@
 # 接口说明
 
-默认 API 前缀 `/api/v1`。运行模型定义在 `backend/app/schemas.py`，上传分析接口位于 `backend/app/user_data/`，辅助解读接口位于 `backend/app/assistant.py`。完整结构见 [openapi.json](openapi.json)；服务的 `/openapi.json` 是实时契约。
+默认 API 前缀 `/api/v1`。运行模型定义在 `backend/app/schemas.py`，辅助解读接口位于 `backend/app/assistant.py`。完整结构见 [openapi.json](openapi.json)；服务的 `/openapi.json` 是实时契约。
+
+## 真实观测比较
+
+`GET /api/v1/runs/{run_id}/comparison` 返回独立冻结的真实观测比较；`status=available` 时包含完整基因/任务三组均值、差值、表达/DE/任务指标、批次群体、来源和绑定哈希。`preparing` 表示比较准备中，可重试读取；`unavailable` 不含伪造指标，明确说明缺少观测或准备失败。冻结来源变化返回 409 `COMPARISON_SOURCE_CHANGED`。
+
+`GET /api/v1/runs/{run_id}/comparison/download?table=json|genes|tasks` 下载同一核验结果，保留全部有效成对记录及合法零变化；无可用比较返回 404。该比较不改写旧 `/genes`、`/validation` 或原运行文件，评价子集与全量摘要可不同。
+
+扰动目录新增 `measured_comparisons`，仅列当前背景、模型支持且已通过源文件哈希核对的实测扰动与细胞数。比较过程为匹配观测诊断，`held_out_validation=false`。详见[使用说明](guide/MEASURED_COMPARISON.md)。
 
 ## 大模型辅助解读
 
@@ -8,16 +16,18 @@
 
 | 接口 | 行为 |
 |---|---|
-| `GET /assistant/capabilities` | 返回协议、允许的服务 origin、超时与只读标记 |
-| `GET /assistant/context?source_kind=run&source_id=run_...` | 根据已保存结果构建摘要；`source_kind` 也支持 `analysis`、对应 `ana_...` |
+| `GET /assistant/capabilities` | 返回提供商预设（ID、名称、地址、协议、预算字段）、允许的服务 origin、超时与只读标记 |
+| `GET /assistant/context?source_kind=run&source_id=run_...` | 根据已保存扰动实验结果构建摘要；`source_kind` 仅接受 `run` |
 | `POST /assistant/test` | 使用指定模型发送简短连接检查，可能消耗额度 |
 | `POST /assistant/interpret` | 校验预览摘要的哈希后调用模型；不更改科学结果 |
 
-连接请求字段：`base_url`（最多 512 字符）、`model`（1–128）、`api_key`（1–4096）、`max_tokens`（256–8192，默认 2048）、`token_parameter`（`max_completion_tokens` 默认，或 `max_tokens`）。额外字段拒绝，校验错误统一脱敏。
+连接请求字段：`provider`（`openai` / `gemini` / `anthropic` / `deepseek` / `siliconflow` / `custom`；缺省 `custom` 以保留旧版兼容协议请求）、`base_url`（最多 512 字符）、`model`（1–128）、`api_key`（1–4096）、`max_tokens`（256–8192，默认 2048）、`token_parameter`（`max_completion_tokens` 默认，或 `max_tokens`）。额外字段拒绝，校验错误统一脱敏。
 
-解读请求增加 `source_kind`（run / analysis）、`source_id`、`context_sha256`（来自预览的 SHA-256）和 `purpose`（interpret / coverage / next_steps，默认 interpret）。客户端不能提交自定义科学上下文、文件路径或模型工具指令。
+Claude 使用原生 `/messages`、`x-api-key` 与 `anthropic-version: 2023-06-01`，系统提示单独传入 `system`；其文本块、结束原因与 token 用量归一化为统一响应。Gemini 使用官方兼容 `/chat/completions`。Gemini、Claude、DeepSeek 与硅基流动使用 `max_tokens`；OpenAI 与 custom 使用选择的 `token_parameter`。除管理员额外信任的代理外，预设提供商的地址必须匹配对应官方 origin，避免将密钥发给错误提供商。
 
-响应包含 `text`、调用的 `model` / `base_url`、`finish_reason`、`generated_at`、服务返回的 token `usage`；解读另带来源、任务和摘要哈希。`length` 表示可能截断。未完成或改变的产物返回 409；缺失记录返回 404；不允许的地址返回 422；并发繁忙返回 429；上游错误返回 502；超时返回 504。不会自动重试。
+解读请求增加 `source_kind`（仅 run）、`source_id`、`context_sha256`（来自预览的 SHA-256）和 `purpose`（interpret / coverage / next_steps，默认 interpret）。客户端不能提交自定义科学上下文、文件路径或模型工具指令。
+
+响应包含 `text`、调用的 `provider` / `model` / `base_url`、`finish_reason`、`generated_at`、服务返回的 token `usage`；解读另带来源、任务和摘要哈希。`length` 表示可能截断。未完成或改变的产物返回 409；缺失记录返回 404；不允许或不匹配的地址返回 422；并发繁忙返回 429；上游错误返回 502；超时返回 504。不会自动重试。
 
 详情见 [设置与辅助解读](guide/ASSISTANT_SETTINGS.md)。
 
@@ -61,6 +71,12 @@
 
 旧 `coverage`、`evidence_level` 与三档计数仍保留兼容性，表示项目 80%／60% 规则，不是官方完整性、置信度或论文标准。新报告使用官方连续指标，未建立官方指标的项目分档门槛。
 
+`GET /api/v1/coverage` 返回独立覆盖目录，默认使用首个已启用模型的基因面板。可选 `cell_line` 或 `run_id`，两个来源参数互斥。模型来源每次校验登记的基因文件与冻结数据库哈希，官方统计按面板和数据库清单缓存；读取不执行模型推理、不创建实验。实验来源读取已保存且哈希有效的报告和实际基因面板；报告与当前冻结数据库不一致返回 409，不套用当前模型结果。
+
+目录在官方报告上增加 `source`、已启用 `models`、全部代谢库 `genes`，以及任务的 `coverage_status`（full / partial / absent / unmapped）、分类与 `present_genes_all`。基因条目包括符号、HGNC 身份、`in_panel` 和关联任务/反应。完整报告保留全部 tasks/reactions；这些条目是覆盖清单，不表示全部条目均有评分。响应不缓存到浏览器；无可用模型返回 404，来源冲突返回 422，面板或数据库校验失败返回 503。
+
+覆盖目录另含 `gene_categories`、`classification`，基因条目增加 PANTHER 蛋白功能 `category_ids`、原始 `protein_classes` 与 HGNC 英文名称；任务增加双语 `guide`（当前七项已核验介绍）。页面和下载仅展示覆盖项，API 保留原始明细供来源核验。`GET /catalog/perturbations` 保持原 `items` 可用目标列表，同时返回逐基因 `genes`、当前类别 `categories` 与分类来源；分类为多标签，按显式 HGNC ID 对齐，批准符号优先于唯一旧名/别名，未知功能不凭名称猜测。快照损坏时扰动列表仍可读取，分类明确不可用，不删除目标。
+
 路径均相对 `/api/v1`。
 
 | 方法 | 路径 | 内容与注意事项 |
@@ -75,14 +91,14 @@
 | GET | `/runs/{run_id}/summary` | 汇总；未完成时可返回状态和空结果 |
 | GET | `/runs/{run_id}/projection` | `{method, seed, points}`；合成单细胞演示另含 data_kind、input_sha256、generator 和可选的历史补充来源；点含 x/y/source/cell_index，默认最多 12000 点；新版在线分析另含 `population_selection`，记录目标扰动筛选的输入、保留与排除细胞数 |
 | GET | `/runs/{run_id}/genes?limit=2000` | CSV 行转 JSON；gene/control/predicted/predicted_delta 与可选观测列，数值可能是字符串 |
-| GET | `/runs/{run_id}/cell-state?feature_kind=gene&feature_id=ENO1` | 只读科研视图：共同对照 PCA、解释方差、显示点与指标值、完整群体 ECDF/统计、共享坐标与色标、来源核对；feature_kind 为 gene/task，指标为空时选默认指标；无法核对冻结来源返回 409 CELL_STATE_UNAVAILABLE |
-| GET | `/runs/{run_id}/cell-state/figure?feature_kind=gene&feature_id=ENO1&file_format=svg` | 同数据 Matplotlib 图下载；支持 svg/pdf/png（300 dpi）；响应头 X-CellLens-Manifest-SHA256 为来源哈希；不修改运行、不重新推理或评分 |
+| GET | `/runs/{run_id}/cell-state?feature_kind=gene&feature_id=ENO1&embedding=umap` | 只读科研视图：space 为 expression/metabolic，默认 expression；metabolic 须使用 feature_kind=task，坐标由完整且对照有变化的逐细胞任务分数按对照标准化后计算，无缺失插补；返回 embedding_space/embedding_preprocessing；embedding 为 pca/umap，默认 pca；PCA 使用共同对照参考，UMAP 在各来源的对应空间多维主成分上联合拟合，返回参数与版本，解释方差为空；显示点、完整群体 ECDF/统计、共享坐标与色标、来源核对；指标为空时选默认指标；无法核对冻结来源返回 409 CELL_STATE_UNAVAILABLE |
+| GET | `/runs/{run_id}/cell-state/figure?feature_kind=gene&feature_id=ENO1&embedding=umap&file_format=svg` | 同数据 Matplotlib 图下载；space/embedding 与数据端点一致，文件名及图注区分表达/代谢；embedding 默认 pca，支持 svg/pdf/png（300 dpi）；坐标轴、图注与下载文件名区分 UMAP/PCA；响应头 X-CellLens-Manifest-SHA256 为来源哈希；不修改运行、不重新推理或评分 |
 | GET | `/runs/{run_id}/metabolic-tasks?limit=1000` | 默认 scope=top 返回 Top 20；scope=all 从本次任务矩阵和覆盖表读取完整有效结果，缺少产物或旧 precomputed 长表格式时明确返回 scope=top 已保存摘要 |
 | GET | `/runs/{run_id}/reactions?limit=1000` | 真实矩阵按来源取均值，再按绝对差异排序；其他 CSV 格式可能有不同列 |
 | GET | `/runs/{run_id}/task-trace?task_id=...` | 读取本次冻结的任务—反应—基因知识关联及对照/预测/差值；reaction_limit、gene_limit 默认 30，范围 1–100 |
 | GET | `/runs/{run_id}/provenance` | 本次 manifest 的历史模型/数据 ID、资产/代码/清单哈希及时间；不返回本机路径 |
 | GET | `/runs/{run_id}/validation` | 已生成的验证指标，缺失返回 404；protocol_status=unconfirmed，不能视为正式验收 |
-| GET | `/runs/{run_id}/report` | HTML 下载；包含基因、任务及警告 |
+| GET | `/runs/{run_id}/report` | PDF 附件下载；包含实验参数、主要基因与代谢任务结果、来源和已准备的科研图 |
 
 三类表格返回 `{items, limit, truncated}`，limit 均允许 1–10000。truncated=false 只表示接口未因 limit 截断，不证明摘要包含全部任务。真实基因表保持输出顺序，接口不会按效应大小排序。
 

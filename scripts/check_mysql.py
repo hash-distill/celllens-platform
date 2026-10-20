@@ -18,10 +18,6 @@ EXPECTED_TABLES = {
     "run_events",
     "run_artifacts",
     "run_cache",
-    "users",
-    "user_sessions",
-    "user_datasets",
-    "user_analyses",
 }
 
 

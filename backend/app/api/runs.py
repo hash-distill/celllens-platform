@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request, status
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from pydantic import ValidationError
 
 from backend.app.core.cache import build_cache_key, code_fingerprint
@@ -25,17 +25,27 @@ from backend.app.schemas import (
 )
 from backend.app.services.cell_state import CellStateUnavailable, cell_state_document
 from backend.app.services.cell_state_figure import render_cell_state
+from backend.app.services.cell_state_preparation import prepared_figure
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
 
-def _cell_state(run_id: str, request: Request, feature_kind: str, feature_id: str) -> dict[str, Any]:
+def _cell_state(
+    run_id: str,
+    request: Request,
+    feature_kind: str,
+    feature_id: str,
+    embedding: str = "pca",
+    space: str = "expression",
+) -> dict[str, Any]:
     # Check existence/status before reconstruction; no model inference or result mutation.
     get_run(run_id, request)
     if request.app.state.container.store.get(run_id).status != RunStatus.COMPLETED:
         raise HTTPException(status_code=409, detail={"code": "RUN_NOT_COMPLETED"})
     try:
-        return cell_state_document(request.app.state.container, run_id, feature_kind, feature_id)
+        return cell_state_document(
+            request.app.state.container, run_id, feature_kind, feature_id, embedding, space
+        )
     except (CellStateUnavailable, CellLensError, OSError, KeyError, ValueError) as exc:
         raise HTTPException(
             status_code=409, detail={"code": "CELL_STATE_UNAVAILABLE", "message": str(exc)}
@@ -53,8 +63,10 @@ def get_cell_state(
     request: Request,
     feature_kind: Literal["gene", "task"] = "gene",
     feature_id: str = Query(default="", max_length=500),
+    embedding: Literal["pca", "umap"] = "pca",
+    space: Literal["expression", "metabolic"] = "expression",
 ) -> dict[str, Any]:
-    return _cell_state(run_id, request, feature_kind, feature_id)
+    return _cell_state(run_id, request, feature_kind, feature_id, embedding, space)
 
 
 @router.get("/{run_id}/cell-state/figure")
@@ -64,21 +76,30 @@ def get_cell_state_figure(
     feature_kind: Literal["gene", "task"] = "gene",
     feature_id: str = Query(default="", max_length=500),
     file_format: Literal["svg", "pdf", "png"] = "svg",
+    embedding: Literal["pca", "umap"] = "pca",
+    space: Literal["expression", "metabolic"] = "expression",
 ) -> Response:
-    document = _cell_state(run_id, request, feature_kind, feature_id)
+    document = _cell_state(run_id, request, feature_kind, feature_id, embedding, space)
     try:
-        content = render_cell_state(document, file_format)
+        content = prepared_figure(request.app.state.container, document) if file_format == "svg" else None
+        if content is None:
+            content = render_cell_state(document, file_format)
+    except (CellStateUnavailable, CellLensError, OSError, KeyError, ValueError) as exc:
+        raise HTTPException(
+            status_code=409, detail={"code": "CELL_STATE_UNAVAILABLE", "message": str(exc)}
+        ) from exc
     except ImportError as exc:
         raise HTTPException(
             status_code=503,
             detail={"code": "CELL_STATE_DEPENDENCY", "message": "Install report dependencies"},
         ) from exc
     mime = {"svg": "image/svg+xml", "pdf": "application/pdf", "png": "image/png"}[file_format]
+    filename = f"{run_id}_cell_state_{space}_{embedding}.{file_format}"
     return Response(
         content,
         media_type=mime,
         headers={
-            "Content-Disposition": f'attachment; filename="{run_id}_cell_state.{file_format}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "X-CellLens-Manifest-SHA256": document["provenance"]["manifest_sha256"],
         },
     )
@@ -488,10 +509,26 @@ def get_reactions(
     return {"items": items, "limit": limit, "truncated": len(delta) > limit}
 
 
-@router.get("/{run_id}/report", response_class=FileResponse)
-def get_report(run_id: str, request: Request) -> FileResponse:
-    path = _artifact_path(run_id, "report.html", request)
-    return FileResponse(path, media_type="text/html", filename=f"celllens-{run_id}.html")
+@router.get("/{run_id}/report", response_class=Response,
+            responses={200: {"content": {"application/pdf": {}}}})
+def get_report(run_id: str, request: Request) -> Response:
+    _artifact_path(run_id, "summary.json", request)
+    from backend.app.services.pdf_report import build_report_pdf
+
+    try:
+        content = build_report_pdf(request.app.state.container, run_id)
+    except ImportError as exc:
+        raise HTTPException(status_code=503, detail={
+            "code": "REPORT_DEPENDENCY", "message": "PDF 报告组件暂不可用，请联系管理员",
+        }) from exc
+    except (CellStateUnavailable, CellLensError, OSError, KeyError, ValueError) as exc:
+        raise HTTPException(status_code=409, detail={
+            "code": "REPORT_UNAVAILABLE", "message": "报告来源核验失败，请重试或检查运行文件",
+        }) from exc
+    return Response(content, media_type="application/pdf", headers={
+        "Content-Disposition": f'attachment; filename="celllens-{run_id}.pdf"',
+        "Cache-Control": "no-store",
+    })
 
 
 @router.get("/{run_id}/provenance")

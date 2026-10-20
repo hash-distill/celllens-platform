@@ -4,12 +4,15 @@
 
 ## 日常启动与检查
 
+2026-10-15 真实观测比较：`python -m scripts.prepare_measured_comparisons extract` 从固定官方源抽取并冻结观测（现有 catalog 拒绝覆盖）；`evaluate` 为真实保存预测准备独立比较，支持 `--run-id`。`python -m scripts.verify_measured_comparisons` 核对实际 H5AD 群体、全基因均值、原文件哈希和选定官方 Cell-Eval 指标；`python scripts/check_measured_comparison_frontend.py` 验证真实主服务页面、下载、手机布局与助手上下文。证据写入 `reports/measured-comparison-2026-10-15/`。
+
 | 脚本 | 用途 |
 |---|---|
 | `start_system.ps1` | Windows 检查端口占用、启动或复用数据库、构建前端并启动后端 |
 | `start_mysql.ps1` | Windows 独立 MySQL 启动 |
 | `check_mysql.py` | 数据库连接与表检查 |
 | `audit_registry.py` | 注册资产、哈希与冻结数据库检查 |
+| `prepare_gene_annotations.py --source-dir <已下载官方文件目录>` | 按显式 HGNC ID 冻结 PANTHER 功能分类，生成压缩注释与来源哈希；拒绝覆盖已有快照 |
 | `verify_scientific_cell_state.py --figures` | 核对四背景及 ACD 的真实 PCA/逐细胞分数，导出科研图样例 |
 | `check_scientific_cell_state_frontend.py` | 代谢导航合并、指标切换、四背景、科研图下载和响应式浏览器检查 |
 | `smoke_backend.py` | 后端链路冒烟；按参数可能执行真实推理 |
@@ -19,7 +22,7 @@
 | 脚本 | 环境 | 产物 |
 |---|---|---|
 | `check_assistant_frontend.py --base-url http://127.0.0.1:8000` | 亮暗/系统外观、快捷栏、设置、真实结果摘要、纯文本解读和下载；外部模型响应被拦截，不调用真实服务 | `reports/assistant-ui-2026-10-11/` |
-| `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用、免登录共享上传、CPU 开关和手机布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
+| `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用和手机布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
 | `check_formal_frontend.py --url http://127.0.0.1:8001` | 2026-10-10 历史验收：旧回放/实测入口、科研图与布局；当前入口使用 check_online_workflow_frontend.py | `reports/formal-system-2026-10-10/browser/` |
 | `check_function_frontend.py` | 生产服务、真实保存结果、Playwright | `reports/function-visualization-2026-10-09/browser/` |
 | `check_frontend.py` | 后端与 Vite；显式 Mock 回归 | 终端检查结果 |
@@ -29,7 +32,8 @@
 | `check_required_projection_frontend.py` | 真实 API；遍历全部完成实验、旧/新预计算投影、并排/叠加、刷新与手机布局 | `reports/frontend/projection/` |
 | `check_response_frontend.py` | 真实已完成运行，含冻结追溯；用独立浏览器上下文注入局部错误 | `reports/frontend/response/` |
 | `check_metabolism_frontend.py` | 单选覆盖等级、空分类、搜索、实际条形点击、真实与旧任务详情、缺失结果请求及手机布局 | `reports/frontend/metabolism-fix/` |
-| `check_completeness_frontend.py` | 四背景真实响应/代谢页的官方完整性、缺失基因、旧筛选隐藏、完整下载与旧演示兼容 | `reports/frontend/official-completeness/` |
+| `check_coverage_frontend.py` | 仅显示覆盖数量与清单、真实四背景、双语基因分类筛选、七项任务介绍与来源、覆盖项下载、扰动选择与移动布局；不创建记录 | `reports/gene-education-2026-10-11/` |
+| `check_completeness_frontend.py` | 兼容入口，委托当前独立覆盖目录验收 | `reports/gene-education-2026-10-11/` |
 | `check_context_capabilities_frontend.py` | 2026-10-09 历史验收：三模式与 ALDOA 诊断；已不适用于当前新建入口 | `reports/four-context-capabilities-2026-10-09/browser/` |
 
 生产检查示例：
@@ -75,6 +79,8 @@ python scripts/check_production_frontend.py --url http://127.0.0.1:8000 --smoke
 | `export_openapi.py` | 导出接口快照 |
 
 资产准备脚本会写入数据或注册文件；日常启动已准备好的系统时无需重复执行。`replogle-k562-source.toml` 是上游来源拆分快照，不能代替项目正式评价协议；当前协议限制见 [模型与数据](../docs/MODEL_AND_DATA.md)。
+
+预测结果展示验收：`python -m scripts.check_prediction_evidence_frontend`。可用 `--url` 指定只读服务，`--check-projection` 额外验证已加载代谢任务空间的 UMAP/PCA 和关联导出。浏览器测试对缺失、非有限数值和零变化的拦截仅作用于测试页面，不改写服务器结果。
 
 补齐官方完整性：`.venv\Scripts\python.exe -m scripts.backfill_official_completeness`，可重复传入 `--run-id` 指定真实运行。没有冻结追溯的旧记录跳过；已有报告校验后保留。审计写入 `reports/official-completeness/backfill.json`。方法、实际覆盖与限制见 [官方完整性验收](../docs/verification/2026-10-09-official-completeness.md)。
 

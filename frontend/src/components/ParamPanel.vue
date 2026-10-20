@@ -8,6 +8,9 @@ import { useUiStore } from '../stores/ui'
 import { isIntegerInRange } from '../utils/number'
 import { buildDiagnostics, copyText, diagnosticsFromError } from '../utils/diagnostics'
 import type { CellLine } from '../types/run'
+import GeneCategoryGuide from './GeneCategoryGuide.vue'
+import CellBackgroundCard from './CellBackgroundCard.vue'
+import { getCellBackground } from '../data/cellBackgrounds'
 
 /**
  * 实验参数面板。
@@ -31,6 +34,7 @@ onMounted(() => {
 watch(
   () => draft.cellLine,
   (cellLine) => {
+    perturbationCategory.value = ''
     perturbationQuery.value = draft.perturbation
     runs.clearSubmitState()
     void catalog.loadPerturbations(cellLine, 'online')
@@ -38,6 +42,7 @@ watch(
 )
 
 // ---------- 细胞背景 ----------
+const selectedBackground = computed(() => getCellBackground(draft.cellLine))
 const cellOptions = computed(() =>
   catalog.contexts.map((ctx) => {
     const ready = ctx.online_ready
@@ -53,6 +58,7 @@ const cellOptions = computed(() =>
 
 // ---------- 扰动：可搜索下拉，禁止任意文本 ----------
 const perturbationQuery = ref(draft.perturbation)
+const perturbationCategory = ref('')
 watch(() => draft.perturbation, value => { perturbationQuery.value = value })
 const dropdownOpen = ref(false)
 const highlightIndex = ref(-1)
@@ -60,12 +66,24 @@ let dropdownCloseTimer: number | undefined
 onBeforeUnmount(() => window.clearTimeout(dropdownCloseTimer))
 
 const perturbationState = computed(() => catalog.perturbations[`${draft.cellLine}:online`] ?? null)
+const measuredOptions = computed(() => perturbationState.value?.measured_comparisons ?? [])
+const geneCategories = computed(() => perturbationState.value?.categories ?? [])
+const annotationsBySymbol = computed(() => new Map((perturbationState.value?.genes ?? []).map(gene => [gene.symbol, gene])))
+const selectedAnnotation = computed(() => annotationsBySymbol.value.get(draft.perturbation))
+function categoryNames(symbol: string) {
+  const ids = annotationsBySymbol.value.get(symbol)?.category_ids ?? []
+  return geneCategories.value.filter(item => ids.includes(item.id)).map(item => item.name_zh).join('、')
+}
+function changeGeneCategory() { perturbationQuery.value = ''; openDropdown() }
 
 const filteredPerturbations = computed(() => {
   const items = perturbationState.value?.items ?? []
   const query = perturbationQuery.value.trim().toUpperCase()
-  if (!query) return items
-  return items.filter((item) => item.toUpperCase().includes(query))
+  return items.filter(item => {
+    const annotation = annotationsBySymbol.value.get(item)
+    return (!perturbationCategory.value || annotation?.category_ids.includes(perturbationCategory.value)) &&
+      (!query || `${item} ${annotation?.approved_symbol ?? ''} ${annotation?.name_en ?? ''}`.toUpperCase().includes(query))
+  })
 })
 
 function openDropdown(): void {
@@ -251,10 +269,17 @@ async function copySubmitDiagnostics(): Promise<void> {
               </span>
             </label>
           </div>
+          <CellBackgroundCard v-if="selectedBackground" :background="selectedBackground" compact />
+          <RouterLink class="cell-background-link" :to="{path:'/coverage', query:{cell_line:draft.cellLine}}">查看各细胞背景介绍 ↗</RouterLink>
         </div>
 
         <!-- 扰动基因 -->
-        <div class="field">
+        <div class="field perturbation-field">
+          <label class="label" for="perturbation-category">基因功能分类 · Gene function class</label>
+          <select id="perturbation-category" v-model="perturbationCategory" class="input gene-category-select" @change="changeGeneCategory">
+            <option value="">全部可用扰动基因</option>
+            <option v-for="item in geneCategories" :key="item.id" :value="item.id">{{ item.name_zh }} · {{ item.name_en }}（{{ item.count }}）</option>
+          </select>
           <label class="label" for="perturbation-input">扰动基因</label>
           <div class="perturbation-box">
             <input
@@ -292,16 +317,22 @@ async function copySubmitDiagnostics(): Promise<void> {
                   :key="item"
                   type="button"
                   role="option"
+                  :aria-label="item"
                   :aria-selected="draft.perturbation === item"
                   class="dropdown-item"
                   :class="{ highlighted: index === highlightIndex }"
                   @mousedown.prevent="pickPerturbation(item)"
                 >
                   {{ item }}
+                  <small aria-hidden="true">{{ categoryNames(item) }}</small>
                 </button>
               </template>
             </div>
           </div>
+          <p v-if="selectedAnnotation" class="selected-gene-annotation"><strong>已选 {{ selectedAnnotation.symbol }}</strong><span>{{ selectedAnnotation.name_en }}</span><span>{{ categoryNames(selectedAnnotation.symbol) }}</span></p>
+          <div v-if="measuredOptions.length" class="measured-shortcuts"><span>已登记真实实测，可在预测完成后对比：</span><button v-for="item in measuredOptions" :key="item.perturbation" type="button" @click="pickPerturbation(item.perturbation)">{{item.perturbation}} · {{item.measured_cells}} 个实测细胞</button><small>最终比较仅采用共有批次，细胞数可能减少。</small></div>
+          <GeneCategoryGuide :categories="geneCategories" :selected="perturbationCategory" />
+          <p v-if="perturbationState?.classification?.warning" class="field-error">{{ perturbationState.classification.warning }}</p>
           <p v-if="perturbationState?.error" class="field-error">
             扰动列表加载失败：{{ perturbationState.error.message }}
             <button class="btn btn-ghost btn-sm" @click="catalog.loadPerturbations(draft.cellLine, 'online', true)">
@@ -428,6 +459,9 @@ async function copySubmitDiagnostics(): Promise<void> {
 </template>
 
 <style scoped>
+.cell-background-link{display:inline-block;font-size:11px;line-height:1.8;margin-top:12px}
+.horizontal .perturbation-field{grid-column:2/-1}@media(max-width:900px){.horizontal .perturbation-field{grid-column:1/-1}}
+.gene-category-select{width:100%;min-width:0;margin-bottom:14px;font-size:11px}.selected-gene-annotation{font-size:10px;line-height:1.8;color:var(--muted);margin:10px 0}.selected-gene-annotation span{display:block;overflow-wrap:anywhere}.selected-gene-annotation strong{font-weight:500;color:var(--ink)}.dropdown-item small{display:block;color:var(--muted);font-size:10px;line-height:1.6;margin-top:3px}
 .horizontal>.card{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:22px 28px;padding:24px}.horizontal .card-title{grid-column:1/-1;font-size:15px}.horizontal .field{margin:0;min-width:0}.horizontal .choice-group{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px}.horizontal .choice{flex:1;padding:10px;font-size:11px}.horizontal .choice-name{font-size:12px}.horizontal .choice-reason{font-size:10px;line-height:1.6}.horizontal .advanced-field,.horizontal .submit-btn,.horizontal .notice,.horizontal .skeleton-wrap{grid-column:1/-1}.horizontal .submit-btn{width:fit-content;min-width:170px;justify-self:end;font-size:13px;padding:11px 22px}.horizontal .advanced{max-width:500px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}.horizontal .advanced label{margin-top:0!important}.horizontal .advanced .notice{grid-column:1/-1}@media(max-width:900px){.horizontal>.card{grid-template-columns:1fr 1fr}.horizontal>.card>.field:nth-of-type(3){grid-column:1/-1}}@media(max-width:600px){.horizontal>.card{grid-template-columns:1fr;padding:18px;gap:20px}.horizontal .submit-btn{width:100%}.horizontal .advanced{display:block}.horizontal .advanced label{margin-top:12px!important}.horizontal .choice{flex:1 1 100px}}
 .param-panel {
   display: flex;
@@ -517,4 +551,5 @@ async function copySubmitDiagnostics(): Promise<void> {
   flex-direction: column;
   gap: 10px;
 }
+.measured-shortcuts{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:10px;color:var(--muted)}.measured-shortcuts>span,.measured-shortcuts>small{flex-basis:100%;line-height:1.8}.measured-shortcuts>button{background:var(--card);border:1px solid var(--border);color:var(--primary);padding:6px 9px;cursor:pointer;font:inherit}
 </style>

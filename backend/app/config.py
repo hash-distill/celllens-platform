@@ -26,23 +26,8 @@ class Settings(BaseSettings):
     create_database_schema: bool = False
     worker_id: str = "celllens-worker-1"
     job_lease_seconds: int = 7_200
-    data_worker_enabled: bool = False
-    max_upload_bytes: int = 256 * 1024 * 1024
-    max_workspace_storage_bytes: int = 2 * 1024 * 1024 * 1024
-    max_dataset_cells: int = 10_000
-    max_dataset_genes: int = 60_000
-    max_matrix_values: int = 20_000_000
-    max_decoded_bytes: int = 512 * 1024 * 1024
     assistant_extra_origins: str = ""
     assistant_timeout_seconds: int = Field(default=90, ge=5, le=90)
-
-    @property
-    def user_data_root(self) -> Path:
-        return self.project_root / "data" / "user_uploads"
-
-    @property
-    def user_analysis_root(self) -> Path:
-        return self.project_root / "data" / "derived" / "user_analyses"
 
     @property
     def registry_root(self) -> Path:

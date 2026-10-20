@@ -67,7 +67,7 @@ interface MockRun {
   createdAt: string
 }
 
-const MOCK_STORAGE = 'celllens.mockRuns.v2'
+const MOCK_STORAGE = 'celllens.mockRuns.v3'
 function loadRuns(): Map<string, MockRun> {
   try {
     const entries = JSON.parse(localStorage.getItem(MOCK_STORAGE) ?? '[]')
@@ -444,23 +444,7 @@ export async function getProjection(runId: string): Promise<ProjectionResponse> 
 
 export async function downloadReport(runId: string): Promise<{ blob: Blob; filename: string }> {
   await delay()
-  const run = requireRun(runId, '/report')
-  const html = `<!doctype html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><title>CellLens Mock 报告 ${runId}</title></head>
-<body style="font-family: sans-serif; max-width: 720px; margin: 40px auto; line-height: 1.7">
-  <h1>细胞知镜 · 运行报告（Mock 样例）</h1>
-  <p><strong>运行编号：</strong>${runId}</p>
-  <p><strong>细胞背景：</strong>${run.request.cell_line}　<strong>扰动：</strong>${run.request.perturbation}　<strong>模式：</strong>${run.request.mode}</p>
-  <p><strong>n_cells：</strong>${run.request.n_cells}　<strong>seed：</strong>${run.request.seed}</p>
-  <p style="color:#b45309">本报告由 Mock 演示模式生成，全部为样例数据，不能用于任何科学结论。</p>
-  <h2>说明</h2>
-  <p>真实报告由后端 GET /api/v1/runs/{run_id}/report 生成，包含运行信息、主要基因、任务与警告；
-  尚未包含完整哈希与验证指标（见需求文档 B7）。</p>
-</body>
-</html>`
-  return {
-    blob: new Blob([html], { type: 'text/html;charset=utf-8' }),
-    filename: `celllens-${runId}.html`,
-  }
+  requireRun(runId, '/report')
+  throw new ApiError({kind:'http',status:409,code:'REPORT_UNAVAILABLE',
+    message:'开发演示模式不提供正式 PDF 报告',endpoint:`/runs/${runId}/report`})
 }

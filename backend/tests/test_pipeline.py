@@ -73,7 +73,25 @@ class FakeAnalysisService:
 
 
 @pytest.mark.parametrize("omit_projection", [False, True])
-def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path, omit_projection):
+@pytest.mark.parametrize("figure_failure", [False, True])
+def test_pipeline_publishes_real_summary_and_artifact_manifest(
+    tmp_path, omit_projection, figure_failure, monkeypatch
+):
+    preparation = []
+
+    def prepare(container, run_id, *, source_root):
+        assert container.store.get(run_id).status == RunStatus.VALIDATING
+        assert container.store.get(run_id).stage_progress == 85
+        assert source_root.name.endswith(".partial")
+        assert (source_root / "manifest.json").is_file()
+        assert not (container.settings.derived_root / run_id).exists()
+        preparation.append(run_id)
+        if figure_failure:
+            raise RuntimeError("figure preparation failed")
+        (source_root / "cell_state").mkdir()
+        (source_root / "cell_state" / "prepared.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr("backend.app.services.pipeline.prepare_cell_state_artifacts", prepare)
     registry_root = tmp_path / "data" / "registry"
     registry_root.mkdir(parents=True)
     checkpoint = tmp_path / "models" / "checkpoint.ckpt"
@@ -133,9 +151,27 @@ def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path, omit_pr
         assert store.get("run_1").error_code == "SCIENTIFIC_CONTRACT_ERROR"
         assert not (derived / "run_1").exists()
         return
+    # A formal expression analysis requires prepared figures before completion.
+    original_run = pipeline.analysis_service.run
+
+    def formal_run(*args):
+        result = original_run(*args)
+        contract = args[-1] / "expression_contract.json"
+        contract.write_text('{"analysis_version":"expression-cp10k-v2"}', encoding="utf-8")
+        result.artifacts.append(contract)
+        return result
+
+    monkeypatch.setattr(pipeline.analysis_service, "run", formal_run)
+    if figure_failure:
+        with pytest.raises(RuntimeError, match="figure preparation failed"):
+            pipeline._run_sync("run_1")
+        assert store.get("run_1").status == RunStatus.FAILED
+        assert preparation == ["run_1"]
+        return
     pipeline._run_sync("run_1")
 
     assert store.get("run_1").status == RunStatus.COMPLETED
+    assert preparation == ["run_1"]
     summary = json.loads((derived / "run_1" / "summary.json").read_text(encoding="utf-8"))
     assert summary["top_genes"][0]["id"] == "MYC"
     assert {artifact.kind for artifact in store.artifacts("run_1")} >= {
@@ -144,5 +180,6 @@ def test_pipeline_publishes_real_summary_and_artifact_manifest(tmp_path, omit_pr
         "manifest",
         "gene_deltas",
         "projection",
+        "cell_state_preparation",
     }
     assert not list(derived.glob("run_1.attempt-*.partial"))

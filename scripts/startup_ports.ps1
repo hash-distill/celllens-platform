@@ -21,3 +21,22 @@ function Assert-StartupPortAvailable {
     }
     throw "[PORT_IN_USE] $Service port $Port on $Address is occupied by $owners. $guidance"
 }
+
+function Get-EnvironmentOverride {
+    # Settings load .env, but a same-named shell variable wins silently. Report the
+    # override before launch so "已启用/未启用" in the status page is explainable.
+    param([Parameter(Mandatory = $true)][string[]]$Name)
+    @($Name | Where-Object { $null -ne [Environment]::GetEnvironmentVariable($_, 'Process') })
+}
+
+function Assert-NoWorkerOverride {
+    $names = @('CELLLENS_WORKER_ENABLED', 'CELLLENS_GPU_AVAILABLE')
+    $overrides = @(Get-EnvironmentOverride -Name $names)
+    foreach ($name in $overrides) {
+        Write-Warning "$name=$([Environment]::GetEnvironmentVariable($name, 'Process')) is set in this shell and overrides .env."
+    }
+    if ($overrides.Count -gt 0) {
+        throw ('[ENV_OVERRIDE] ' + ($overrides -join ', ') +
+            ' would override .env for this launch. Clear them first (Remove-Item Env:CELLLENS_WORKER_ENABLED, Env:CELLLENS_GPU_AVAILABLE) or use a fresh terminal.')
+    }
+}

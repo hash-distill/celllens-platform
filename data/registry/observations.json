@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "selection": {
+    "selection": "existing genuine expression-cp10k-v2 model runs, before comparison scoring",
+    "seed": 42,
+    "max_measured_cells_per_pair": 256,
+    "targets": [
+      [
+        "HepG2",
+        "AAMP"
+      ],
+      [
+        "HepG2",
+        "ACD"
+      ],
+      [
+        "HepG2",
+        "ALDOA"
+      ],
+      [
+        "Jurkat",
+        "AAMP"
+      ],
+      [
+        "Jurkat",
+        "AASDHPPT"
+      ],
+      [
+        "Jurkat",
+        "ABHD11"
+      ],
+      [
+        "Jurkat",
+        "ALDOA"
+      ],
+      [
+        "K562",
+        "AAMP"
+      ],
+      [
+        "K562",
+        "ALDOA"
+      ],
+      [
+        "K562",
+        "ASCC3"
+      ],
+      [
+        "K562",
+        "MYC"
+      ],
+      [
+        "RPE1",
+        "AAMP"
+      ],
+      [
+        "RPE1",
+        "ALDOA"
+      ],
+      [
+        "RPE1",
+        "AQR"
+      ],
+      [
+        "RPE1",
+        "C12ORF45"
+      ]
+    ],
+    "source": {
+      "kind": "measured_rna",
+      "repo": "arcinstitute/State-Replogle-Filtered",
+      "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+      "file": "replogle_concat.h5ad",
+      "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+    }
+  },
+  "observations": [
+    {
+      "cell_line": "HepG2",
+      "perturbation": "AAMP",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    },
+    {
+      "cell_line": "HepG2",
+      "perturbation": "ACD",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    },
+    {
+      "cell_line": "HepG2",
+      "perturbation": "ALDOA",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 96,
+      "status": "available",
+      "n_cells": 96,
+      "path": "data/raw/measured-comparison-v1/hepg2/ALDOA.h5ad",
+      "sha256": "18571c099848813b976d362062a84baff6411055b761dd826fb54df46a38bc30",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "Jurkat",
+      "perturbation": "AAMP",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 39,
+      "status": "available",
+      "n_cells": 39,
+      "path": "data/raw/measured-comparison-v1/jurkat/AAMP.h5ad",
+      "sha256": "33140a261c611e7c15b68305fe42aa52b02a6e7403c5c8e53a6d87173ef1dbe8",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "Jurkat",
+      "perturbation": "AASDHPPT",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 97,
+      "status": "available",
+      "n_cells": 97,
+      "path": "data/raw/measured-comparison-v1/jurkat/AASDHPPT.h5ad",
+      "sha256": "32a295d59971bcda0507dff904021ad01cccd5851a0cc3a4a6de755b7b832208",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "Jurkat",
+      "perturbation": "ABHD11",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 97,
+      "status": "available",
+      "n_cells": 97,
+      "path": "data/raw/measured-comparison-v1/jurkat/ABHD11.h5ad",
+      "sha256": "cfff81898d571f061ec655b414d39ca32ff568a5a3e5a794f3a92f9087e3f7ac",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "Jurkat",
+      "perturbation": "ALDOA",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 75,
+      "status": "available",
+      "n_cells": 75,
+      "path": "data/raw/measured-comparison-v1/jurkat/ALDOA.h5ad",
+      "sha256": "734e59f7462278a5fedce85a7936cb333d5d15d48c7a0ce6b3b60b673995657b",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "K562",
+      "perturbation": "AAMP",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 76,
+      "status": "available",
+      "n_cells": 76,
+      "path": "data/raw/measured-comparison-v1/k562/AAMP.h5ad",
+      "sha256": "b8556f9440431d67c0900076f8f98689ea62bc0fc3d0e82e584724d67c37a2cf",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "K562",
+      "perturbation": "ALDOA",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 77,
+      "status": "available",
+      "n_cells": 77,
+      "path": "data/raw/measured-comparison-v1/k562/ALDOA.h5ad",
+      "sha256": "bdd3b7137f38347eed16c3a29dfc975a8fe18cb468f0ae5f88ee0f19d7533dd7",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "K562",
+      "perturbation": "ASCC3",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    },
+    {
+      "cell_line": "K562",
+      "perturbation": "MYC",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    },
+    {
+      "cell_line": "RPE1",
+      "perturbation": "AAMP",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    },
+    {
+      "cell_line": "RPE1",
+      "perturbation": "ALDOA",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 70,
+      "status": "available",
+      "n_cells": 70,
+      "path": "data/raw/measured-comparison-v1/rpe1/ALDOA.h5ad",
+      "sha256": "ce86f0daf11cdbf8ec5f95ec2a3dba1f47488a886f90a747d38ddc6957ebd2f4",
+      "expression_scale": "log1p_cp10k",
+      "sampling_seed": 42
+    },
+    {
+      "cell_line": "RPE1",
+      "perturbation": "AQR",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    },
+    {
+      "cell_line": "RPE1",
+      "perturbation": "C12ORF45",
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "available_cells_in_source": 0,
+      "status": "unavailable",
+      "n_cells": 0,
+      "reason": "No matching measured cells in this pinned filtered atlas"
+    }
+  ]
+}

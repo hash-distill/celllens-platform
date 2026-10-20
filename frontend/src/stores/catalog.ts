@@ -2,11 +2,16 @@ import { defineStore } from 'pinia'
 import { api } from '../api/client'
 import { ApiError } from '../api/http'
 import type { ContextItem, RunMode } from '../types/run'
+import type { ClassificationInfo, GeneAnnotation, GeneCategory } from '../types/geneEducation'
 
 interface PerturbationState {
   items: string[]
+  measured_comparisons?: {perturbation: string; measured_cells: number}[]
   loading: boolean
   error: ApiError | null
+  genes?: GeneAnnotation[]
+  categories?: GeneCategory[]
+  classification?: ClassificationInfo
 }
 
 export const useCatalogStore = defineStore('catalog', {
@@ -48,7 +53,7 @@ export const useCatalogStore = defineStore('catalog', {
       this.perturbations[key] = { items: [], loading: true, error: null }
       try {
         const res = await api.perturbations(cellLine, mode)
-        this.perturbations[key] = { items: res.items, loading: false, error: null }
+        this.perturbations[key] = { items: res.items, measured_comparisons: res.measured_comparisons, genes: res.genes, categories: res.categories, classification: res.classification, loading: false, error: null }
       } catch (err) {
         this.perturbations[key] = {
           items: [],

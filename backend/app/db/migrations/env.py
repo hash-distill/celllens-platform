@@ -4,8 +4,8 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from backend.app.config import get_settings
+from backend.app.db import legacy_schema  # noqa: F401
 from backend.app.db.models import Base
-from backend.app.user_data import models as user_data_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))

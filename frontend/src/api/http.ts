@@ -106,6 +106,7 @@ export interface RawResponse {
 }
 
 export interface RequestOptions {
+  responseType?: 'json' | 'blob'
   method?: 'GET' | 'POST'
   body?: unknown
   headers?: Record<string, string>
@@ -150,13 +151,17 @@ export async function apiFetchRaw(path: string, opts: RequestOptions = {}): Prom
       credentials: 'same-origin',
       signal: controller.signal,
     })
-    const text = await res.text()
     let data: unknown = null
-    if (text.length > 0) {
-      try {
-        data = JSON.parse(text)
-      } catch {
-        data = text
+    if (opts.responseType === 'blob' && res.ok) {
+      data = await res.blob()
+    } else {
+      const text = await res.text()
+      if (text.length > 0) {
+        try {
+          data = JSON.parse(text)
+        } catch {
+          data = text
+        }
       }
     }
     return { status: res.status, ok: res.ok, data }

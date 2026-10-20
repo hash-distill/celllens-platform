@@ -100,6 +100,10 @@ export interface ContextItem {
 export interface PerturbationList {
   cell_line: string
   items: string[]
+  measured_comparisons?: {perturbation: string; measured_cells: number}[]
+  genes?: import('./geneEducation').GeneAnnotation[]
+  categories?: import('./geneEducation').GeneCategory[]
+  classification?: import('./geneEducation').ClassificationInfo
 }
 
 export interface HealthResponse {

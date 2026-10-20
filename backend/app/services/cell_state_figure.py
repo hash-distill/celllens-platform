@@ -47,6 +47,9 @@ def render_cell_state(document: dict[str, Any], file_format: str) -> bytes:
             for i in range(len(sources))
         ]
         points = document["points"]
+        is_umap = document["method"] == "joint-umap"
+        is_metabolic = document.get("embedding_space") == "metabolic"
+        space_label = "Metabolic" if is_metabolic else "Expression"
         units = document["feature"]["units"]
         feature = document["feature"]["id"]
         low, high = document["color_range"]
@@ -61,10 +64,21 @@ def render_cell_state(document: dict[str, Any], file_format: str) -> bytes:
             ax.set_xlim(document["bounds"][0])
             ax.set_ylim(document["bounds"][1])
             ax.set_aspect("equal", adjustable="box")
-            variance = document["explained_variance_ratio"]
-            ax.set_xlabel(f"PC1 ({variance[0] * 100:.1f}% control variance)")
-            ax.set_ylabel(f"PC2 ({variance[1] * 100:.1f}% control variance)")
-        overlay.set_title("A   Global expression distribution", loc="left", fontweight="bold", pad=13)
+            if is_umap:
+                ax.set_xlabel("UMAP 1")
+                ax.set_ylabel("UMAP 2")
+            else:
+                variance = document["explained_variance_ratio"]
+                ax.set_xlabel(f"PC1 ({variance[0] * 100:.1f}% control variance)")
+                ax.set_ylabel(f"PC2 ({variance[1] * 100:.1f}% control variance)")
+        overlay.set_title(
+            f"A   {space_label} neighborhood structure"
+            if is_umap
+            else f"A   Global {space_label.lower()} distribution",
+            loc="left",
+            fontweight="bold",
+            pad=13,
+        )
         ecdf.set_title("C   Per-cell feature distribution", loc="left", fontweight="bold", pad=13)
         for index, (source, ax) in enumerate(zip(sources, per_source, strict=True)):
             source_points = [p for p in points if p["source"] == source]
@@ -146,11 +160,24 @@ def render_cell_state(document: dict[str, Any], file_format: str) -> bytes:
         )
         fig.text(0.07, 0.928, fill(f"Feature: {feature}", 115), fontsize=10, va="top")
         provenance = document["provenance"]
+        if is_umap:
+            parameters = document["embedding_parameters"]
+            method_caption = (
+                f"Joint UMAP | {parameters['preprocessing']['n_components']} {space_label.lower()} PCs | "
+                f"neighbors={parameters['n_neighbors']}, min_dist={parameters['min_dist']}, seed=42"
+            )
+        else:
+            method_caption = "Control-reference PCA"
+        input_caption = (
+            f"{document['embedding_preprocessing']['feature_count']} metabolic tasks | "
+            "control z-score scaling"
+            if is_metabolic
+            else f"{document['gene_count']} genes | centered log1p(CP10K), no gene-wise scaling"
+        )
         footer = (
-            f"Control-reference PCA | {document['gene_count']} genes | centered log1p(CP10K), "
-            "no gene-wise scaling | identical axes and feature color range\n"
+            f"{method_caption} | {input_caption} | identical axes and feature color range\n"
             "ECDF uses all valid cells. Populations are unpaired; no significance claim. "
-            "Expression space does not represent morphology or metabolic flux.\n"
+            f"{space_label} space does not represent morphology or metabolic flux.\n"
             f"Run: {document['run_id']} | Source: {provenance['source_run_id']} | "
             f"Manifest SHA256: {provenance['manifest_sha256']}"
         )

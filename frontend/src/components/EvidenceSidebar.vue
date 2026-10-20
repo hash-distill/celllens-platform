@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRunStore, type RunEntry } from '../stores/run'
 import { useCatalogStore } from '../stores/catalog'
 import { useUiStore } from '../stores/ui'
-import { fmtPercent, fmtServerTime, MODE_LABEL } from '../utils/format'
+import { fmtServerTime, MODE_LABEL } from '../utils/format'
 import { buildDiagnostics, copyText } from '../utils/diagnostics'
 import { isSyntheticResult, runSourceLabel } from '../utils/source'
 
@@ -24,7 +24,6 @@ const context = computed(() =>
   record.value ? catalog.contextFor(record.value.request.cell_line) : null,
 )
 
-const coverage = computed(() => props.entry.summary.data?.coverage ?? null)
 const provenance = computed(() => props.entry.provenance)
 
 /** 汇总本运行最近一次错误（用于诊断信息） */
@@ -115,23 +114,7 @@ async function copyDiagnostics(): Promise<void> {
           注册模型代表当前配置；本次运行使用的模型与哈希见下方溯源，二者可能不同。
         </p>
 
-        <h3 class="evidence-section">覆盖信息</h3>
-        <template v-if="coverage">
-          <dl class="evidence-list">
-            <dt>对齐基因</dt>
-            <dd>{{ fmtPercent(coverage.state_gene_fraction) }}（占参考面板比例）</dd>
-            <dt>代谢库基因</dt>
-            <dd>{{ fmtPercent(coverage.metabolic_gene_fraction) }}（覆盖率）</dd>
-            <dt>反应覆盖</dt>
-            <dd>{{ fmtPercent(coverage.reaction_fraction) }}（所需基因平均覆盖）</dd>
-            <dt>任务数</dt>
-            <dd>
-              覆盖支持 {{ coverage.supported_tasks }} / 探索性
-              {{ coverage.exploratory_tasks }} / 证据不足 {{ coverage.insufficient_tasks }}
-            </dd>
-          </dl>
-        </template>
-        <p v-else class="muted small" style="margin: 4px 0 0">覆盖摘要未提供（任务未完成或无代谢结果）。</p>
+        <RouterLink :to="{path:'/coverage',query:{run:record.run_id}}" class="muted small">查看基因与任务范围 ↗</RouterLink>
 
         <h3 class="evidence-section">限制与警告</h3>
         <template v-if="record.warnings.length > 0">
@@ -150,7 +133,7 @@ async function copyDiagnostics(): Promise<void> {
             <dt>历史模型</dt><dd class="mono">{{ provenance.data.assets.model_id ?? '未记录（合成包或旧运行）' }}</dd>
             <dt>历史数据</dt><dd class="mono">{{ provenance.data.assets.dataset_id ?? '未记录' }}</dd>
             <template v-if="provenance.data.source_run_id">
-              <dt>原始真实运行</dt><dd><RouterLink :to="{path:'/workbench',query:{run:provenance.data.source_run_id}}">{{ provenance.data.source_run_id }}</RouterLink></dd>
+              <dt>原始真实运行</dt><dd><RouterLink :to="{path:'/demo',query:{run:provenance.data.source_run_id}}">{{ provenance.data.source_run_id }}</RouterLink></dd>
             </template>
             <dt>完成时间</dt><dd>{{ fmtServerTime(provenance.data.completed_at) }}</dd>
           </dl>

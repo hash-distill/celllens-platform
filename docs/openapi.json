@@ -50,6 +50,128 @@
         }
       }
     },
+    "/api/v1/system-status": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Environment Status",
+        "operationId": "environment_status_api_v1_system_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/experiments": {
+      "get": {
+        "tags": [
+          "experiments"
+        ],
+        "summary": "Experiments",
+        "operationId": "experiments_api_v1_experiments_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "active",
+                "completed",
+                "failed"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "online",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Experiments Api V1 Experiments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/catalog/contexts": {
       "get": {
         "tags": [
@@ -134,6 +256,71 @@
         }
       }
     },
+    "/api/v1/coverage": {
+      "get": {
+        "tags": [
+          "coverage"
+        ],
+        "summary": "Get Coverage",
+        "operationId": "get_coverage_api_v1_coverage_get",
+        "parameters": [
+          {
+            "name": "cell_line",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cell Line"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^run_[a-zA-Z0-9_-]{1,56}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/runs/{run_id}/cell-state": {
       "get": {
         "tags": [
@@ -174,6 +361,34 @@
               "maxLength": 500,
               "default": "",
               "title": "Feature Id"
+            }
+          },
+          {
+            "name": "embedding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pca",
+                "umap"
+              ],
+              "type": "string",
+              "default": "pca",
+              "title": "Embedding"
+            }
+          },
+          {
+            "name": "space",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "expression",
+                "metabolic"
+              ],
+              "type": "string",
+              "default": "expression",
+              "title": "Space"
             }
           }
         ],
@@ -258,6 +473,34 @@
               "type": "string",
               "default": "svg",
               "title": "File Format"
+            }
+          },
+          {
+            "name": "embedding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pca",
+                "umap"
+              ],
+              "type": "string",
+              "default": "pca",
+              "title": "Embedding"
+            }
+          },
+          {
+            "name": "space",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "expression",
+                "metabolic"
+              ],
+              "type": "string",
+              "default": "expression",
+              "title": "Space"
             }
           }
         ],
@@ -889,7 +1132,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "content": {
+              "application/pdf": {}
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -992,155 +1238,21 @@
         }
       }
     },
-    "/api/v1/data-capabilities": {
+    "/api/v1/runs/{run_id}/comparison": {
       "get": {
         "tags": [
-          "user data"
+          "measured comparison"
         ],
-        "summary": "Capabilities",
-        "operationId": "capabilities_api_v1_data_capabilities_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Capabilities Api V1 Data Capabilities Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/datasets": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Datasets",
-        "operationId": "datasets_api_v1_datasets_get",
+        "summary": "Get Comparison",
+        "operationId": "get_comparison_api_v1_runs__run_id__comparison_get",
         "parameters": [
           {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000000,
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
-            }
-          },
-          {
-            "name": "q",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 128,
-              "default": "",
-              "title": "Q"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Datasets Api V1 Datasets Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Upload Dataset",
-        "operationId": "upload_dataset_api_v1_datasets_post",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_dataset_api_v1_datasets_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Upload Dataset Api V1 Datasets Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/datasets/{dataset_id}": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Dataset Detail",
-        "operationId": "dataset_detail_api_v1_datasets__dataset_id__get",
-        "parameters": [
-          {
-            "name": "dataset_id",
+            "name": "run_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Dataset Id"
+              "title": "Run Id"
             }
           }
         ],
@@ -1152,7 +1264,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Dataset Detail Api V1 Datasets  Dataset Id  Get"
+                  "title": "Response Get Comparison Api V1 Runs  Run Id  Comparison Get"
                 }
               }
             }
@@ -1170,336 +1282,36 @@
         }
       }
     },
-    "/api/v1/datasets/{dataset_id}/archive": {
-      "post": {
+    "/api/v1/runs/{run_id}/comparison/download": {
+      "get": {
         "tags": [
-          "user data"
+          "measured comparison"
         ],
-        "summary": "Archive Dataset",
-        "operationId": "archive_dataset_api_v1_datasets__dataset_id__archive_post",
+        "summary": "Download Comparison",
+        "operationId": "download_comparison_api_v1_runs__run_id__comparison_download_get",
         "parameters": [
           {
-            "name": "dataset_id",
+            "name": "run_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Dataset Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Archive Dataset Api V1 Datasets  Dataset Id  Archive Post"
-                }
-              }
+              "title": "Run Id"
             }
           },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/datasets/{dataset_id}/file": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Download Dataset",
-        "operationId": "download_dataset_api_v1_datasets__dataset_id__file_get",
-        "parameters": [
           {
-            "name": "dataset_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Dataset Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/analyses": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Analyses",
-        "operationId": "analyses_api_v1_analyses_get",
-        "parameters": [
-          {
-            "name": "limit",
+            "name": "table",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000000,
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
-            }
-          },
-          {
-            "name": "dataset_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^ds_[a-f0-9]{32}$"
-                },
-                {
-                  "type": "null"
-                }
+              "enum": [
+                "json",
+                "genes",
+                "tasks"
               ],
-              "title": "Dataset Id"
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(queued|running|completed|failed)$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Status"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Analyses Api V1 Analyses Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Create Analysis",
-        "operationId": "create_analysis_api_v1_analyses_post",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AnalysisRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Create Analysis Api V1 Analyses Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/analyses/{analysis_id}": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Analysis Detail",
-        "operationId": "analysis_detail_api_v1_analyses__analysis_id__get",
-        "parameters": [
-          {
-            "name": "analysis_id",
-            "in": "path",
-            "required": true,
-            "schema": {
               "type": "string",
-              "title": "Analysis Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Analysis Detail Api V1 Analyses  Analysis Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/analyses/{analysis_id}/report": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Analysis Report",
-        "operationId": "analysis_report_api_v1_analyses__analysis_id__report_get",
-        "parameters": [
-          {
-            "name": "analysis_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Analysis Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Analysis Report Api V1 Analyses  Analysis Id  Report Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/analyses/{analysis_id}/files/{filename}": {
-      "get": {
-        "tags": [
-          "user data"
-        ],
-        "summary": "Analysis File",
-        "operationId": "analysis_file_api_v1_analyses__analysis_id__files__filename__get",
-        "parameters": [
-          {
-            "name": "analysis_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Analysis Id"
-            }
-          },
-          {
-            "name": "filename",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Filename"
+              "default": "json",
+              "title": "Table"
             }
           }
         ],
@@ -1561,10 +1373,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "enum": [
-                "run",
-                "analysis"
-              ],
+              "const": "run",
               "type": "string",
               "title": "Source Kind"
             }
@@ -1575,7 +1384,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^(run_[a-zA-Z0-9_-]{1,56}|ana_[a-f0-9]{32})$",
+              "pattern": "^run_[a-zA-Z0-9_-]{1,56}$",
               "title": "Source Id"
             }
           }
@@ -1695,94 +1504,6 @@
   },
   "components": {
     "schemas": {
-      "AnalysisRequest": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "dataset_id": {
-            "type": "string",
-            "pattern": "^ds_[a-f0-9]{32}$",
-            "title": "Dataset Id"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "explore",
-              "metabolism"
-            ],
-            "title": "Kind",
-            "default": "explore"
-          },
-          "group_key": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Key"
-          },
-          "reference_group": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 256
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reference Group"
-          },
-          "seed": {
-            "type": "integer",
-            "maximum": 4294967295.0,
-            "minimum": 0.0,
-            "title": "Seed",
-            "default": 42
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "dataset_id"
-        ],
-        "title": "AnalysisRequest"
-      },
-      "Body_upload_dataset_api_v1_datasets_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          },
-          "metadata": {
-            "type": "string",
-            "maxLength": 5000,
-            "title": "Metadata"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file",
-          "metadata"
-        ],
-        "title": "Body_upload_dataset_api_v1_datasets_post"
-      },
       "CompletenessResponse": {
         "properties": {
           "schema_version": {
@@ -1997,6 +1718,19 @@
       },
       "Connection": {
         "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "deepseek",
+              "siliconflow",
+              "gemini",
+              "anthropic",
+              "custom"
+            ],
+            "title": "Provider",
+            "default": "custom"
+          },
           "base_url": {
             "type": "string",
             "maxLength": 512,
@@ -2388,6 +2122,19 @@
       },
       "InterpretationRequest": {
         "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "deepseek",
+              "siliconflow",
+              "gemini",
+              "anthropic",
+              "custom"
+            ],
+            "title": "Provider",
+            "default": "custom"
+          },
           "base_url": {
             "type": "string",
             "maxLength": 512,
@@ -2425,15 +2172,12 @@
           },
           "source_kind": {
             "type": "string",
-            "enum": [
-              "run",
-              "analysis"
-            ],
+            "const": "run",
             "title": "Source Kind"
           },
           "source_id": {
             "type": "string",
-            "pattern": "^(run_[a-zA-Z0-9_-]{1,56}|ana_[a-f0-9]{32})$",
+            "pattern": "^run_[a-zA-Z0-9_-]{1,56}$",
             "title": "Source Id"
           },
           "context_sha256": {

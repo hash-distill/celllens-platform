@@ -50,7 +50,7 @@ export const STATUS_LABEL: Record<RunStatus, string> = {
   state_running: '正在生成扰动预测',
   adapting: '正在对齐表达数据',
   metabolic_running: '正在分析基因与代谢结果',
-  validating: '正在校验并整理结果',
+  validating: '正在准备 PCA / UMAP 科研图',
   completed: '分析完成',
   failed: '分析失败',
 }

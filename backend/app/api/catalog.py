@@ -3,6 +3,8 @@ from typing import Literal
 from fastapi import APIRouter, Request
 
 from backend.app.schemas import ContextItem
+from backend.app.services.gene_education import categories_for, classify_gene, load_annotations
+from backend.app.services.measured_comparison import comparable_perturbations
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
@@ -71,4 +73,25 @@ def perturbations(
     container = request.app.state.container
     # Legacy modes remain readable in stored records, but cannot start experiments.
     items = container.registry.supported_perturbations(cell_line) if mode == "online" else []
-    return {"cell_line": cell_line, "mode": mode, "items": items}
+    annotation_error = None
+    try:
+        annotations = load_annotations(container.settings.registry_root)
+    except (OSError, ValueError, KeyError):
+        annotations = None
+        annotation_error = "功能分类快照未通过校验；扰动可用列表仍以模型登记为准"
+    genes = [classify_gene(symbol, annotations) for symbol in items]
+    return {
+        "cell_line": cell_line,
+        "mode": mode,
+        "items": items,
+        "measured_comparisons": comparable_perturbations(container.settings.project_root, cell_line, items),
+        "genes": genes,
+        "categories": categories_for(genes, annotations),
+        "classification": {
+            "available": annotations is not None,
+            "multi_label": True,
+            "method": "PANTHER Protein Class / HGNC identity",
+            "provenance": annotations["provenance"] if annotations else None,
+            "warning": annotation_error,
+        },
+    }

@@ -51,6 +51,7 @@ try {
         Write-Host "CellLens development: http://127.0.0.1:$FrontendPort/workbench"
     }
     Assert-StartupPortAvailable -Address $HostAddress -Port $ApiPort -Service 'API'
+    Assert-NoWorkerOverride
     & uv run --no-sync uvicorn backend.app.main:app --host $HostAddress --port $ApiPort
     if ($LASTEXITCODE -ne 0) { throw 'API stopped with an error' }
 } finally {

@@ -1,14 +1,14 @@
 # CellLens 文档目录
 
-更新日期：2026-10-11。项目概览和快速启动见 [项目 README](../README.md)。
+更新日期：2026-10-15。项目概览和快速启动见 [项目 README](../README.md)。
 
 ## 先了解和使用系统
 
 | 文档 | 内容 |
 |---|---|
-| [上传数据与分析](guide/USER_DATA.md) | H5AD 格式、免登录共享管理、CPU 下游分析 |
 | [设置与辅助解读](guide/ASSISTANT_SETTINGS.md) | 外观、页面快捷工具、OpenAI 兼容连接与结果摘要解读 |
 | [使用指南](guide/USER_GUIDE.md) | 面向非生物专业用户：参数、运行流程、结果阅读 |
+| [实测与预测对比](guide/MEASURED_COMPARISON.md) | 真实观测、三组比较、表达/DE 指标、基线与来源 |
 | [功能前后对比](guide/FUNCTION_WORKSPACE.md) | 任务筛选、同布局网络、实测比较、节点证据和导出 |
 | [单细胞科研图](guide/SCIENTIFIC_CELL_STATE.md) | 共同 PCA、逐细胞着色、累积分布和 SVG/PDF/PNG 导出 |
 | [模型说明](guide/MODELS.md) | STATE、scCellFie 的原始任务、输入输出与项目边界 |
@@ -32,9 +32,11 @@
 
 ## 截图与检查记录
 
+- [2026-10-15 实测对比验收](verification/2026-10-15-measured-comparison.md)：627 个真实观测细胞、四背景新推理、五个当前比较、官方指标核对与页面验收。
+
 - [2026-10-11 设置与辅助解读验收](verification/2026-10-11-assistant-settings.md)：主题、密钥范围、真实摘要与受控协议响应；未使用真实 API Key。
 
-- [2026-10-11 在线入口与上传验收](verification/2026-10-11-online-workflow.md)：移除回放与实测对照的新建入口，现有 8000 服务免登录上传、CPU 分析及下载。
+- [2026-10-11 在线入口验收](verification/2026-10-11-online-workflow.md)：在线实验入口、历史参数复用与启动检查。
 
 - [2026-10-10 正式操作修订](verification/2026-10-10-formal-operation.md)：正式入口、生产数据来源、现行说明及实际验证范围。
 

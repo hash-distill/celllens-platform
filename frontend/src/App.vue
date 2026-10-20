@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import UtilityRail from './components/UtilityRail.vue'
+import FloatingAssistant from './components/FloatingAssistant.vue'
 import ConnectionBanner from './components/ConnectionBanner.vue'
 import { isMockEnabled } from './api/mockFlag'
 import { useServiceStore } from './stores/service'
@@ -17,8 +18,6 @@ const ui = useUiStore()
 /** 开发数据来源标记（生产构建不启用） */
 const mockOn = isMockEnabled()
 
-let healthTimer: number | null = null
-
 function onVisibilityChange(): void {
   // 页面恢复可见：立即补一次轮询；隐藏时轮询自动降频（间隔在调度时读取）
   if (document.visibilityState === 'visible') runs.wakePolling()
@@ -27,12 +26,10 @@ function onVisibilityChange(): void {
 onMounted(() => {
   void service.refresh()
   void catalog.load()
-  healthTimer = window.setInterval(() => void service.refresh(), 30000)
   document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onBeforeUnmount(() => {
-  if (healthTimer !== null) window.clearInterval(healthTimer)
   document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
@@ -47,6 +44,7 @@ onBeforeUnmount(() => {
     <RouterView />
   </main>
   <UtilityRail />
+  <FloatingAssistant />
 
   <!-- 轻量提示 -->
   <div class="toast-stack" aria-live="polite">

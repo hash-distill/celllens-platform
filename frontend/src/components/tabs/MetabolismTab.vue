@@ -2,18 +2,17 @@
 import { computed, ref, watch } from 'vue'
 import { useRunStore } from '../../stores/run'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
-import CoverageCards from '../CoverageCards.vue'
 import DivergingBar, { type DivergingBarItem } from '../../charts/DivergingBar.vue'
-import { EVIDENCE_LABEL, fmtDelta, fmtNumber, fmtPercent } from '../../utils/format'
+import { EVIDENCE_LABEL, fmtDelta, fmtNumber } from '../../utils/format'
 import type { EvidenceLevel, EvidenceItem } from '../../types/run'
 import TablePager from '../TablePager.vue'
 import { usePagedRows } from '../../utils/pagination'
 import TaskTrace from '../response/TaskTrace.vue'
-import OfficialCompleteness from '../OfficialCompleteness.vue'
-import type { CompletenessResponse } from '../../types/completeness'
+import { useTaskAssociations } from '../../utils/taskAssociations'
+import { hasPredictionChange } from '../../utils/predictionEvidence'
 
 /**
- * 代谢功能：覆盖摘要卡 + Top 任务差异图与表格 + 反应聚合表。
+ * 代谢功能：任务差异图与表格 + 反应聚合表；覆盖详情在独立目录。
  * 优先读取完整有效任务，旧产物明确降级为 Top 摘要；
  * 旧运行的宽表反应文件（INVALID_ARTIFACT）降级为不可用提示。
  */
@@ -22,20 +21,16 @@ const props = defineProps<{ runId: string }>()
 
 const runs = useRunStore()
 const entry = computed(() => runs.entry(props.runId))
-const summaryBlock = computed(() => entry.value?.summary ?? null)
 const tasksBlock = computed(() => entry.value?.tasks ?? null)
 const reactionsBlock = computed(() => entry.value?.reactions ?? null)
 
-const coverage = computed(() => summaryBlock.value?.data?.coverage ?? null)
-const official = ref<CompletenessResponse | null>(null)
 const hasOfficial = computed(() => tasksBlock.value?.data?.completeness_available === true)
-function officialRow(id: string) { return official.value?.tasks.find(row => row.id === id) }
 function coverageLabel(task: EvidenceItem) {
-  return hasOfficial.value ? `官方全部基因覆盖 ${fmtPercent(officialRow(task.id)?.fraction_present_all, 1)} · 影响加权完整性 ${fmtPercent(officialRow(task.id)?.impact_weighted_completeness_all, 1)}` : `项目旧分档：${EVIDENCE_LABEL[task.evidence_level]} · 基因覆盖 ${fmtPercent(task.coverage, 1)}`
+  return task.coverage >= 1 ? '关联基因齐全' : '存在缺失关联基因'
 }
 
 // ---------- 任务 ----------
-const allTasks = computed<EvidenceItem[]>(() => tasksBlock.value?.data?.items ?? [])
+const allTasks = computed<EvidenceItem[]>(() => (tasksBlock.value?.data?.items ?? []).filter(hasPredictionChange))
 
 const levelCounts = computed(() => {
   const counts: Record<EvidenceLevel, number> = { supported: 0, exploratory: 0, insufficient: 0 }
@@ -59,8 +54,7 @@ const searchedTasks = computed(() => {
   return visibleTasks.value.filter(
     (t) =>
       t.label.toLowerCase().includes(query) ||
-      t.id.toLowerCase().includes(query) ||
-      t.determinant_genes.some((g) => g.toLowerCase().includes(query)),
+      t.id.toLowerCase().includes(query),
   )
 })
 
@@ -76,20 +70,15 @@ const barItems = computed<DivergingBarItem[]>(() =>
     })),
 )
 
-const { page: taskPage, pages: taskPages, visible: taskRows } = usePagedRows(searchedTasks)
+const { page: taskPage, pageSize: taskPageSize, pages: taskPages, visible: taskRows } = usePagedRows(searchedTasks)
+const { associations, retry: retryAssociations } = useTaskAssociations(() => props.runId, taskRows)
+const hasObservedTasks = computed(() => allTasks.value.some(task => task.observed_delta !== null))
 const selectedTask = computed(() => searchedTasks.value.find(task => task.id === selectedTaskId.value))
 watch(searchedTasks, rows => {
   if (!rows.some(task => task.id === selectedTaskId.value)) selectedTaskId.value = ''
 })
 watch(() => props.runId, () => {
   evidenceFilter.value = 'all'; taskSearch.value = ''; selectedTaskId.value = ''
-})
-
-const summaryDisplay = computed<BlockDisplay>(() => {
-  const b = summaryBlock.value
-  if (!b || b.status === 'idle' || b.status === 'loading') return 'loading'
-  if (b.status === 'error') return b.error?.status === 404 || b.error?.status === 409 ? 'unavailable' : 'error'
-  return coverage.value ? 'ok' : 'unavailable'
 })
 
 const tasksDisplay = computed<BlockDisplay>(() => {
@@ -109,7 +98,7 @@ const reactionsDisplay = computed<BlockDisplay>(() => {
     if (b.error?.status === 404 || b.error?.status === 409) return 'unavailable'
     return 'error'
   }
-  return (b.data?.items.length ?? 0) > 0 ? 'ok' : 'empty'
+  return (b.data?.items ?? []).some(hasPredictionChange) ? 'ok' : 'empty'
 })
 
 const reactionsUnavailableText = computed(() => {
@@ -131,7 +120,7 @@ const reactionsUnavailableHint = computed(() => {
 const reactionSearch = ref('')
 const reactionSortDir = ref<'asc' | 'desc'>('desc')
 const reactionItems = computed(() => {
-  const items = reactionsBlock.value?.data?.items ?? []
+  const items = (reactionsBlock.value?.data?.items ?? []).filter(hasPredictionChange)
   const query = reactionSearch.value.trim().toLowerCase()
   const filtered = query
     ? items.filter((r) => r.reaction.toLowerCase().includes(query))
@@ -139,49 +128,29 @@ const reactionItems = computed(() => {
   const dir = reactionSortDir.value === 'asc' ? 1 : -1
   return filtered.sort((a, b) => ((a.predicted_delta ?? -Infinity) - (b.predicted_delta ?? -Infinity)) * dir)
 })
-const { page: reactionPage, pages: reactionPages, visible: reactionRows } = usePagedRows(reactionItems)
+const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, visible: reactionRows } = usePagedRows(reactionItems)
 </script>
 
 <template>
   <div class="metabolism">
-    <OfficialCompleteness :run-id="runId" :available="tasksBlock?.data?.completeness_available" :selected-task="selectedTaskId" @loaded="official = $event" />
-    <!-- 覆盖摘要 -->
-    <section v-if="!hasOfficial">
-      <h3 class="section-title">项目旧覆盖分档（80%／60%，非官方置信度）</h3>
-      <BlockState
-        :display="summaryDisplay"
-        :error="summaryBlock?.error"
-        loading-text="正在加载覆盖摘要…"
-        unavailable-text="本次结果未提供覆盖摘要"
-        unavailable-hint="任务可能未完成，或该运行没有代谢结果。"
-        :skeleton-rows="2"
-        @retry="runs.retryBlock(props.runId, 'summary')"
-      >
-        <CoverageCards v-if="coverage" :coverage="coverage" />
-        <p class="muted small" style="margin: 8px 0 0">
-          代谢库基因覆盖率与反应覆盖比例偏低时，下方任务结论应按证据等级解读；
-          证据不足的任务不能作为可靠代谢结论（也不代表没有生物效应）。
-        </p>
-      </BlockState>
-    </section>
+    <p class="muted small">基因和任务的覆盖详情集中在 <RouterLink :to="{path:'/coverage',query:{run:runId}}">查看基因与任务范围 ↗</RouterLink>。部分任务存在缺失关联基因，评分应结合输入范围解读。</p>
 
     <!-- 任务差异 -->
     <section>
       <div class="flex-between">
-        <h3 class="section-title">代谢任务差异（scCellFie 任务分数变化）</h3>
+        <h3 class="section-title">模型预测的代谢任务变化</h3>
         <span class="pill pill-neutral">{{ tasksBlock?.data?.scope === 'all' ? '全部已生成有效任务结果' : '返回的 Top 摘要' }}（{{ allTasks.length }} 条）</span>
       </div>
       <p class="muted small" style="margin: 0 0 10px">
         任务分数变化不是实测代谢通量。筛选仅覆盖已生成并加载的评分记录，图表取其中绝对变化最大的 15 项。覆盖摘要还可包含未生成分数的任务，未返回不能补零。
         <template v-if="tasksBlock?.data?.scope !== 'all'">当前读取本次运行保存的 Top 摘要，未展示全量任务矩阵。</template>
         <template v-if="tasksBlock?.data?.truncated">服务端已按 limit 截断。</template>
-        <template v-if="tasksBlock?.data?.excluded_count">有 {{ tasksBlock.data.excluded_count }} 项预测变化无有效数值，已排除；不能按零变化解释。</template>
       </p>
       <BlockState
         :display="tasksDisplay"
         :error="tasksBlock?.error"
         loading-text="正在加载代谢任务…"
-        empty-text="本次结果没有代谢任务记录"
+        empty-text="暂无可展示的代谢任务结果"
         unavailable-text="本次结果未提供代谢任务"
         @retry="runs.retryBlock(props.runId, 'tasks')"
       >
@@ -200,7 +169,7 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
             v-model="taskSearch"
             class="input search-input"
             type="search"
-            placeholder="搜索任务名或关联基因"
+            placeholder="搜索任务名或任务 ID"
           />
         </div>
         <p class="task-filter-status muted small" role="status">当前：{{ filterLabel(evidenceFilter) }} · 匹配 {{ searchedTasks.length }} 项。点击条形或任务名查看详情。</p>
@@ -219,8 +188,6 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
             <h4>{{ selectedTask.label }}</h4>
             <p class="muted small">{{ coverageLabel(selectedTask) }} · {{ selectedTask.id }}</p>
             <dl><div><dt>对照分数</dt><dd>{{ fmtNumber(selectedTask.control ?? null) }}</dd></div><div><dt>预测分数</dt><dd>{{ fmtNumber(selectedTask.predicted ?? null) }}</dd></div><div><dt>预测变化</dt><dd>{{ fmtDelta(selectedTask.predicted_delta) }}</dd></div></dl>
-            <p v-if="selectedTask.control == null || selectedTask.predicted == null" class="muted small">保存的摘要尚未提供对照或预测分数，不能根据差值补算。</p>
-            <p class="muted small">关联基因：{{ selectedTask.determinant_genes.join(', ') || '尚未提供；完整关联请查看下方追溯。' }}</p>
           </section>
           <div class="table-wrap" style="margin-top: 12px">
             <table class="table">
@@ -228,10 +195,9 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
                 <tr>
                   <th scope="col">任务</th>
                   <th scope="col">预测变化</th>
-                  <th scope="col">观测变化</th>
-                  <th scope="col">{{ hasOfficial ? '官方全部基因覆盖' : '项目覆盖' }}</th>
-                  <th scope="col">{{ hasOfficial ? '官方影响加权完整性' : '项目旧分档' }}</th>
-                  <th scope="col">关联基因</th>
+                  <th v-if="hasObservedTasks" scope="col">观测变化</th>
+                  <th scope="col">基因依据</th>
+                  <th scope="col">有预测变化的关联基因</th>
                 </tr>
               </thead>
               <tbody>
@@ -241,29 +207,26 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
                     <div class="small faint mono">{{ task.id }}</div>
                   </td>
                   <td>{{ fmtDelta(task.predicted_delta) }}</td>
-                  <td>
+                  <td v-if="hasObservedTasks">
                     <span :class="{ 'null-value': task.observed_delta === null }">
                       {{ fmtDelta(task.observed_delta) }}
                     </span>
                   </td>
-                  <td>{{ fmtPercent(hasOfficial ? officialRow(task.id)?.fraction_present_all : task.coverage, 1) }}</td>
+                  <td><RouterLink :to="{path:'/coverage',query:{run:runId,task:task.id}}">{{ coverageLabel(task) }} ↗</RouterLink></td>
                   <td>
-                    <span v-if="hasOfficial">{{ fmtPercent(officialRow(task.id)?.impact_weighted_completeness_all, 1) }}</span>
-                    <span v-else class="pill" :class="`pill-ev-${task.evidence_level}`">
-                      {{ EVIDENCE_LABEL[task.evidence_level] }}
-                    </span>
-                  </td>
-                  <td>
-                    <template v-if="task.determinant_genes.length > 0">
-                      <span class="mono small">{{ task.determinant_genes.join(', ') }}</span>
+                    <template v-if="associations[task.id]?.status === 'ok'">
+                      <details v-if="associations[task.id]!.genes.length" class="task-associated-genes"><summary>{{ associations[task.id]!.genes.slice(0,4).join(', ') }}{{ associations[task.id]!.genes.length > 4 ? '…' : '' }} · {{ associations[task.id]!.genes.length }} 个</summary><span class="mono small">{{ associations[task.id]!.genes.join(', ') }}</span></details>
+                      <span v-else class="muted small">—</span>
                     </template>
-                    <span v-else class="null-value">关联基因尚未提供</span>
+                    <span v-else-if="associations[task.id]?.status === 'loading'" class="muted small">正在读取冻结关联…</span>
+                    <span v-else-if="associations[task.id]?.status === 'unavailable'" class="muted small">—</span>
+                    <button v-else class="btn btn-sm" :title="associations[task.id]?.error" @click="retryAssociations">关联读取失败 · 重试</button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <TablePager v-model:page="taskPage" :pages="taskPages" :total="searchedTasks.length" />
+          <TablePager v-model:page="taskPage" v-model:page-size="taskPageSize" :pages="taskPages" :total="searchedTasks.length" />
         </template>
         <div v-else class="task-empty notice notice-info" role="status" style="margin-top: 10px">
           当前已加载的{{ tasksBlock?.data?.scope === 'all' ? '任务结果' : ' Top 摘要' }}中没有{{ evidenceFilter === 'all' ? '' : '「'+filterLabel(evidenceFilter)+'」' }}{{ taskSearch.trim() ? '匹配「'+taskSearch.trim()+'」的' : '' }}任务。切换「全部」或清空搜索可查看其他已加载任务。
@@ -333,13 +296,14 @@ const { page: reactionPage, pages: reactionPages, visible: reactionRows } = useP
             </tbody>
           </table>
         </div>
-        <TablePager v-model:page="reactionPage" :pages="reactionPages" :total="reactionItems.length" />
+        <TablePager v-model:page="reactionPage" v-model:page-size="reactionPageSize" :pages="reactionPages" :total="reactionItems.length" />
       </BlockState>
     </section>
   </div>
 </template>
 
 <style scoped>
+.task-associated-genes{min-width:180px;max-width:330px;white-space:normal;line-height:1.8}.task-associated-genes summary{cursor:pointer;color:var(--primary)}.task-associated-genes>span{display:block;margin-top:8px;overflow-wrap:anywhere}
 .metabolism {
   display: flex;
   flex-direction: column;

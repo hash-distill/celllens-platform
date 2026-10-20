@@ -1,7 +1,8 @@
 import { computed, reactive, ref } from 'vue'
+import type { ModelProvider } from '../types/assistant'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
-export interface ModelPreferences {base_url: string; model: string; max_tokens: number; token_parameter: 'max_completion_tokens' | 'max_tokens'}
+export interface ModelPreferences {provider: ModelProvider; base_url: string; model: string; max_tokens: number; token_parameter: 'max_completion_tokens' | 'max_tokens'}
 const themeKey = 'celllens.theme', modelKey = 'celllens.model', secretKey = 'celllens.api-key'
 function read(storage: Storage, key: string): string {try {return storage.getItem(key) ?? ''} catch {return ''}}
 const savedTheme = read(localStorage, themeKey)
@@ -16,10 +17,16 @@ export function setTheme(value: ThemePreference): boolean {
   theme.value = value; applyTheme()
   try {localStorage.setItem(themeKey, value); return true} catch {return false}
 }
-export const modelPreferences = reactive<ModelPreferences>({base_url: 'https://api.openai.com/v1', model: '', max_tokens: 2048, token_parameter: 'max_completion_tokens'})
+export const modelPreferences = reactive<ModelPreferences>({provider: 'openai', base_url: 'https://api.openai.com/v1', model: '', max_tokens: 2048, token_parameter: 'max_completion_tokens'})
 try {
   const saved = JSON.parse(read(localStorage, modelKey)) as Partial<ModelPreferences>
   if (typeof saved?.base_url === 'string') modelPreferences.base_url = saved.base_url
+  if (saved?.provider && ['openai','gemini','anthropic','deepseek','siliconflow','custom'].includes(saved.provider)) modelPreferences.provider = saved.provider
+  else if (typeof saved?.base_url === 'string') {
+    // Preserve existing compatible connections when migrating preferences without a provider.
+    const hostname = new URL(saved.base_url).hostname
+    modelPreferences.provider = hostname === 'api.openai.com' ? 'openai' : hostname === 'api.deepseek.com' ? 'deepseek' : hostname === 'api.siliconflow.cn' ? 'siliconflow' : 'custom'
+  }
   if (typeof saved?.model === 'string') modelPreferences.model = saved.model
   if (typeof saved?.max_tokens === 'number' && saved.max_tokens >= 256 && saved.max_tokens <= 8192) modelPreferences.max_tokens = saved.max_tokens
   if (saved?.token_parameter === 'max_tokens') modelPreferences.token_parameter = saved.token_parameter

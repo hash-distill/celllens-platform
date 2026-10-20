@@ -4,6 +4,7 @@ import { api } from '../../api/client'
 import { ApiError } from '../../api/http'
 import type { TaskTraceResponse } from '../../types/trace'
 import { fmtDelta, fmtNumber } from '../../utils/format'
+import { predictionTrace } from '../../utils/predictionEvidence'
 
 const props = defineProps<{ runId: string; taskId: string; taskLabel: string; available?: boolean | null }>()
 const TraceNetwork = defineAsyncComponent(() => import('./TraceNetwork.vue'))
@@ -24,10 +25,11 @@ async function load() {
     return
   }
   try {
-    const result = await api.getTaskTrace(props.runId, props.taskId, active.signal)
+    const original = await api.getFunctionTrace(props.runId, props.taskId, active.signal)
     if (active.signal.aborted) return
+    const result = predictionTrace(original)
     data.value = result
-    selectedReaction.value = result.reactions[0]?.id ?? ''
+    selectedReaction.value = result?.reactions[0]?.id ?? ''
   } catch (err) {
     if (active.signal.aborted) return
     error.value = err instanceof ApiError ? err : new ApiError({kind:'network', status:null, code:null, message:'追溯结果读取失败', endpoint:'/task-trace'})
@@ -39,12 +41,11 @@ onBeforeUnmount(() => controller?.abort())
 
 <template>
   <section class="task-trace" aria-label="任务证据追溯">
-    <header class="trace-heading"><div><span class="micro">CELLLENS / EVIDENCE TRACE</span><h2>从功能变化，追溯关联依据。</h2></div><span class="trace-kind">知识库关联</span></header>
+    <header class="trace-heading"><div><span class="micro">CELLLENS / PREDICTION</span><h2>查看有预测变化的评分关联。</h2></div><span class="trace-kind">模型预测</span></header>
     <p v-if="loading" class="trace-message" role="status">正在读取本次运行的任务关联记录…</p>
     <div v-else-if="available === false" class="trace-message" role="status"><h3>本次运行尚无关联追溯记录</h3><p>当前任务的分数与覆盖信息仍可查看。本次保存结果未提供该任务的反应—基因追溯；完整关联需由新分析生成。</p></div>
     <div v-else-if="error" class="trace-message"><h3>{{ error.code === 'TASK_TRACE_UNAVAILABLE' ? '本次运行尚无关联追溯记录' : error.code === 'TASK_NOT_FOUND' ? '未找到该任务的关联记录' : '关联追溯暂时不可用' }}</h3><p>{{ error.code === 'TASK_TRACE_UNAVAILABLE' ? '已有表达与代谢结果仍可查看。使用当前版本重新运行后，可保存任务—反应—基因关联及数据库版本。合成记录没有真实知识关联产物。' : error.message }}</p><button v-if="error.status !== 404" class="btn btn-sm" @click="load">重试追溯</button></div>
-    <template v-else-if="data">
-      <p class="trace-caption">连线表示已记录的知识库组成关系；数值来自本次运行。相关基因不等于已验证的因果贡献。</p>
+    <template v-else-if="data && data.reactions.length">
       <button class="btn btn-sm" :aria-pressed="spatial" @click="spatial = !spatial">{{ spatial ? '收起空间网络' : '探索三维功能网络' }}</button>
       <TraceNetwork v-if="spatial" :data="data" :selected-reaction="selectedReaction" @select="selectedReaction = $event" />
       <div class="trace-network">
@@ -52,10 +53,11 @@ onBeforeUnmount(() => controller?.abort())
         <div class="trace-connector" aria-hidden="true">←<small>组成</small></div>
         <div class="trace-reactions"><span class="column-label">关联反应 · {{ data.total_reactions }}</span><p v-if="!data.reactions.length" class="trace-caption">知识库未提供关联反应。</p><div class="trace-scroll"><button v-for="row in data.reactions" :key="row.id" class="reaction-node" :class="{active:selectedReaction === row.id}" :aria-pressed="selectedReaction === row.id" @click="selectedReaction = row.id"><span>{{ row.label }}<small class="mono">{{ row.id }}</small></span><strong>{{ fmtDelta(row.predicted_delta, 3) }}</strong></button></div><p v-if="data.truncated" class="trace-caption">已截取 {{ data.reactions.length }} / {{ data.total_reactions }} 条反应。</p></div>
         <div class="trace-connector" aria-hidden="true">←<small>关联</small></div>
-        <div class="trace-genes"><span class="column-label">{{ reaction?.id ?? '所选反应' }} / 相关基因</span><template v-if="reaction"><p class="reaction-values">反应分数：{{ fmtNumber(reaction.control) }} → {{ fmtNumber(reaction.predicted) }}</p><p v-if="!reaction.genes.length" class="trace-caption">未提供关联基因。</p><div class="trace-scroll"><div v-for="g in reaction.genes" :key="g.id" class="trace-gene"><span class="mono">{{ g.label || g.id }}</span><span>{{ fmtDelta(g.predicted_delta, 3) }}</span><small>表达 {{ fmtNumber(g.control, 3) }} → {{ fmtNumber(g.predicted, 3) }}</small></div></div><p v-if="reaction.truncated" class="trace-caption">已截取 {{ reaction.genes.length }} / {{ reaction.total_genes }} 个基因。</p></template></div>
+        <div class="trace-genes"><span class="column-label">{{ reaction?.id ?? '所选反应' }} / 相关基因</span><template v-if="reaction"><p v-if="reaction.control == null && reaction.predicted == null" class="reaction-values">本次无有效反应分数，仅有知识库关联。</p><p v-else class="reaction-values">反应分数：{{ fmtNumber(reaction.control) }} → {{ fmtNumber(reaction.predicted) }}</p><p v-if="!reaction.genes.length" class="trace-caption">冻结记录中无基因关联。</p><div class="trace-scroll"><div v-for="g in reaction.genes" :key="g.id" class="trace-gene"><span class="mono">{{ g.label || g.id }}</span><template v-if="g.control == null && g.predicted == null"><span>—</span><small>本次无有效表达值</small></template><template v-else><span>{{ fmtDelta(g.predicted_delta, 3) }}</span><small>表达 {{ fmtNumber(g.control, 3) }} → {{ fmtNumber(g.predicted, 3) }}</small></template></div></div><p v-if="reaction.truncated" class="trace-caption">已截取 {{ reaction.genes.length }} / {{ reaction.total_genes }} 个基因。</p></template></div>
       </div>
-      <details class="trace-provenance"><summary>数据库 {{ data.database_version }} · 查看追溯来源</summary><p>清单 SHA-256 <code>{{ data.database_provenance.manifest_sha256 }}</code></p><p>运行 <code>{{ data.run_id }}</code> · 关联类型：知识库关联</p><p>本视图未提供评分决定基因归因；缺失数值显示“未提供”。</p><p v-for="warning in data.warnings" :key="warning">{{ warning }}</p></details>
+      <details class="trace-provenance"><summary>数据库 {{ data.database_version }} · 查看追溯来源</summary><p>清单 SHA-256 <code>{{ data.database_provenance.manifest_sha256 }}</code></p><p>运行 <code>{{ data.run_id }}</code> · 所有显示节点均有模型预测变化数值，连线为冻结评分关联。</p><p>未做因果归因或实测验证；显示筛选不改变原始保存结果。</p></details>
     </template>
+    <p v-else class="trace-caption">本次没有符合展示标准的反应—基因预测变化链路。</p>
   </section>
 </template>
 

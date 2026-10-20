@@ -68,7 +68,18 @@ def test_spa_routes_and_api_404_are_separate(tmp_path):
     (dist / "assets/main.js").write_text("console.log('ok')", encoding="utf-8")
     app = create_app(_settings(tmp_path))
     with TestClient(app) as client:
-        for url in ("/", "/workbench", "/records", "/compare", "/demo", "/about", "/runs/run_example"):
+        for url in (
+            "/",
+            "/workbench",
+            "/records",
+            "/compare",
+            "/demo",
+            "/about",
+            "/status",
+            "/settings",
+            "/coverage",
+            "/runs/run_example",
+        ):
             assert "CellLens SPA" in client.get(url).text
         assert client.get("/assets/main.js").status_code == 200
         assert client.get("/assets/missing.js").status_code == 404

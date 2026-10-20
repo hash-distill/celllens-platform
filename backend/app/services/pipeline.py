@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
 
 from backend.app.core.cache import code_fingerprint
 from backend.app.core.diagnostic_protocol import load_diagnostic_protocol
@@ -17,6 +18,7 @@ from backend.app.core.run_manifest import atomic_write_json, file_sha256
 from backend.app.core.storage import RunStore
 from backend.app.engines.state_engine import StateCliEngine, StateRunInput
 from backend.app.schemas import RunStatus, RunSummary
+from backend.app.services.cell_state_preparation import prepare_cell_state_artifacts
 from backend.app.services.scientific_analysis import ScientificAnalysisService
 
 logger = logging.getLogger(__name__)
@@ -164,6 +166,23 @@ class AnalysisPipeline:
                     "size_bytes": path.stat().st_size,
                 }
             atomic_write_json(partial / "manifest.json", manifest)
+            if (partial / "expression_contract.json").is_file():
+                # Complete the costly preparation inside the attempt directory.
+                # A restart can discard it and retry without colliding with a final run.
+                with _lease_heartbeat(self.store, attempt.id, self.lease_seconds):
+                    prepare_cell_state_artifacts(
+                        SimpleNamespace(
+                            store=self.store,
+                            registry=self.registry,
+                            settings=SimpleNamespace(
+                                project_root=self.registry.project_root,
+                                derived_root=self.derived_root,
+                            ),
+                        ),
+                        run_id,
+                        source_root=partial,
+                    )
+                self.store.transition(run_id, RunStatus.VALIDATING, 95, warnings=warnings)
             if final.exists():
                 raise FileExistsError(f"Immutable run directory already exists: {final}")
             partial.replace(final)
@@ -177,7 +196,35 @@ class AnalysisPipeline:
                         path.stat().st_size,
                         _mime_type(path),
                     )
+            figure_manifest = final / "cell_state" / "prepared.json"
+            if figure_manifest.is_file():
+                self.store.register_artifact(
+                    run_id, "cell_state_preparation", f"{run_id}/cell_state/prepared.json",
+                    file_sha256(figure_manifest), figure_manifest.stat().st_size, "application/json",
+                )
+            if (self.registry.registry_root / "observations.json").is_file():
+                try:
+                    from backend.app.services.measured_comparison import (
+                        mark_comparison_pending,
+                        observation_status,
+                    )
+
+                    observed = observation_status(
+                        self.registry.project_root, request.cell_line, request.perturbation
+                    )
+                    if observed and observed.get("status") == "available":
+                        mark_comparison_pending(self.registry.project_root, run_id)
+                except Exception:
+                    logger.exception("Unable to register optional comparison state for %s", run_id)
             self.store.transition(run_id, RunStatus.COMPLETED, 100, warnings=warnings)
+            # Optional CPU evaluation has its own immutable provenance and never rewrites this run.
+            if (self.registry.registry_root / "observations.json").is_file():
+                try:
+                    from backend.app.services.measured_comparison import prepare_comparison
+
+                    prepare_comparison(self.registry.project_root, run_id, self.registry)
+                except Exception:
+                    logger.exception("Measured comparison unavailable for %s; model result preserved", run_id)
             if cache_key := self.store.cache_key(run_id):
                 self.store.put_cache(cache_key, run_id)
             self.store.finish_attempt(attempt.id, succeeded=True)

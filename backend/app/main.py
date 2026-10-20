@@ -7,13 +7,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 
 from backend.app.api.catalog import router as catalog_router
+from backend.app.api.comparisons import router as comparisons_router
+from backend.app.api.coverage import router as coverage_router
+from backend.app.api.experiments import router as experiments_router
 from backend.app.api.runs import router as runs_router
 from backend.app.assistant import AssistantService
 from backend.app.assistant import router as assistant_router
+from backend.app.assistant_middleware import AssistantRequestMiddleware
 from backend.app.config import Settings, get_settings
 from backend.app.container import build_container
-from backend.app.user_data.api import router as user_data_router
-from backend.app.user_data.middleware import UploadLimitMiddleware
+from backend.app.services.system_status import system_status
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -22,8 +25,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        if resolved.data_worker_enabled:
-            await container.data_worker.start()
         if resolved.worker_enabled:
             await container.queue.start()
             for run_id in container.store.list_recoverable_run_ids():
@@ -32,8 +33,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         if resolved.worker_enabled:
             await container.queue.stop()
-        if resolved.data_worker_enabled:
-            await container.data_worker.stop()
 
     application = FastAPI(
         title="CellLens API",
@@ -43,7 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     application.state.container = container
     application.state.assistant = AssistantService(resolved)
-    application.add_middleware(UploadLimitMiddleware, settings=resolved)
+    application.add_middleware(AssistantRequestMiddleware, api_prefix=resolved.api_prefix)
 
     @application.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):
@@ -85,9 +84,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"service": "celllens", "ready": ready_status, "checks": checks},
         )
 
+    @application.get(f"{resolved.api_prefix}/system-status", tags=["system"])
+    def environment_status() -> JSONResponse:
+        return JSONResponse(content=system_status(container), headers={"Cache-Control": "no-store"})
+
+    application.include_router(experiments_router, prefix=resolved.api_prefix)
     application.include_router(catalog_router, prefix=resolved.api_prefix)
+    application.include_router(coverage_router, prefix=resolved.api_prefix)
     application.include_router(runs_router, prefix=resolved.api_prefix)
-    application.include_router(user_data_router, prefix=resolved.api_prefix)
+    application.include_router(comparisons_router, prefix=resolved.api_prefix)
     application.include_router(assistant_router, prefix=resolved.api_prefix)
 
     # Register after API routes; only known SPA paths receive the HTML fallback.
@@ -114,10 +119,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get("/compare", include_in_schema=False)
     @application.get("/demo", include_in_schema=False)
     @application.get("/about", include_in_schema=False)
-    @application.get("/login", include_in_schema=False)
-    @application.get("/datasets", include_in_schema=False)
     @application.get("/settings", include_in_schema=False)
-    @application.get("/analyses/{analysis_id}", include_in_schema=False)
+    @application.get("/status", include_in_schema=False)
+    @application.get("/coverage", include_in_schema=False)
     @application.get("/runs/{run_id}", include_in_schema=False)
     def frontend_page(run_id: str | None = None) -> FileResponse:
         index = dist / "index.html"

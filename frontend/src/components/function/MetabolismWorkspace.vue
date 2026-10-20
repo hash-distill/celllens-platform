@@ -12,7 +12,7 @@ function select(view: 'function'|'data') { void router.replace({path:route.path,
   <section aria-label="代谢功能工作区">
     <div class="metabolism-views" aria-label="代谢功能视图">
       <button class="btn btn-sm" :aria-pressed="!dataView" @click="select('function')">功能前后对比</button>
-      <button class="btn btn-sm" :aria-pressed="dataView" @click="select('data')">任务分数与数据覆盖</button>
+      <button class="btn btn-sm" :aria-pressed="dataView" @click="select('data')">任务与反应分数</button>
     </div>
     <div v-if="dataView" class="card"><MetabolismTab :run-id="runId" /></div>
     <FunctionWorkspace v-else :run-id="runId" />
