@@ -1,6 +1,8 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from stat import S_ISREG
+from threading import Lock
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -84,6 +86,40 @@ class AssetRegistry:
         self.registry_root = registry_root.resolve()
         self.models = self._load("models.json", "models")
         self.datasets = self._load("datasets.json", "datasets")
+        self._asset_checks: dict[Path, tuple[tuple[int, ...], str, bool]] = {}
+        self._asset_checks_lock = Lock()
+
+    def asset_is_valid_cached(self, entry: RegistryEntry, path_field: str, hash_field: str) -> bool:
+        """Reuse readiness digests only while the registered file is unchanged.
+
+        Execution and artifact provenance still use verify_entry, which always reads
+        the complete file. A missing, replaced or edited file invalidates readiness.
+        """
+        try:
+            path = entry.path(path_field)
+            expected = str(entry.payload.get(hash_field) or "").lower()
+            if not expected:
+                return False
+            with self._asset_checks_lock:
+                before = path.stat()
+                if not S_ISREG(before.st_mode):
+                    return False
+                signature = (
+                    before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns
+                )
+                cached = self._asset_checks.get(path)
+                if cached and cached[:2] == (signature, expected):
+                    return cached[2]
+                valid = file_sha256(path).lower() == expected
+                after = path.stat()
+                current = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+                if signature != current:
+                    self._asset_checks.pop(path, None)
+                    return False
+                self._asset_checks[path] = (signature, expected, valid)
+                return valid
+        except (OSError, RegistryError):
+            return False
 
     def _load(self, filename: str, key: str) -> list[dict[str, Any]]:
         path = self.registry_root / filename

@@ -108,6 +108,7 @@ const entries = [
 ] as const
 
 const revealNodes = ref<HTMLElement[]>([])
+const browseSection = ref<HTMLElement | null>(null)
 const visibleKeys = ref<string[]>([])
 const isAtPageBottom = ref(false)
 let observer: IntersectionObserver | null = null
@@ -155,6 +156,7 @@ onMounted(() => {
   )
 
   for (const node of revealNodes.value) observer.observe(node)
+  if (browseSection.value) observer.observe(browseSection.value)
   updateScrollState()
   window.addEventListener('scroll', updateScrollState, { passive: true })
   window.addEventListener('resize', updateScrollState)
@@ -276,7 +278,7 @@ onBeforeUnmount(() => {
         <div class="panel-visual" aria-hidden="true">
           <div class="visual-sheet visual-sheet-back"></div>
           <div class="visual-sheet visual-sheet-front">
-            <div class="visual-image" :style="storyImageStyle(section.image)"></div>
+            <div class="visual-image" :style="isVisible(section.key) ? storyImageStyle(section.image) : undefined"></div>
             <div class="visual-scrim"></div>
             <div class="visual-content">
               <span class="visual-tag">{{ section.eyebrow }}</span>
@@ -287,7 +289,7 @@ onBeforeUnmount(() => {
       </article>
     </section>
 
-    <section class="browse-section" aria-label="进入系统">
+    <section ref="browseSection" class="browse-section" data-key="browse" aria-label="进入系统">
       <div class="browse-header">
         <span class="section-kicker">START EXPLORING</span>
         <h2>选择你要进入的部分，继续查看实验与结果。</h2>
@@ -296,7 +298,7 @@ onBeforeUnmount(() => {
 
       <div class="browse-grid">
         <RouterLink v-for="item in entries" :key="item.to" :to="item.to" class="browse-card">
-          <div class="browse-card-media" :style="browseImageStyle(item.image)"></div>
+          <div class="browse-card-media" :style="isVisible('browse') ? browseImageStyle(item.image) : undefined"></div>
           <div class="browse-card-top">
             <span class="browse-number">{{ item.number }}</span>
             <UiIcon :name="item.icon" :size="20" />
@@ -936,12 +938,12 @@ onBeforeUnmount(() => {
   color: var(--faint);
 }
 
-.coverage-entry{display:flex;align-items:center;justify-content:space-between;gap:28px;margin-top:28px;padding:26px 28px;border:1px solid var(--glass-border);border-radius:var(--radius);background:var(--glass-bg-strong);color:var(--ink);text-decoration:none;backdrop-filter:blur(18px)}.coverage-entry h3{font-size:22px;font-weight:500;margin:12px 0}.coverage-entry p{font-size:12px;color:var(--muted);line-height:1.9;margin:0}.coverage-entry>span{display:flex;gap:14px;align-items:center;white-space:nowrap;font-size:12px;color:var(--primary)}@media(max-width:700px){.coverage-entry{align-items:start;flex-direction:column;padding:22px}.coverage-entry h3{font-size:20px}}
+.coverage-entry{display:flex;align-items:center;justify-content:space-between;gap:28px;margin-top:28px;padding:26px 28px;border:1px solid var(--glass-border);border-radius:var(--radius);background:var(--glass-bg-strong);color:var(--ink);text-decoration:none;backdrop-filter:blur(18px)}.coverage-entry h3{font-size:22px;font-weight:500;margin:12px 0}.coverage-entry p{font-size:12px;color:var(--muted);line-height:1.9;margin:0}.coverage-entry>span{display:flex;gap:14px;align-items:center;white-space:nowrap;font-size:12px;color:var(--primary)}
 
 .page-edge-button {
   position: fixed;
   right: 24px;
-  bottom: calc(90px + env(safe-area-inset-bottom));
+  bottom: 90px;
   z-index: 44;
   width: 56px;
   height: 56px;
@@ -1002,113 +1004,6 @@ onBeforeUnmount(() => {
     transform: translateY(-10px);
   }
 }
-
-@media (max-width: 1180px) {
-  .home-shell {
-    padding-inline: 18px;
-  }
-
-  .home-hero,
-  .intro-strip,
-  .story-panel,
-  .story-panel:nth-child(even) {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-stage {
-    min-height: 560px;
-  }
-
-  .story-panel:nth-child(even) .panel-copy,
-  .story-panel:nth-child(even) .panel-visual {
-    order: initial;
-  }
-
-  .browse-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .home-shell {
-    padding: 8px 12px 44px;
-  }
-
-  .home-hero {
-    min-height: auto;
-    padding-top: 24px;
-  }
-
-  .hero-copy h1 {
-    max-width: none;
-    font-size: clamp(38px, 14vw, 62px);
-  }
-
-  .hero-metrics,
-  .browse-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-stage {
-    min-height: 500px;
-  }
-
-  .stage-card-main {
-    padding: 24px;
-    min-height: 320px;
-  }
-
-  .stage-card-float {
-    width: min(72vw, 220px);
-  }
-
-  .stage-card-top {
-    top: 4%;
-    right: 2%;
-  }
-
-  .stage-card-mid {
-    bottom: 20%;
-  }
-
-  .stage-card-low {
-    left: 0;
-    bottom: 6%;
-  }
-
-  .stage-ring-a {
-    width: 420px;
-    height: 420px;
-  }
-
-  .stage-ring-b {
-    width: 520px;
-    height: 520px;
-  }
-
-  .story-panel {
-    min-height: auto;
-    padding-block: 20px;
-  }
-
-  .panel-copy h3,
-  .intro-copy h2,
-  .browse-header h2 {
-    font-size: clamp(30px, 9vw, 44px);
-  }
-
-  .panel-visual {
-    min-height: 400px;
-  }
-
-  .page-edge-button {
-    width: 50px;
-    height: 50px;
-    right: 14px;
-    bottom: calc(90px + env(safe-area-inset-bottom));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .orb,
   .stage-card-float {

@@ -4,6 +4,7 @@ param(
     [ValidateRange(1024, 65535)][int]$ApiPort = 8000,
     [ValidateRange(1024, 65535)][int]$FrontendPort = 5173,
     [switch]$SkipBuild,
+    [switch]$Rebuild,
     [switch]$StartLocalMysql
 )
 $ErrorActionPreference = 'Stop'
@@ -15,6 +16,7 @@ $previousProxyTarget = $env:CELLLENS_API_PROXY_TARGET
 $previousSyntheticSetting = $env:CELLLENS_ALLOW_SYNTHETIC_RESULTS
 try {
     if ($Mode -eq 'Development' -and $ApiPort -eq $FrontendPort) { throw 'Development ports must be different' }
+    if ($SkipBuild -and $Rebuild) { throw 'Use either -SkipBuild or -Rebuild, not both' }
     Assert-StartupPortAvailable -Address $HostAddress -Port $ApiPort -Service 'API'
     if ($Mode -eq 'Development') {
         Assert-StartupPortAvailable -Address $HostAddress -Port $FrontendPort -Service 'Frontend'
@@ -36,7 +38,8 @@ try {
     if ($Mode -eq 'Production') {
         $env:CELLLENS_ALLOW_SYNTHETIC_RESULTS = 'false'
         if (-not $SkipBuild) {
-            & npm.cmd --prefix frontend run build
+            if ($Rebuild) { & npm.cmd --prefix frontend run build }
+            else { & npm.cmd --prefix frontend run build:if-needed }
             if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' }
         }
         if (-not (Test-Path -LiteralPath 'frontend/dist/index.html')) { throw 'Build is missing; remove -SkipBuild' }

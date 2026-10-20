@@ -37,6 +37,10 @@ def main() -> None:
         page.goto(base + "/", wait_until="networkidle")
         expect(page.locator(".home-shell")).to_be_visible()
         expect(page.locator(".mock-banner")).to_have_count(0)
+        for section in page.locator(".story-panel,.browse-card").all():
+            section.scroll_into_view_if_needed()
+            page.wait_for_load_state("networkidle")
+        page.evaluate("window.scrollTo(0,0)")
         assets = page.locator(".home-fixed-backdrop,.visual-image,.browse-card-media").evaluate_all(
             r"""nodes => [...new Set(nodes.flatMap(node =>
                 [...getComputedStyle(node).backgroundImage.matchAll(/url\([\"']?([^\"')]+)[\"']?\)/g)]
@@ -74,7 +78,7 @@ def main() -> None:
         for mode in ("light", "dark"):
             page.goto(base + "/settings", wait_until="networkidle")
             page.get_by_label("页面主题", exact=True).select_option(mode)
-            for width in (390, 768, 1100, 1440):
+            for width in (1280, 1440, 1920):
                 page.set_viewport_size({"width": width, "height": 1000})
                 for index, path in enumerate(paths):
                     page.goto(base + path, wait_until="networkidle")
@@ -111,8 +115,7 @@ def main() -> None:
                             panel.scroll_into_view_if_needed()
                             expect(panel).to_have_css("opacity", "1")
                         page.evaluate("window.scrollTo(0,0)")
-                    if width in (390, 1440):
-                        page.screenshot(path=str(output / f"{mode}-{width}-{index}.png"))
+                    page.screenshot(path=str(output / f"{mode}-{width}-{index}.png"))
                     layouts.append({"theme": mode, "width": width, "path": path, **width_state})
 
         if run_id:

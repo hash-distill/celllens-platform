@@ -20,21 +20,27 @@ def contexts(request: Request) -> list[ContextItem]:
             None,
         )
         model_entry = registry.model_for(row["cell_line"], require_enabled=False)
-        model_ready = bool(row.get("enabled")) and model_entry.asset_is_valid(
-            "checkpoint_path", "checkpoint_sha256"
+        model_ready = bool(row.get("enabled")) and registry.asset_is_valid_cached(
+            model_entry, "checkpoint_path", "checkpoint_sha256"
         )
         if row.get("gene_list_path"):
-            model_ready = model_ready and model_entry.asset_is_valid("gene_list_path", "gene_list_sha256")
+            model_ready = model_ready and registry.asset_is_valid_cached(
+                model_entry, "gene_list_path", "gene_list_sha256"
+            )
         if row.get("config_path"):
-            model_ready = model_ready and model_entry.asset_is_valid("config_path", "config_sha256")
+            model_ready = model_ready and registry.asset_is_valid_cached(
+                model_entry, "config_path", "config_sha256"
+            )
         dataset_ready = False
         if dataset:
             dataset_entry = registry.dataset_for(row["cell_line"], require_enabled=False)
-            dataset_ready = bool(dataset.get("enabled")) and dataset_entry.asset_is_valid(
-                "control_path", "control_sha256"
+            dataset_ready = bool(dataset.get("enabled")) and registry.asset_is_valid_cached(
+                dataset_entry, "control_path", "control_sha256"
             )
             if dataset.get("split_path"):
-                dataset_ready = dataset_ready and dataset_entry.asset_is_valid("split_path", "split_sha256")
+                dataset_ready = dataset_ready and registry.asset_is_valid_cached(
+                    dataset_entry, "split_path", "split_sha256"
+                )
         online_ready = (
             model_ready
             and dataset_ready

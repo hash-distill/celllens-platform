@@ -144,7 +144,7 @@ def main() -> None:
         page.keyboard.press("Escape")
         expect(page.get_by_role("button", name="AI 解读", exact=True)).to_be_focused()
 
-        for width in (390, 768, 1280):
+        for width in (1440, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             for path in ("/", "/settings", "/records", targets[0][2]):
                 page.goto(base + path, wait_until="networkidle")
@@ -170,8 +170,8 @@ def main() -> None:
                 if path in ("/", "/settings", "/records"):
                     expect(page.locator(".assistant-empty")).to_be_visible()
                     expect(page.locator(".assistant-panel")).to_have_count(0)
-                if width == 390 and path == targets[0][2]:
-                    page.screenshot(path=str(output / "run-floating-mobile.png"), full_page=True)
+                if width == 1440 and path == targets[0][2]:
+                    page.screenshot(path=str(output / "run-floating-desktop.png"), full_page=True)
         page.set_viewport_size({"width": 1440, "height": 1000})
         page.goto(base + "/settings")
         page.get_by_label("页面主题").select_option("light")
@@ -201,9 +201,9 @@ def main() -> None:
                         "source preview",
                         "plain text rendering",
                         "JSON download",
-                        "responsive layouts",
+                        "desktop layouts at 1440 and 1920 px",
                         "floating-only panels, minimize preserves result, source switch clears result",
-                        "Escape restores focus and mobile launcher avoids utility rail",
+                        "Escape restores focus and desktop launcher avoids utility rail",
                     ],
                 },
                 ensure_ascii=False,

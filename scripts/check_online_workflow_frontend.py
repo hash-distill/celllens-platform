@@ -62,7 +62,7 @@ def check(base: str, executable: str | None = None) -> None:
             page.get_by_role("button", name="展开高级参数", exact=True).click()
             expect(page.locator("#n-cells-input")).to_be_editable()
             submit()
-        for width in (390, 768, 1280):
+        for width in (1440, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
         assert not errors and not auth_requests, (errors, auth_requests)

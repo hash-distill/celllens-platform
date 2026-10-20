@@ -103,11 +103,11 @@ def main():
             expect(page.locator(".state-source-legend")).to_contain_text("扰动后 / 实测")
             page.locator(".scientific-figure").screenshot(path=str(output / f"{name}-figure.png"))
             checks.append(name + " frozen real-result replay has control/predicted/observed figures")
-        page.set_viewport_size({"width": 390, "height": 844})
+        page.set_viewport_size({"width": 1440, "height": 1000})
         open_cell(acd, "&feature_id=ENO1")
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth+1")
-        page.locator(".scientific-cell-state").screenshot(path=str(output / "ACD-mobile.png"))
-        checks.append("390px mobile: figure scroll stays within container")
+        page.locator(".scientific-cell-state").screenshot(path=str(output / "ACD-desktop-1440.png"))
+        checks.append("1440px desktop: figure scroll stays within container")
         page.set_viewport_size({"width": 1920, "height": 1100})
         page.goto(
             f"{args.url}/workbench?run=run_b69b0a932fa84675&tab=cell", wait_until="networkidle", timeout=60000

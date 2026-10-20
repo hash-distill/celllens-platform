@@ -127,7 +127,7 @@ def main():
                     "methods": ["pca", "umap"],
                 }
             )
-        for width in (768, 390):
+        for width in (1440, 1920):
             page.set_viewport_size({"width": width, "height": 1000})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(output / f"metabolic-{width}.png"), full_page=True)
@@ -142,7 +142,7 @@ def main():
                 "browser_errors": errors,
                 "frozen_outputs_unchanged": True,
                 "experiment_history_unchanged": True,
-                "viewport_widths": [1600, 768, 390],
+                "viewport_widths": [1600, 1440, 1920],
             },
             ensure_ascii=False,
             indent=2,

@@ -99,11 +99,11 @@ def main():
         expect(page.get_by_text('已加载', exact=True)).to_have_count(1)
         assert stored()[0]['run_id'] == replacement
         checks.append('empty selection navigates to records and accepts a different experiment')
-        page.set_viewport_size({'width': 390, 'height': 844})
+        page.set_viewport_size({'width': 1920, 'height': 1000})
         expect(page.get_by_role('button', name='清空比较', exact=True)).to_be_visible()
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
-        page.screenshot(path=str(output / 'comparison-mobile.png'), full_page=True)
-        checks.append('390 px viewport keeps comparison actions accessible without page overflow')
+        page.screenshot(path=str(output / 'comparison-desktop.png'), full_page=True)
+        checks.append('1920 px desktop viewport keeps comparison actions accessible without page overflow')
 
         # Delay the real API calls in a separate context, then remove during loading.
         delayed = browser.new_context(viewport={'width': 1440, 'height': 900})

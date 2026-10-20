@@ -106,12 +106,13 @@ def main():
         )
         page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(out / "real-after.png"), full_page=True)
-        page.set_viewport_size({"width": 390, "height": 844})
+        page.set_viewport_size({"width": 1920, "height": 1000})
         expect(filters.get_by_role("radio")).to_have_count(0 if data.get("completeness_available") else 4)
         page.wait_for_function("document.documentElement.scrollWidth <= innerWidth + 2")
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2")
         checks.append(
-            "390px metabolism layout preserves the applicable completeness view without page overflow"
+            "1920px desktop metabolism layout preserves the applicable completeness view "
+            "without page overflow"
         )
         page.set_viewport_size({"width": 1440, "height": 1000})
         page.goto(f"{args.url}/workbench?run={args.demo_run_id}", wait_until="networkidle")

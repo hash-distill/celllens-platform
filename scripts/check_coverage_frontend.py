@@ -185,7 +185,7 @@ def main():
             expect(page.locator(".official-completeness")).to_have_count(0)
             assert not any("/completeness" in url for url in requests[start:])
         page.goto(base + "/coverage", wait_until="networkidle")
-        for width in (390, 768):
+        for width in (1440, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             page.locator(".all-backgrounds summary").click()
             expect(page.locator(".background-grid .cell-background-card")).to_have_count(4)

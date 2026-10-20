@@ -17,5 +17,5 @@ const bound = computed(() => typeof route.query.run === 'string' && Boolean(rout
   </div>
 </template>
 <style scoped>
-.result-selection{padding:48px}.result-selection h1{font-size:26px;font-weight:500;margin:18px 0}.result-selection p{color:var(--muted);font-size:13px;line-height:1.9;margin:0 0 24px}@media(max-width:600px){.result-selection{padding:24px}.result-selection h1{font-size:21px}}
+.result-selection{padding:48px}.result-selection h1{font-size:26px;font-weight:500;margin:18px 0}.result-selection p{color:var(--muted);font-size:13px;line-height:1.9;margin:0 0 24px}
 </style>

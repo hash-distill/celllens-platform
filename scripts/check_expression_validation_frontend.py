@@ -66,11 +66,6 @@ def main() -> None:
             expect(card.get_by_text(displayed_ratio, exact=True)).to_be_visible()
             expect(card).to_contain_text("尚未完成独立留出验收")
             page.screenshot(path=str(out / f"{context}-desktop.png"), full_page=True)
-            page.set_viewport_size({"width": 390, "height": 844})
-            page.wait_for_function("document.documentElement.scrollWidth <= innerWidth + 2")
-            expect(card).to_be_visible()
-            page.screenshot(path=str(out / f"{context}-mobile.png"), full_page=True)
-            page.set_viewport_size({"width": 1440, "height": 1000})
         old_id = reanalyses[0]["source_run_id"]
         page.goto(f"{base}/workbench?run={old_id}", wait_until="networkidle")
         expect(page.get_by_text("历史分析结果尚未按 expression-cp10k-v2 重算", exact=False)).to_be_visible()
@@ -81,7 +76,7 @@ def main() -> None:
         "output_hashes_verified": True,
         "originals_unchanged": True,
         "diagnostic_pages": 2,
-        "desktop_and_mobile": True,
+        "desktop_only": True,
         "pageerrors": errors,
     }
     (PROOF / "acceptance.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

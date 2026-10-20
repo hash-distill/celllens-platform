@@ -209,6 +209,7 @@ html[data-theme='dark'] {
 
 html,
 body {
+  min-width: 1280px;
   margin: 0;
   padding: 0;
 }
@@ -229,13 +230,9 @@ body {
   min-height: 100vh;
 }
 
-/* Leave space for the existing local shortcut tools. */
-@media (min-width: 761px) {
-  body { padding-right: 64px; }
-}
-@media (max-width: 760px) {
-  #app { padding-bottom: 72px; }
-}
+/* Desktop canvas and local shortcut tools. */
+body { padding-right: 64px; }
+
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 a {
@@ -697,22 +694,6 @@ table.table {
   margin: 10px 0 0
 }
 
-@media(max-width:760px) {
-  .page {
-    padding: 24px 16px 40px
-  }
-
-  .page-heading {
-    align-items: start;
-    gap: 18px;
-    flex-wrap: wrap
-  }
-
-  .page-heading h1 {
-    font-size: 25px
-  }
-}
-
 .layout-3col {
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr) 300px;
@@ -739,68 +720,6 @@ table.table {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-/* 1024–1279px：证据栏改为抽屉 */
-.evidence-drawer-toggle {
-  display: none;
-}
-
-@media (max-width: 1279px) {
-  .layout-3col {
-    grid-template-columns: 272px minmax(0, 1fr);
-  }
-
-  .evidence-aside {
-    display: none;
-  }
-
-  .evidence-drawer-toggle {
-    display: inline-flex;
-  }
-
-  .evidence-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(360px, 92vw);
-    background: var(--bg);
-    box-shadow: var(--shadow-lg);
-    z-index: 60;
-    overflow-y: auto;
-    padding: 16px;
-    border-left: 1px solid var(--border);
-  }
-
-  .evidence-drawer-mask {
-    position: fixed;
-    inset: 0;
-    background: var(--drawer-mask);
-    z-index: 55;
-  }
-}
-
-/* 更窄：单列 */
-@media (max-width: 940px) {
-
-  .layout-3col,
-  .layout-2col {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .col-sticky {
-    position: static;
-    max-height: none;
-  }
-
-  .narrow-hint {
-    display: block;
-  }
-}
-
-.narrow-hint {
-  display: none;
 }
 
 /* ---------- 标签页 ---------- */
@@ -843,7 +762,7 @@ table.table {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: min(420px, 90vw);
+  max-width: 420px;
 }
 
 .toast {

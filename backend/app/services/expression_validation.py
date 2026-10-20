@@ -6,7 +6,6 @@ from typing import Any, cast
 
 import numpy as np
 import pandas as pd
-from scipy.stats import spearmanr
 
 from backend.app.core.errors import ScientificContractError
 from backend.app.services.expression_scale import validate_expression
@@ -15,7 +14,12 @@ from backend.app.services.expression_scale import validate_expression
 def correlation(a: np.ndarray, b: np.ndarray, *, ranked: bool = False) -> float | None:
     if len(a) < 2 or np.std(a) == 0 or np.std(b) == 0:
         return None
-    result = float(cast(Any, spearmanr(a, b))[0] if ranked else np.corrcoef(a, b)[0, 1])
+    if ranked:
+        from scipy.stats import spearmanr
+
+        result = float(cast(Any, spearmanr(a, b))[0])
+    else:
+        result = float(np.corrcoef(a, b)[0, 1])
     return result if np.isfinite(result) else None
 
 

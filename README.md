@@ -169,7 +169,9 @@ uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql
 ```
 
-`-StartLocalMysql` 会先执行 `scripts/start_mysql.ps1`，随后检查数据库并运行迁移；`-SkipBuild` 跳过前端构建，`-Mode Development` 额外启动 Vite 开发服务。独立 MySQL 实例不随脚本停止。
+`-StartLocalMysql` 会先执行 `scripts/start_mysql.ps1`，随后检查数据库并运行迁移。生产模式默认核对源码、配置、依赖锁和构建产物的内容指纹，未变化时复用构建；`-Rebuild` 强制重建，`-SkipBuild` 手动跳过构建检查，二者不能同时使用。`-Mode Development` 额外启动 Vite 开发服务。独立 MySQL 实例不随脚本停止。
+
+系统面向桌面浏览器，页面最小宽度为 1280px。启动与首页性能的实测范围见 [桌面与启动验收](docs/verification/2026-10-21-desktop-startup.md)。
 
 服务使用单个 Uvicorn 进程。实验与分析结果为共享科研入口，部署时应使用受控网络。服务器配置见 [部署文档](docs/DEPLOYMENT.md)。
 

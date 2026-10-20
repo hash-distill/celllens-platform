@@ -302,7 +302,7 @@ function exportCsv(): void {
 .expression-track{height:5px;background:var(--figure-track-bg)}.expression-track i{display:block;height:100%}
 .gene-detail .evidence-list{font-size:11px}
 .gene-detail-empty{color:var(--muted);font-size:12px}
-@media(max-width:1100px){.gene-analysis-grid{grid-template-columns:1fr}.expression-values{max-width:420px;margin-top:14px}}
+
 
 .overview {
   display: flex;

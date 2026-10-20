@@ -1,4 +1,4 @@
-"""Acceptance against stored results: unified records, direct analysis, live status, responsive UI."""
+"""Acceptance against stored results: unified records, direct analysis, live status, desktop UI."""
 
 import argparse
 import json
@@ -61,14 +61,14 @@ def main():
         checks.append("connection indicator opens dedicated live service/configuration page")
         page.get_by_role("button", name="切换深色", exact=True).click()
         page.screenshot(path=str(output / "service-status-dark.png"), full_page=True)
-        for width in (390, 768):
-            page.set_viewport_size({"width": width, "height": 844})
+        for width in (1440, 1920):
+            page.set_viewport_size({"width": width, "height": 1000})
             page.reload(wait_until="networkidle")
             expect(page.locator(".service-indicator")).to_be_visible()
             expect(page.get_by_role("region", name="数据库配置")).to_be_visible(timeout=20000)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(output / f"status-{width}.png"), full_page=True)
-        checks.append("mobile/tablet status link visible; no horizontal page overflow")
+        checks.append("desktop status link visible at 1440 and 1920 px; no horizontal page overflow")
         assert not errors, errors
         browser.close()
     result = {"checks": checks, "page_errors": errors}

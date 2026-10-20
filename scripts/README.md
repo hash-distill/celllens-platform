@@ -4,32 +4,33 @@
 
 ## 日常启动与检查
 
-2026-10-15 真实观测比较：`python -m scripts.prepare_measured_comparisons extract` 从固定官方源抽取并冻结观测（现有 catalog 拒绝覆盖）；`evaluate` 为真实保存预测准备独立比较，支持 `--run-id`。`python -m scripts.verify_measured_comparisons` 核对实际 H5AD 群体、全基因均值、原文件哈希和选定官方 Cell-Eval 指标；`python scripts/check_measured_comparison_frontend.py` 验证真实主服务页面、下载、手机布局与助手上下文。证据写入 `reports/measured-comparison-2026-10-15/`。
+2026-10-15 真实观测比较：`python -m scripts.prepare_measured_comparisons extract` 从固定官方源抽取并冻结观测（现有 catalog 拒绝覆盖）；`evaluate` 为真实保存预测准备独立比较，支持 `--run-id`。`python -m scripts.verify_measured_comparisons` 核对实际 H5AD 群体、全基因均值、原文件哈希和选定官方 Cell-Eval 指标；`python scripts/check_measured_comparison_frontend.py` 验证真实主服务页面、下载、桌面布局与助手上下文。证据写入 `reports/measured-comparison-2026-10-15/`。
 
 | 脚本 | 用途 |
 |---|---|
-| `start_system.ps1` | Windows 检查端口占用、启动或复用数据库、构建前端并启动后端 |
+| `start_system.ps1` | Windows 检查端口占用、启动或复用数据库、检查并按需构建前端，然后启动后端 |
 | `start_mysql.ps1` | Windows 独立 MySQL 启动 |
 | `check_mysql.py` | 数据库连接与表检查 |
 | `audit_registry.py` | 注册资产、哈希与冻结数据库检查 |
 | `prepare_gene_annotations.py --source-dir <已下载官方文件目录>` | 按显式 HGNC ID 冻结 PANTHER 功能分类，生成压缩注释与来源哈希；拒绝覆盖已有快照 |
 | `verify_scientific_cell_state.py --figures` | 核对四背景及 ACD 的真实 PCA/逐细胞分数，导出科研图样例 |
-| `check_scientific_cell_state_frontend.py` | 代谢导航合并、指标切换、四背景、科研图下载和响应式浏览器检查 |
+| `check_scientific_cell_state_frontend.py` | 代谢导航合并、指标切换、四背景、科研图下载和桌面浏览器检查 |
 | `smoke_backend.py` | 后端链路冒烟；按参数可能执行真实推理 |
 
 ## 前端检查
 
 | 脚本 | 环境 | 产物 |
 |---|---|---|
-| `check_theme_frontend.py` | 生产 API；主题、系统偏好、静态资源、80 组页面/窗口布局和已有实验；不提交推理 | `reports/frontend-integration-2026-10-20/browser/` |
-| `check_records_status_frontend.py` | 真实实验历史、结果直达与刷新、服务状态及响应式布局 | `reports/records-status-2026-10-11/` |
+| `check_theme_frontend.py` | 生产 API；主题、系统偏好、静态资源、60 组桌面页面/窗口布局和已有实验；不提交推理 | `reports/frontend-integration-2026-10-20/browser/` |
+| `check_startup_frontend.py` | 1440px 桌面首屏计时、图片传输量和滚动后图片完整性；不提交任务 | `reports/startup-performance-2026-10-20/browser-after.json` |
+| `check_records_status_frontend.py` | 真实实验历史、结果直达与刷新、服务状态及桌面布局 | `reports/records-status-2026-10-11/` |
 | `check_measured_comparison_frontend.py` | 已保存真实预测与实测比较、缺失状态、导出及助手摘要 | `reports/measured-comparison-2026-10-15/browser/` |
 | `check_provider_frontend.py` | 大模型提供方选择与设置交互；实际调用范围以脚本内拦截规则为准 | 终端检查结果 |
 | `check_assistant_frontend.py --base-url http://127.0.0.1:8000` | 亮暗/系统外观、快捷栏、设置、真实结果摘要、纯文本解读和下载；外部模型响应被拦截，不调用真实服务 | `reports/assistant-ui-2026-10-11/` |
-| `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用和手机布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
+| `check_online_workflow_frontend.py --url http://127.0.0.1:8000` | 当前在线入口、历史参数复用和桌面布局；预测提交被拦截，不创建 GPU 任务 | 终端验收结果 |
 | `check_frontend.py` | 后端与 Vite；显式 Mock 回归 | 终端检查结果 |
-| `check_metabolism_frontend.py` | 单选覆盖等级、空分类、搜索、实际条形点击、真实与旧任务详情、缺失结果请求及手机布局 | `reports/frontend/metabolism-fix/` |
-| `check_coverage_frontend.py` | 仅显示覆盖数量与清单、真实四背景、双语基因分类筛选、七项任务介绍与来源、覆盖项下载、扰动选择与移动布局；不创建记录 | `reports/gene-education-2026-10-11/` |
+| `check_metabolism_frontend.py` | 单选覆盖等级、空分类、搜索、实际条形点击、真实与旧任务详情、缺失结果请求及桌面布局 | `reports/frontend/metabolism-fix/` |
+| `check_coverage_frontend.py` | 仅显示覆盖数量与清单、真实四背景、双语基因分类筛选、七项任务介绍与来源、覆盖项下载、扰动选择与桌面布局；不创建记录 | `reports/gene-education-2026-10-11/` |
 
 生产检查示例：
 
@@ -38,6 +39,8 @@ python scripts/check_theme_frontend.py --url http://127.0.0.1:8000
 ```
 
 浏览器脚本需要其 Python 环境中的 Playwright 与 Chromium。旧章节播放、预计算新建、旧投影与三维兼容入口的验收脚本已退休；当前命令以上表为准，历史代码可从提交 `9ba57c7` 恢复。
+
+构建复用的独立回归：`node frontend/scripts/test-build-cache.mjs`。`npm --prefix frontend run build:if-needed` 检查内容后复用，`npm --prefix frontend run build` 始终重新构建。
 
 ## 资产准备与契约导出
 

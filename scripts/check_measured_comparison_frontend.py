@@ -114,18 +114,18 @@ def main():
                 else:
                     # A comparison may be absent or preparing without a measured-count claim.
                     expect(zero_note).to_have_count(0)
-            for width in [1500, 768, 390]:
+            for width in (1440, 1920):
                 page.set_viewport_size({"width": width, "height": 1050})
                 page.wait_for_timeout(250)
                 assert not page.evaluate("document.documentElement.scrollWidth > innerWidth"), (run, width)
-                page.screenshot(path=str(OUT / f"{run}-{width}.png"), full_page=width == 390)
+                page.screenshot(path=str(OUT / f"{run}-{width}.png"), full_page=True)
             reports.append(
                 {
                     "run_id": run,
                     "status": doc["status"],
                     "cell_line": doc["cell_line"],
                     "perturbation": doc["perturbation"],
-                    "all_widths_passed": True,
+                    "desktop_widths_passed": [1440, 1920],
                     "download_rows": len(doc.get("genes", [])),
                 }
             )

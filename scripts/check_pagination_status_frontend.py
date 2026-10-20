@@ -122,7 +122,7 @@ def main():
         )
         checks["metabolic_tasks"] = exercise(task_table, task_table.locator("tbody tr"))
         checks["metabolic_reactions"] = exercise(reaction_table, reaction_table.locator("tbody tr"))
-        for width in (390, 768):
+        for width in (1440, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
         page.set_viewport_size({"width": 1440, "height": 1000})

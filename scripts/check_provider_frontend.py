@@ -103,12 +103,12 @@ def main():
         page.goto(base + "/settings", wait_until="networkidle")
         page.get_by_role("button", name="切换深色", exact=True).click()
         page.screenshot(path=str(output / "claude-settings-dark.png"), full_page=True)
-        for width in (390, 768):
+        for width in (1440, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(output / f"claude-settings-{width}.png"), full_page=True)
         # Legacy preferences lacking provider still recover their model, budget and session key.
-        legacy = browser.new_context()
+        legacy = browser.new_context(viewport={"width": 1440, "height": 1000})
         legacy.add_init_script("""
             localStorage.setItem('celllens.model', JSON.stringify({base_url:'https://api.deepseek.com',model:'legacy-fixture',max_tokens:1024,token_parameter:'max_tokens'}));
             sessionStorage.setItem('celllens.api-key','legacy-fixture-key');

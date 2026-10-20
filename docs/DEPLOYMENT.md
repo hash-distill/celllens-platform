@@ -220,10 +220,10 @@ Windows PowerShell 若拦截 `npm.ps1`，使用 `npm.cmd --prefix frontend ...`�
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql
 ```
 
-复用最新构建：
+默认会检查前端源码、配置、依赖锁、Node 环境和产物内容指纹，未变化时直接复用构建；变化、产物丢失或损坏时重新进行类型检查与构建。首次启动仍需完整构建。需要强制重建时使用：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -SkipBuild
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -Rebuild
 ```
 
 启动前会检查 API 端口，开发模式还会检查 Vite 端口；发现占用时，在数据库操作和构建之前停止，并显示 `[PORT_IN_USE]`、端口与进程 PID。已有 CellLens 服务时可直接打开页面；重启须先停止旧服务（原终端按 Ctrl+C），再执行启动命令。脚本不自动终止占用进程。改用其他端口可指定 `-ApiPort 8001`，开发前端可指定 `-FrontendPort 5174`。构建后启动前会再次检查端口，以识别过程中新增的占用。
@@ -238,6 +238,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -
 | 参数 | 行为 |
 |---|---|
 | `-StartLocalMysql` | 运行当前本机数据库脚本；使用 Docker/外部数据库时省略 |
+| `-Rebuild` | 生产模式强制重新执行类型检查和构建，与 `-SkipBuild` 互斥 |
 | `-SkipBuild` | 生产模式跳过构建，要求 `frontend/dist/index.html` 存在且版本最新 |
 | `-Mode Development` | 启动 Vite 与后端；默认页面端口 5173 |
 | `-ApiPort 8001` | 更改后端端口；开发模式同步设置代理目标 |
