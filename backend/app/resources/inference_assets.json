@@ -1,0 +1,216 @@
+{
+  "schema_version": 1,
+  "control_source": {
+    "repo": "arcinstitute/State-Replogle-Filtered",
+    "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+    "filename": "replogle_concat.h5ad",
+    "max_cells": 1024,
+    "seed": 42
+  },
+  "packs": [
+    {
+      "cell_line": "K562",
+      "repo": "arcinstitute/ST-HVG-Replogle",
+      "revision": "bb6a9562cbbf1fd152df14cc53b4cc7517c77175",
+      "license": "Arc State Model Non-Commercial License",
+      "source_url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/tree/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562",
+      "files": [
+        {
+          "name": "checkpoints/final.ckpt",
+          "target": "models/state-replogle-k562/checkpoints/final.ckpt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562/checkpoints/final.ckpt",
+          "size_bytes": 471695263,
+          "sha256": "121ff54db0e6f9f53b2777bbf45139757367ed827a111824213e6bf3777b2618"
+        },
+        {
+          "name": "config.yaml",
+          "target": "models/state-replogle-k562/config.yaml",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562/config.yaml",
+          "size_bytes": 2752,
+          "sha256": "f99ed9287b229d592b771162080251e5c9976188b13ade4beceb6e7d0ab34072"
+        },
+        {
+          "name": "var_dims.pkl",
+          "target": "models/state-replogle-k562/var_dims.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562/var_dims.pkl",
+          "size_bytes": 155642,
+          "sha256": "e37e133d276aca89ee193356a546a26376cd6757ddb02e068b1f09429918a269"
+        },
+        {
+          "name": "pert_onehot_map.pt",
+          "target": "models/state-replogle-k562/pert_onehot_map.pt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562/pert_onehot_map.pt",
+          "size_bytes": 16746593,
+          "sha256": "f5621cab243a5135014af3867f63f8bf75cff19aee06d0f29a1bdecd2dbf47d0"
+        },
+        {
+          "name": "batch_onehot_map.pkl",
+          "target": "models/state-replogle-k562/batch_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562/batch_onehot_map.pkl",
+          "size_bytes": 721431,
+          "sha256": "3460dc1f8a7795e5316d7210f59662fe45e266e5775b6bf93cf8cb81e11b3938"
+        },
+        {
+          "name": "cell_type_onehot_map.pkl",
+          "target": "models/state-replogle-k562/cell_type_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/k562/cell_type_onehot_map.pkl",
+          "size_bytes": 1799,
+          "sha256": "5ab34fd5d8a121a15f305160bda383158fcc5633b8bcb89fb3595bc65ffc3c85"
+        }
+      ]
+    },
+    {
+      "cell_line": "RPE1",
+      "repo": "arcinstitute/ST-HVG-Replogle",
+      "revision": "bb6a9562cbbf1fd152df14cc53b4cc7517c77175",
+      "license": "Arc State Model Non-Commercial License",
+      "source_url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/tree/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1",
+      "files": [
+        {
+          "name": "checkpoints/final.ckpt",
+          "target": "models/state-replogle-rpe1/checkpoints/final.ckpt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1/checkpoints/final.ckpt",
+          "size_bytes": 471695263,
+          "sha256": "02603032590f51fbcca890e9f201ad07f1c457dbc72580baa97e5aae9b5a3814"
+        },
+        {
+          "name": "config.yaml",
+          "target": "models/state-replogle-rpe1/config.yaml",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1/config.yaml",
+          "size_bytes": 2752,
+          "sha256": "d5fb5229f68cabe0e76ff9c3c50598b8898380149e8fdaa85f9d0e1a839ddae7"
+        },
+        {
+          "name": "var_dims.pkl",
+          "target": "models/state-replogle-rpe1/var_dims.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1/var_dims.pkl",
+          "size_bytes": 155642,
+          "sha256": "e37e133d276aca89ee193356a546a26376cd6757ddb02e068b1f09429918a269"
+        },
+        {
+          "name": "pert_onehot_map.pt",
+          "target": "models/state-replogle-rpe1/pert_onehot_map.pt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1/pert_onehot_map.pt",
+          "size_bytes": 16746593,
+          "sha256": "f5621cab243a5135014af3867f63f8bf75cff19aee06d0f29a1bdecd2dbf47d0"
+        },
+        {
+          "name": "batch_onehot_map.pkl",
+          "target": "models/state-replogle-rpe1/batch_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1/batch_onehot_map.pkl",
+          "size_bytes": 721431,
+          "sha256": "b3810b260ff3a893571db2ada4a0b6bfc892f28e0a2f8df67126a567044690ae"
+        },
+        {
+          "name": "cell_type_onehot_map.pkl",
+          "target": "models/state-replogle-rpe1/cell_type_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/rpe1/cell_type_onehot_map.pkl",
+          "size_bytes": 1799,
+          "sha256": "e8aaf8c2fa5b6ee8a15e6267b209fef64eac12e7f7befebf1a73481f8017999e"
+        }
+      ]
+    },
+    {
+      "cell_line": "Jurkat",
+      "repo": "arcinstitute/ST-HVG-Replogle",
+      "revision": "bb6a9562cbbf1fd152df14cc53b4cc7517c77175",
+      "license": "Arc State Model Non-Commercial License",
+      "source_url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/tree/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat",
+      "files": [
+        {
+          "name": "checkpoints/final.ckpt",
+          "target": "models/state-replogle-jurkat/checkpoints/final.ckpt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat/checkpoints/final.ckpt",
+          "size_bytes": 471695263,
+          "sha256": "10cfcf01aff649e7f868ed6cf70e763cfbae91d7ba94e2887324a58fbcf5ede5"
+        },
+        {
+          "name": "config.yaml",
+          "target": "models/state-replogle-jurkat/config.yaml",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat/config.yaml",
+          "size_bytes": 2756,
+          "sha256": "8d407b59815bb206c1229dd586a135a4948f63c8468b864ec59a40cc8b16ee95"
+        },
+        {
+          "name": "var_dims.pkl",
+          "target": "models/state-replogle-jurkat/var_dims.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat/var_dims.pkl",
+          "size_bytes": 155642,
+          "sha256": "e37e133d276aca89ee193356a546a26376cd6757ddb02e068b1f09429918a269"
+        },
+        {
+          "name": "pert_onehot_map.pt",
+          "target": "models/state-replogle-jurkat/pert_onehot_map.pt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat/pert_onehot_map.pt",
+          "size_bytes": 16746593,
+          "sha256": "f5621cab243a5135014af3867f63f8bf75cff19aee06d0f29a1bdecd2dbf47d0"
+        },
+        {
+          "name": "batch_onehot_map.pkl",
+          "target": "models/state-replogle-jurkat/batch_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat/batch_onehot_map.pkl",
+          "size_bytes": 721431,
+          "sha256": "26a314101bae3c2481b28f113bf5e211510adf110d3e314ae851428e06019ee4"
+        },
+        {
+          "name": "cell_type_onehot_map.pkl",
+          "target": "models/state-replogle-jurkat/cell_type_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/jurkat/cell_type_onehot_map.pkl",
+          "size_bytes": 1799,
+          "sha256": "e59c1c401bafd86eb5a3fc6767d01b45860c9d6d99855e5b99ad513dbf82ab62"
+        }
+      ]
+    },
+    {
+      "cell_line": "HepG2",
+      "repo": "arcinstitute/ST-HVG-Replogle",
+      "revision": "bb6a9562cbbf1fd152df14cc53b4cc7517c77175",
+      "license": "Arc State Model Non-Commercial License",
+      "source_url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/tree/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2",
+      "files": [
+        {
+          "name": "checkpoints/final.ckpt",
+          "target": "models/state-replogle-hepg2/checkpoints/final.ckpt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2/checkpoints/final.ckpt",
+          "size_bytes": 471695263,
+          "sha256": "9b387a5268f9432b9dd7ad2b1d193b97314835b0d10f50b9b2e7c979cd85b35c"
+        },
+        {
+          "name": "config.yaml",
+          "target": "models/state-replogle-hepg2/config.yaml",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2/config.yaml",
+          "size_bytes": 2754,
+          "sha256": "aa26b66c1de445d55a09cb57fca04b43b3298124a2fdea5ade8228a86ca35aa5"
+        },
+        {
+          "name": "var_dims.pkl",
+          "target": "models/state-replogle-hepg2/var_dims.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2/var_dims.pkl",
+          "size_bytes": 155642,
+          "sha256": "e37e133d276aca89ee193356a546a26376cd6757ddb02e068b1f09429918a269"
+        },
+        {
+          "name": "pert_onehot_map.pt",
+          "target": "models/state-replogle-hepg2/pert_onehot_map.pt",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2/pert_onehot_map.pt",
+          "size_bytes": 16746593,
+          "sha256": "f5621cab243a5135014af3867f63f8bf75cff19aee06d0f29a1bdecd2dbf47d0"
+        },
+        {
+          "name": "batch_onehot_map.pkl",
+          "target": "models/state-replogle-hepg2/batch_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2/batch_onehot_map.pkl",
+          "size_bytes": 721431,
+          "sha256": "72e7131047f9720fbbb1edd802bfa67b47c54e48729da29af62db0968ee92c58"
+        },
+        {
+          "name": "cell_type_onehot_map.pkl",
+          "target": "models/state-replogle-hepg2/cell_type_onehot_map.pkl",
+          "url": "https://huggingface.co/arcinstitute/ST-HVG-Replogle/resolve/bb6a9562cbbf1fd152df14cc53b4cc7517c77175/fewshot/hepg2/cell_type_onehot_map.pkl",
+          "size_bytes": 1799,
+          "sha256": "cc3e2396670cadeeb63b70a38adb3149ce5d5037a577b8263b99c2960c2cb0f8"
+        }
+      ]
+    }
+  ]
+}

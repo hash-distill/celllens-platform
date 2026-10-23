@@ -70,6 +70,10 @@ def test_spa_routes_and_api_404_are_separate(tmp_path):
     with TestClient(app) as client:
         for url in (
             "/",
+            "/research",
+            "/research?type=prediction",
+            "/measured",
+            "/measured/measured_example",
             "/workbench",
             "/records",
             "/compare",
@@ -104,6 +108,21 @@ def test_favicon_png_and_default_ico_request_serve_the_same_icon(tmp_path):
             assert response.headers["content-type"] == "image/png"
             assert response.headers["cache-control"] == "no-cache"
             assert response.content == icon
+
+
+def test_webp_assets_have_portable_image_content_type(tmp_path, monkeypatch):
+    _write_registry(tmp_path)
+    assets = tmp_path / "frontend/dist/assets"
+    assets.mkdir(parents=True)
+    payload = b"RIFF\x00\x00\x00\x00WEBP"
+    (assets / "background.webp").write_bytes(payload)
+    monkeypatch.setattr("mimetypes.guess_type", lambda *args, **kwargs: (None, None))
+    with TestClient(create_app(_settings(tmp_path))) as client:
+        response = client.get("/assets/background.webp")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/webp"
+        assert response.content == payload
+        assert response.headers["cache-control"] == "public, max-age=31536000, immutable"
 
 
 def completed_run(app, root):

@@ -1,0 +1,789 @@
+{
+  "audit_time": "2026-10-22T19:54:06.797298+08:00",
+  "git_head": "ce28ff5d481524b123e98aff1cca27c5daf46db0",
+  "scope": "Read-only registry and saved-output audit; no new inference, no H5AD metric recomputation, no new biological validation, no database inventory.",
+  "models": [
+    {
+      "id": "state-replogle-k562-fewshot-v1",
+      "cell_line": "K562",
+      "enabled": true,
+      "expression_slot": "X_hvg",
+      "panel_size": 2000,
+      "target_count_without_control": 2023,
+      "source_measured_combinations": 1383,
+      "supported_without_source": 640,
+      "selected_targets_in_prediction_panel": {
+        "ALDOA": false,
+        "AAAS": false,
+        "AHCY": false,
+        "GAPDH": true,
+        "TPI1": true
+      }
+    },
+    {
+      "id": "state-replogle-rpe1-fewshot-v1",
+      "cell_line": "RPE1",
+      "enabled": true,
+      "expression_slot": "X_hvg",
+      "panel_size": 2000,
+      "target_count_without_control": 2023,
+      "source_measured_combinations": 1499,
+      "supported_without_source": 524,
+      "selected_targets_in_prediction_panel": {
+        "ALDOA": false,
+        "AAAS": false,
+        "AHCY": false,
+        "GAPDH": true,
+        "TPI1": true
+      }
+    },
+    {
+      "id": "state-replogle-jurkat-fewshot-v1",
+      "cell_line": "Jurkat",
+      "enabled": true,
+      "expression_slot": "X_hvg",
+      "panel_size": 2000,
+      "target_count_without_control": 2023,
+      "source_measured_combinations": 1537,
+      "supported_without_source": 486,
+      "selected_targets_in_prediction_panel": {
+        "ALDOA": false,
+        "AAAS": false,
+        "AHCY": false,
+        "GAPDH": true,
+        "TPI1": true
+      }
+    },
+    {
+      "id": "state-replogle-hepg2-fewshot-v1",
+      "cell_line": "HepG2",
+      "enabled": true,
+      "expression_slot": "X_hvg",
+      "panel_size": 2000,
+      "target_count_without_control": 2023,
+      "source_measured_combinations": 1340,
+      "supported_without_source": 683,
+      "selected_targets_in_prediction_panel": {
+        "ALDOA": false,
+        "AAAS": false,
+        "AHCY": false,
+        "GAPDH": true,
+        "TPI1": true
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "run_id": "run_47d09620968f48cf",
+      "request": {
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "mode": "online",
+        "n_cells": 256,
+        "seed": 43
+      },
+      "held_out_validation": false,
+      "training_exclusion_verified": false,
+      "recalculated_from_saved_csv": {
+        "signed_delta_pearson": 0.4376002372851744,
+        "mse_relative_to_no_change": 0.7983516633097215
+      },
+      "matches_saved_metrics": true,
+      "output_hash_checks": [
+        {
+          "file": "comparison.json",
+          "matches": true
+        },
+        {
+          "file": "differential_expression.csv",
+          "matches": true
+        },
+        {
+          "file": "expression_contract.json",
+          "matches": true
+        },
+        {
+          "file": "gene_deltas.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection.json",
+          "matches": true
+        },
+        {
+          "file": "reaction_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "task_trace.json",
+          "matches": true
+        },
+        {
+          "file": "validation_metrics.json",
+          "matches": true
+        }
+      ],
+      "source_manifest_matches": true,
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 199,
+        "n_tasks_fully_covered_all": 7,
+        "n_tasks_compromised_essential": 19,
+        "n_tasks_compromised_all": 187,
+        "mean_task_impact_weighted_essential": 0.9128440366972477,
+        "mean_task_impact_weighted_all": 0.38710648716456453,
+        "mean_task_fraction_present_essential": 0.9167940876656473,
+        "mean_task_fraction_present_all": 0.1777120836967064,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 346,
+        "n_reactions_fully_covered_all": 86,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 138,
+        "fraction_db_genes_present": 0.14822771213748656
+      },
+      "independent_panel_database_intersection": 138,
+      "empty_essential_task_sets": 192
+    },
+    {
+      "run_id": "run_aef55809479e4c21",
+      "request": {
+        "cell_line": "RPE1",
+        "perturbation": "ALDOA",
+        "mode": "online",
+        "n_cells": 256,
+        "seed": 43
+      },
+      "held_out_validation": false,
+      "training_exclusion_verified": false,
+      "recalculated_from_saved_csv": {
+        "signed_delta_pearson": 0.8943695606636494,
+        "mse_relative_to_no_change": 0.2085343884717282
+      },
+      "matches_saved_metrics": true,
+      "output_hash_checks": [
+        {
+          "file": "comparison.json",
+          "matches": true
+        },
+        {
+          "file": "differential_expression.csv",
+          "matches": true
+        },
+        {
+          "file": "expression_contract.json",
+          "matches": true
+        },
+        {
+          "file": "gene_deltas.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection.json",
+          "matches": true
+        },
+        {
+          "file": "reaction_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "task_trace.json",
+          "matches": true
+        },
+        {
+          "file": "validation_metrics.json",
+          "matches": true
+        }
+      ],
+      "source_manifest_matches": true,
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 199,
+        "n_tasks_fully_covered_all": 7,
+        "n_tasks_compromised_essential": 19,
+        "n_tasks_compromised_all": 187,
+        "mean_task_impact_weighted_essential": 0.9128440366972477,
+        "mean_task_impact_weighted_all": 0.38710648716456453,
+        "mean_task_fraction_present_essential": 0.9167940876656473,
+        "mean_task_fraction_present_all": 0.1777120836967064,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 346,
+        "n_reactions_fully_covered_all": 86,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 138,
+        "fraction_db_genes_present": 0.14822771213748656
+      },
+      "independent_panel_database_intersection": 138,
+      "empty_essential_task_sets": 192
+    },
+    {
+      "run_id": "run_34737097754841fd",
+      "request": {
+        "cell_line": "Jurkat",
+        "perturbation": "ALDOA",
+        "mode": "online",
+        "n_cells": 256,
+        "seed": 43
+      },
+      "held_out_validation": false,
+      "training_exclusion_verified": false,
+      "recalculated_from_saved_csv": {
+        "signed_delta_pearson": 0.4979987456892719,
+        "mse_relative_to_no_change": 0.8612879717967002
+      },
+      "matches_saved_metrics": true,
+      "output_hash_checks": [
+        {
+          "file": "comparison.json",
+          "matches": true
+        },
+        {
+          "file": "differential_expression.csv",
+          "matches": true
+        },
+        {
+          "file": "expression_contract.json",
+          "matches": true
+        },
+        {
+          "file": "gene_deltas.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection.json",
+          "matches": true
+        },
+        {
+          "file": "reaction_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "task_trace.json",
+          "matches": true
+        },
+        {
+          "file": "validation_metrics.json",
+          "matches": true
+        }
+      ],
+      "source_manifest_matches": true,
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 199,
+        "n_tasks_fully_covered_all": 7,
+        "n_tasks_compromised_essential": 19,
+        "n_tasks_compromised_all": 187,
+        "mean_task_impact_weighted_essential": 0.9128440366972477,
+        "mean_task_impact_weighted_all": 0.38710648716456453,
+        "mean_task_fraction_present_essential": 0.9167940876656473,
+        "mean_task_fraction_present_all": 0.1777120836967064,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 346,
+        "n_reactions_fully_covered_all": 86,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 138,
+        "fraction_db_genes_present": 0.14822771213748656
+      },
+      "independent_panel_database_intersection": 138,
+      "empty_essential_task_sets": 192
+    },
+    {
+      "run_id": "run_41504106326f404d",
+      "request": {
+        "cell_line": "HepG2",
+        "perturbation": "ALDOA",
+        "mode": "online",
+        "n_cells": 256,
+        "seed": 43
+      },
+      "held_out_validation": false,
+      "training_exclusion_verified": false,
+      "recalculated_from_saved_csv": {
+        "signed_delta_pearson": 0.26260930086924594,
+        "mse_relative_to_no_change": 1.5529107318159985
+      },
+      "matches_saved_metrics": true,
+      "output_hash_checks": [
+        {
+          "file": "comparison.json",
+          "matches": true
+        },
+        {
+          "file": "differential_expression.csv",
+          "matches": true
+        },
+        {
+          "file": "expression_contract.json",
+          "matches": true
+        },
+        {
+          "file": "gene_deltas.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection.json",
+          "matches": true
+        },
+        {
+          "file": "reaction_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "task_trace.json",
+          "matches": true
+        },
+        {
+          "file": "validation_metrics.json",
+          "matches": true
+        }
+      ],
+      "source_manifest_matches": true,
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 199,
+        "n_tasks_fully_covered_all": 7,
+        "n_tasks_compromised_essential": 19,
+        "n_tasks_compromised_all": 187,
+        "mean_task_impact_weighted_essential": 0.9128440366972477,
+        "mean_task_impact_weighted_all": 0.38710648716456453,
+        "mean_task_fraction_present_essential": 0.9167940876656473,
+        "mean_task_fraction_present_all": 0.1777120836967064,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 346,
+        "n_reactions_fully_covered_all": 86,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 138,
+        "fraction_db_genes_present": 0.14822771213748656
+      },
+      "independent_panel_database_intersection": 138,
+      "empty_essential_task_sets": 192
+    },
+    {
+      "run_id": "run_ed570bb58ec74739",
+      "request": {
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "mode": "online",
+        "n_cells": 64,
+        "seed": 42
+      },
+      "held_out_validation": false,
+      "training_exclusion_verified": false,
+      "recalculated_from_saved_csv": {
+        "signed_delta_pearson": 0.33209451015341535,
+        "mse_relative_to_no_change": 1.0166656730286796
+      },
+      "matches_saved_metrics": true,
+      "output_hash_checks": [
+        {
+          "file": "comparison.json",
+          "matches": true
+        },
+        {
+          "file": "differential_expression.csv",
+          "matches": true
+        },
+        {
+          "file": "expression_contract.json",
+          "matches": true
+        },
+        {
+          "file": "gene_deltas.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection.json",
+          "matches": true
+        },
+        {
+          "file": "reaction_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "task_trace.json",
+          "matches": true
+        },
+        {
+          "file": "validation_metrics.json",
+          "matches": true
+        }
+      ],
+      "source_manifest_matches": true,
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 199,
+        "n_tasks_fully_covered_all": 7,
+        "n_tasks_compromised_essential": 19,
+        "n_tasks_compromised_all": 187,
+        "mean_task_impact_weighted_essential": 0.9128440366972477,
+        "mean_task_impact_weighted_all": 0.38710648716456453,
+        "mean_task_fraction_present_essential": 0.9167940876656473,
+        "mean_task_fraction_present_all": 0.1777120836967064,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 346,
+        "n_reactions_fully_covered_all": 86,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 138,
+        "fraction_db_genes_present": 0.14822771213748656
+      },
+      "independent_panel_database_intersection": 138,
+      "empty_essential_task_sets": 192
+    },
+    {
+      "run_id": "run_469edf3453324f66",
+      "available": false
+    }
+  ],
+  "measured_analyses": [
+    {
+      "analysis_id": "measured_678b672019124ac8a8662cbe",
+      "cell_line": "K562",
+      "perturbation": "AAAS",
+      "counts": {
+        "control": 1360,
+        "observed": 32
+      },
+      "gene_count": 6546,
+      "metabolic_coverage": {
+        "available_metabolic_genes": 526,
+        "database_metabolic_genes": 931,
+        "full_gene_panel": 6546
+      },
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 209,
+        "n_tasks_fully_covered_all": 23,
+        "n_tasks_compromised_essential": 9,
+        "n_tasks_compromised_all": 139,
+        "mean_task_impact_weighted_essential": 0.9587155963302753,
+        "mean_task_impact_weighted_all": 0.7442968893400314,
+        "mean_task_fraction_present_essential": 0.9632008154943934,
+        "mean_task_fraction_present_all": 0.522103022598555,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 562,
+        "n_reactions_fully_covered_all": 329,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 526,
+        "fraction_db_genes_present": 0.564983888292159
+      },
+      "output_hash_checks": [
+        {
+          "file": "genes.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection-pca.json",
+          "matches": true
+        },
+        {
+          "file": "projection-umap.json",
+          "matches": true
+        },
+        {
+          "file": "reactions.csv",
+          "matches": true
+        },
+        {
+          "file": "report.html",
+          "matches": true
+        },
+        {
+          "file": "summary.json",
+          "matches": true
+        },
+        {
+          "file": "tasks.csv",
+          "matches": true
+        },
+        {
+          "file": "inputs/observed.h5ad",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "analysis_id": "measured_a40955b0de73475a9d628e05",
+      "cell_line": "K562",
+      "perturbation": "ALDOA",
+      "counts": {
+        "control": 2145,
+        "observed": 77
+      },
+      "gene_count": 6546,
+      "metabolic_coverage": {
+        "available_metabolic_genes": 526,
+        "database_metabolic_genes": 931,
+        "full_gene_panel": 6546
+      },
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 209,
+        "n_tasks_fully_covered_all": 23,
+        "n_tasks_compromised_essential": 9,
+        "n_tasks_compromised_all": 139,
+        "mean_task_impact_weighted_essential": 0.9587155963302753,
+        "mean_task_impact_weighted_all": 0.7442968893400314,
+        "mean_task_fraction_present_essential": 0.9632008154943934,
+        "mean_task_fraction_present_all": 0.522103022598555,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 562,
+        "n_reactions_fully_covered_all": 329,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 526,
+        "fraction_db_genes_present": 0.564983888292159
+      },
+      "output_hash_checks": [
+        {
+          "file": "genes.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection-pca.json",
+          "matches": true
+        },
+        {
+          "file": "projection-umap.json",
+          "matches": true
+        },
+        {
+          "file": "reactions.csv",
+          "matches": true
+        },
+        {
+          "file": "report.html",
+          "matches": true
+        },
+        {
+          "file": "summary.json",
+          "matches": true
+        },
+        {
+          "file": "tasks.csv",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "analysis_id": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "cell_line": "K562",
+      "perturbation": "AHCY",
+      "counts": {
+        "control": 2934,
+        "observed": 142
+      },
+      "gene_count": 6546,
+      "metabolic_coverage": {
+        "available_metabolic_genes": 526,
+        "database_metabolic_genes": 931,
+        "full_gene_panel": 6546
+      },
+      "completeness": {
+        "n_tasks_total": 218,
+        "n_tasks_fully_covered_essential": 209,
+        "n_tasks_fully_covered_all": 23,
+        "n_tasks_compromised_essential": 9,
+        "n_tasks_compromised_all": 139,
+        "mean_task_impact_weighted_essential": 0.9587155963302753,
+        "mean_task_impact_weighted_all": 0.7442968893400314,
+        "mean_task_fraction_present_essential": 0.9632008154943934,
+        "mean_task_fraction_present_all": 0.522103022598555,
+        "n_reactions_total": 787,
+        "n_reactions_fully_covered_essential": 562,
+        "n_reactions_fully_covered_all": 329,
+        "n_genes_in_db_total": 931,
+        "n_genes_in_db_present_in_adata": 526,
+        "fraction_db_genes_present": 0.564983888292159
+      },
+      "output_hash_checks": [
+        {
+          "file": "genes.csv",
+          "matches": true
+        },
+        {
+          "file": "gene_identity.json",
+          "matches": true
+        },
+        {
+          "file": "metabolic_coverage.csv",
+          "matches": true
+        },
+        {
+          "file": "metabolic_task_scores.csv",
+          "matches": true
+        },
+        {
+          "file": "official_completeness.json",
+          "matches": true
+        },
+        {
+          "file": "projection-pca.json",
+          "matches": true
+        },
+        {
+          "file": "projection-umap.json",
+          "matches": true
+        },
+        {
+          "file": "reactions.csv",
+          "matches": true
+        },
+        {
+          "file": "report.html",
+          "matches": true
+        },
+        {
+          "file": "summary.json",
+          "matches": true
+        },
+        {
+          "file": "tasks.csv",
+          "matches": true
+        },
+        {
+          "file": "inputs/observed.h5ad",
+          "matches": true
+        }
+      ]
+    }
+  ],
+  "catalog_context_totals": {
+    "HepG2": 96616,
+    "Jurkat": 184470,
+    "K562": 188590,
+    "RPE1": 173737
+  },
+  "source_sha256": {
+    "backend/app/engines/state_engine.py": "106f739f3d92313f347958d072dc8d54ad6bf03e45d4fbc49f2cfd9dee02f01b",
+    "backend/app/services/scientific_analysis.py": "2c0bdb483375ee61f59bb24b381ed45622c85284ba0adaf2096e1f1bd26ed567",
+    "backend/app/services/measured_analysis.py": "cece153a601125cd786d1a77c2701510cfb634b864adef1ad321730a0a3cd44e",
+    "backend/app/services/completeness.py": "84e8c7d5a5161e733726c8e08740c39990bf77cdb108d1bf0fb3cb63c1b004de",
+    "backend/app/assistant.py": "780cedddb120ec730db4178aef663c6bcd2718d1f5851e8f70ab4b6c09b2b6b7",
+    "backend/app/api/runs.py": "40d1d3c25f2c13026251cb22f98f6289fae642d280057096b125f0f658d4278b",
+    "frontend/src/components/AppHeader.vue": "dcea635c9935023631f25d58710834c45e459c1b6f5a3f5866d947cbfd6b7541",
+    "frontend/src/utils/predictionEvidence.ts": "b8c59c07dbd3f46ca659c1c8e423c49a571fbacb8c927c71531180225488efa0",
+    "frontend/src/router/index.ts": "e021bb7a5747465b5335e5e8ea236b95b7637d3f37310d42416bc293441e52cc",
+    "docs/ARCHITECTURE.md": "46928e5fdfd3286f958814b3de46d76127dc867c7068c8de89b64888981b4ab1",
+    "docs/OPERATIONS.md": "58f8a1925abb34bed299a1265530088c5ed9b4a56b868ac1a825a5101aab350a",
+    "docs/GENERALIZATION.md": "b691b30ef222b786badbd3880eea5231e6b74d049c7b63b0b15f9dc2caf44821",
+    "docs/MEASURED_ANALYSIS.md": "3bd59ecda8396493c6104ea31d93e6561879db58abd6b7c34a0ea95078638f12",
+    "data/registry/models.json": "38aa55f9937737db94ebbc2298a9d7d76d43de3a90b971b456cebf1b3cb51add",
+    "data/registry/perturbation_catalog.json": "92ac71a83f0872c1d5023ff00efbb21175b87cb75b8651d646eb73ebd4ce4972"
+  },
+  "verification_summary": {
+    "saved_output_files_checked": 95,
+    "saved_output_hash_mismatches": 0,
+    "comparison_metric_matches": 5,
+    "comparison_source_manifest_matches": 5
+  }
+}

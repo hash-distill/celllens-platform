@@ -209,7 +209,7 @@ html[data-theme='dark'] {
 
 html,
 body {
-  min-width: 1280px;
+  min-width: 1024px;
   margin: 0;
   padding: 0;
 }
@@ -230,8 +230,8 @@ body {
   min-height: 100vh;
 }
 
-/* Desktop canvas and local shortcut tools. */
-body { padding-right: 64px; }
+/* Reserve shortcut space for page content while keeping the header full width. */
+#app > main { padding-right: 64px; }
 
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 

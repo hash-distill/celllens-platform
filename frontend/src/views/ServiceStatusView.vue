@@ -4,6 +4,7 @@ import { apiFetch } from '../api/http'
 import { isMockEnabled } from '../api/mockFlag'
 import { useServiceStore } from '../stores/service'
 import type { SystemStatus } from '../types/system'
+import InferenceResources from '../components/InferenceResources.vue'
 
 const service = useServiceStore()
 const data = ref<SystemStatus | null>(null), loading = ref(false), error = ref('')
@@ -16,15 +17,12 @@ const resources = computed(() => data.value ? [
   {name: '数据所在磁盘', ...data.value.system.storage},
 ] : [])
 const workerLabel = (enabled: boolean, running: boolean) => running ? '运行中' : enabled ? '已启用 · 未运行' : '未启用'
-const overridden = computed(() => Object.entries(data.value?.workers.sources ?? {})
-  .filter(([, source]) => source === 'environment')
-  .map(([field]) => field === 'worker_enabled' ? 'CELLLENS_WORKER_ENABLED' : 'CELLLENS_GPU_AVAILABLE'))
 async function refresh() {
   if (loading.value) return
   controller?.abort(); const current = new AbortController(); controller = current
   loading.value = true; error.value = ''
   try {
-    if (mock) {data.value = null; error.value = '当前为 Mock 模式，环境配置未采集。关闭开发数据模式后查看实际服务状态。'; return}
+    if (mock) {data.value = null; error.value = '示例模式不提供实时服务状态。'; return}
     const result = await apiFetch<SystemStatus>('/system-status', {signal: current.signal, timeoutMs: 15000})
     if (!current.signal.aborted) data.value = result
   } catch (reason) {
@@ -37,9 +35,10 @@ onBeforeUnmount(() => controller?.abort())
 </script>
 <template>
   <div class="page status-page">
-    <header class="page-heading"><div><span class="eyebrow">SERVICE & ENVIRONMENT</span><h1>服务状态</h1><p>读取运行后端的本机环境与当前生效配置 · 点击“重新检查”更新</p></div><button class="btn btn-primary" :disabled="loading || service.checking" @click="check">{{ loading ? '检查中…' : '重新检查' }}</button></header>
+    <header class="page-heading"><div><span class="eyebrow">SERVICE & ENVIRONMENT</span><h1>服务状态</h1><p>查看服务连接、计算资源与分析任务状态。</p></div><button class="btn btn-primary" :disabled="loading || service.checking" @click="check">{{ loading ? '检查中…' : '重新检查' }}</button></header>
     <div v-if="error" class="notice notice-danger" role="alert">{{ error }}<button class="btn btn-sm" @click="check">重试</button></div>
     <div v-if="loading && !data" class="card" role="status">正在检测服务环境…</div>
+    <InferenceResources v-if="!mock" />
     <template v-if="data">
       <section class="status-overview" aria-label="服务连接概览"><div class="overall"><span class="eyebrow">CURRENT SERVICE</span><h2><i :class="service.level" />{{ service.levelLabel }}</h2><p>采集于 {{ new Date(data.checked_at).toLocaleString() }}</p></div><div><span>数据库连接</span><strong :class="{warning: !data.database.connected}">{{ data.database.connected ? '已连接' : '不可用' }}</strong><small>{{ data.database.latency_ms == null ? '延迟未获取' : `${data.database.latency_ms} ms 响应延迟` }}</small></div><div><span>GPU 设备</span><strong>{{ data.gpu.devices.length }} <small>张</small></strong><small>{{ data.gpu.configured ? 'GPU 推演：已启用' : 'GPU 推演：未启用' }}</small></div><div><span>CPU 逻辑核心</span><strong>{{ data.system.cpu_logical_cores ?? '—' }}</strong><small>{{ data.system.architecture }}</small></div></section>
       <div class="status-grid">
@@ -50,11 +49,11 @@ onBeforeUnmount(() => controller?.abort())
             <div class="meter-heading"><span>GPU 利用率</span><strong>{{ gpu.utilization_percent == null ? '未获取' : `${gpu.utilization_percent}%` }}</strong></div><progress v-if="gpu.utilization_percent !== null" max="100" :value="gpu.utilization_percent" :aria-label="`${gpu.name} 利用率`" />
           </article>
         </section>
-        <section class="card" aria-label="系统资源"><span class="eyebrow">HOST / RESOURCES</span><h2>系统资源</h2><p class="muted cpu-model">{{ data.system.cpu_model ?? 'CPU 型号未获取' }}</p><article v-for="resource in resources" :key="resource.name" class="resource"><div class="meter-heading"><h3>{{ resource.name }}</h3><strong>{{ percentage(resource.used_bytes, resource.total_bytes)?.toFixed(1) ?? '—' }}%</strong></div><progress v-if="percentage(resource.used_bytes, resource.total_bytes) !== null" max="100" :value="percentage(resource.used_bytes, resource.total_bytes) ?? 0" :aria-label="`${resource.name}使用率`" /><p class="muted">已用 {{ bytes(resource.used_bytes) }} / 总量 {{ bytes(resource.total_bytes) }}</p></article><p class="muted">资源数值来自运行后端的主机。采集失败时显示未获取。</p></section>
+        <section class="card" aria-label="系统资源"><span class="eyebrow">HOST / RESOURCES</span><h2>系统资源</h2><p class="muted cpu-model">{{ data.system.cpu_model ?? 'CPU 型号未获取' }}</p><article v-for="resource in resources" :key="resource.name" class="resource"><div class="meter-heading"><h3>{{ resource.name }}</h3><strong>{{ percentage(resource.used_bytes, resource.total_bytes)?.toFixed(1) ?? '—' }}%</strong></div><progress v-if="percentage(resource.used_bytes, resource.total_bytes) !== null" max="100" :value="percentage(resource.used_bytes, resource.total_bytes) ?? 0" :aria-label="`${resource.name}使用率`" /><p class="muted">已用 {{ bytes(resource.used_bytes) }} / 总量 {{ bytes(resource.total_bytes) }}</p></article><p class="muted">实时资源使用情况。</p></section>
         <section class="card" aria-label="数据库配置"><span class="eyebrow">STORAGE / DATABASE</span><h2>数据库配置</h2><dl><dt>数据库引擎</dt><dd>{{ data.database.engine }}</dd><dt>服务端版本</dt><dd>{{ data.database.version ?? '未获取' }}</dd><dt>连接池大小</dt><dd>{{ data.database.pool_size ?? '未获取' }}</dd><dt>借出的连接</dt><dd>{{ data.database.checked_out ?? '未获取' }}</dd><dt>连接状态</dt><dd>{{ data.database.connected ? '连接正常' : '连接不可用' }}</dd></dl></section>
-        <section class="card" aria-label="分析服务"><span class="eyebrow">PIPELINE / WORKERS</span><h2>分析服务</h2><div class="worker-row"><div><h3>在线扰动推演</h3><p>STATE → 表达响应 → scCellFie</p></div><span :class="{warning: !data.workers.online_running}">{{ workerLabel(data.workers.online_enabled, data.workers.online_running) }}</span></div><dl><dt>在线待完成任务</dt><dd>{{ data.workers.online_pending ?? '未获取' }}</dd></dl><p class="muted">“已启用”表示配置开关；“运行中”表示本服务进程的分析循环仍在运行。</p><p v-if="overridden.length" class="notice notice-warn">当前进程的 {{ overridden.join('、') }} 由<b>启动终端的环境变量</b>提供，并覆盖了 .env。请在启动前清除该变量（Remove-Item Env:CELLLENS_WORKER_ENABLED）或改用新终端。</p></section>
+        <section class="card" aria-label="分析服务"><span class="eyebrow">PIPELINE / WORKERS</span><h2>分析服务</h2><div class="worker-row"><div><h3>在线扰动推演</h3><p>STATE → 表达响应 → scCellFie</p></div><span :class="{warning: !data.workers.online_running}">{{ workerLabel(data.workers.online_enabled, data.workers.online_running) }}</span></div><dl><dt>在线待完成任务</dt><dd>{{ data.workers.online_pending ?? '未获取' }}</dd></dl></section>
       </div>
-      <section class="card environment" aria-label="运行环境"><span class="eyebrow">RUNTIME / CONFIGURATION</span><h2>运行环境与依赖</h2><p class="muted">系统与依赖版本来自运行后端的主机采集。</p><div class="environment-grid"><dl><dt>操作系统</dt><dd>{{ data.system.os }} {{ data.system.os_release }}<template v-if="data.system.os_display_version"> · {{ data.system.os_display_version }}</template></dd><dt>系统构建版本</dt><dd class="mono">{{ data.system.os_version }}</dd><dt>Python</dt><dd>{{ data.system.python }}</dd></dl><dl><template v-for="(version, name) in data.versions" :key="name"><dt>{{ name }}</dt><dd class="mono">{{ version ?? '未安装' }}</dd></template></dl></div></section>
+      <section class="card environment" aria-label="运行环境"><span class="eyebrow">RUNTIME / CONFIGURATION</span><h2>运行环境与依赖</h2><p class="muted">查看系统与分析引擎版本。</p><div class="environment-grid"><dl><dt>操作系统</dt><dd>{{ data.system.os }} {{ data.system.os_release }}<template v-if="data.system.os_display_version"> · {{ data.system.os_display_version }}</template></dd><dt>系统构建版本</dt><dd class="mono">{{ data.system.os_version }}</dd><dt>Python</dt><dd>{{ data.system.python }}</dd></dl><dl><template v-for="(version, name) in data.versions" :key="name"><dt>{{ name }}</dt><dd class="mono">{{ version ?? '未安装' }}</dd></template></dl></div></section>
     </template>
   </div>
 </template>

@@ -1,7 +1,5 @@
 """Read-only access to genuine measured perturbation comparisons."""
 
-import csv
-import io
 import json
 from typing import Literal
 
@@ -9,6 +7,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 
 from backend.app.schemas import RunStatus
+from backend.app.services.cell_state import CellStateUnavailable
+from backend.app.services.export_tables import export_table
 from backend.app.services.measured_comparison import (
     ComparisonUnavailable,
     comparison_examples,
@@ -93,20 +93,13 @@ def download_comparison(run_id: str, request: Request, table: Literal["json", "g
         content = json.dumps(doc, ensure_ascii=False, allow_nan=False, indent=2).encode("utf-8")
         extension, mime = "json", "application/json"
     else:
-        stream = io.StringIO(newline="")
-        fields = [
-            "id",
-            "control",
-            "predicted",
-            "observed",
-            "predicted_delta",
-            "observed_delta",
-            "absolute_error",
-        ]
-        writer = csv.DictWriter(stream, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(doc[table])
-        content = ("\ufeff" + stream.getvalue()).encode("utf-8")
+        try:
+            content, _ = export_table(request.app.state.container, run_id, table, "comparison")
+        except (CellStateUnavailable, ComparisonUnavailable, OSError, ValueError, KeyError) as exc:
+            raise HTTPException(409, detail={
+                "code": "COMPARISON_EXPORT_UNAVAILABLE",
+                "message": "实测比较导出来源未通过校验，请检查冻结文件。",
+            }) from exc
         extension, mime = "csv", "text/csv"
     return Response(
         content,

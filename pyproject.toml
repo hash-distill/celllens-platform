@@ -20,6 +20,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+analysis = [
+  "anndata>=0.11.4,<0.13",
+  "sccellfie==0.6.2",
+  "h5py>=3.13,<4",
+  "fsspec>=2025.3,<2027",
+  "huggingface-hub>=0.34,<2",
+  "scikit-learn>=1.6,<2",
+  "umap-learn>=0.5.8,<0.6",
+]
 model = [
   "anndata>=0.11.4,<0.13",
   "arc-state==0.11.1",

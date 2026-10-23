@@ -65,10 +65,6 @@ const rows = computed(() => Array.from({ length: props.skeletonRows }, (_, i) =>
       <div class="state-box state-unavailable" role="status">
         <p class="state-title">{{ unavailableText }}</p>
         <p v-if="unavailableHint" class="muted small">{{ unavailableHint }}</p>
-        <div v-if="error" class="muted small mono">
-          {{ error.status ? `HTTP ${error.status}` : '' }}
-          {{ error.code ? ` · ${error.code}` : '' }}
-        </div>
         <button v-if="error" class="btn btn-sm state-retry" @click="emit('retry')">重试</button>
       </div>
     </template>
@@ -77,7 +73,6 @@ const rows = computed(() => Array.from({ length: props.skeletonRows }, (_, i) =>
       <div class="state-box state-error" role="alert">
         <p class="state-title">请求失败</p>
         <p class="small">{{ error?.message ?? '未知错误' }}</p>
-        <p v-if="error?.code" class="muted small mono">错误码：{{ error.code }}</p>
         <button class="btn btn-sm state-retry" @click="emit('retry')">重新加载</button>
       </div>
     </template>

@@ -6,6 +6,7 @@ import { useUiStore } from '../stores/ui'
 import { api } from '../api/client'
 import { ApiError } from '../api/http'
 import { runSourceLabel } from '../utils/source'
+import { taskName } from '../utils/biologyLocale'
 import { EVIDENCE_LABEL, fmtDelta, fmtPercent, MODE_LABEL, shortRunId } from '../utils/format'
 import type { EvidenceItem, RunRecord, RunSummary } from '../types/run'
 
@@ -96,7 +97,7 @@ const taskUnion = computed(() => {
   for (const item of items.value) {
     for (const task of dataMap[item.run_id]?.summary?.metabolic_tasks ?? []) {
       const key = task.id || task.label
-      if (!seen.has(key)) seen.set(key, task.label)
+      if (!seen.has(key)) seen.set(key, taskName(task.id, task.label))
     }
   }
   return [...seen.entries()].map(([key, label]) => ({ key, label }))
@@ -118,13 +119,11 @@ function sourceLabel(runId: string): string {
           <h1 class="page-title">实验比较</h1>
           <p class="muted small" style="margin: 6px 0 0">
             <span class="pill pill-neutral">本浏览器记录</span>
-            已加入的运行并排展示（最多 4 个，以 run_id 去重）。
-            <strong>尚未核验版本一致，仅描述性并列</strong>：请打开各运行证据栏核对历史模型 / 数据哈希与生成时间，
-            不输出实验优先级评分；比较前请核对细胞背景、结果来源、表达尺度和模型版本。
+            并排查看最多 4 个实验的参数、基因响应与代谢任务结果。
           </p>
         </div>
         <div class="comparison-actions">
-          <RouterLink to="/records" class="btn btn-primary">选择实验</RouterLink>
+          <RouterLink to="/records?view=results&amp;category=predicted" class="btn btn-primary">选择预测结果</RouterLink>
           <button v-if="items.length" class="btn clear-comparison" type="button" @click="clearCandidates">清空比较</button>
           <button class="btn" type="button" @click="router.push('/workbench')">返回工作台</button>
         </div>
@@ -134,10 +133,10 @@ function sourceLabel(runId: string): string {
     <div v-if="items.length === 0" class="card empty-card">
       <p class="empty-title">尚未选择比较实验</p>
       <p class="muted small">
-        从实验记录或工作台点击「加入比较」，再回到本页。可随时移出单个实验或清空列表，选择新的比较组合。
+        先打开已完成的预测结果，点击「加入比较」，再回到本页。可随时移出单个实验或清空列表，选择新的比较组合。
       </p>
-      <button class="btn btn-primary" type="button" style="margin-top: 12px" @click="router.push('/records')">
-        去实验记录选择
+      <button class="btn btn-primary" type="button" style="margin-top: 12px" @click="router.push('/records?view=results&category=predicted')">
+        选择已完成预测
       </button>
     </div>
 
@@ -262,7 +261,7 @@ function sourceLabel(runId: string): string {
         <h2 class="card-title">返回任务差异（Top 摘要并集）</h2>
         <p class="muted small" style="margin: 0 0 10px">
           任务未出现在另一运行的返回 Top 列表时标「未返回」，不补 0，也不表示没有变化。
-          各运行返回的只是 Top 摘要，不代表全量任务。
+          展示各实验的主要代谢任务摘要。
         </p>
         <p v-if="taskUnion.length === 0" class="muted small">暂无可比较的任务（汇总尚未加载或均无任务）。</p>
         <div v-else class="table-wrap">

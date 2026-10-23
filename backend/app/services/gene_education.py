@@ -9,6 +9,10 @@ from typing import Any
 
 from backend.app.core.run_manifest import file_sha256
 
+DISPLAY_TRANSLATIONS = json.loads(
+    (Path(__file__).resolve().parents[1] / "resources" / "biology_zh.json").read_text(encoding="utf-8")
+)
+
 # Display categories follow PANTHER Protein Class. Enzyme subclasses are kept
 # separate so that the metabolic panel is useful to browse rather than one block.
 CLASS_TEXT = {
@@ -201,6 +205,7 @@ def classify_gene(
         "approved_symbol": row.get("symbol", symbol),
         "hgnc_id": identifier,
         "name_en": row.get("name_en", ""),
+        "name_zh": DISPLAY_TRANSLATIONS["gene_names"].get(row.get("symbol", "")),
         "category_ids": row.get("category_ids") or ["unclassified"],
         "protein_classes": row.get("protein_classes", []),
         "uniprot_ids": row.get("uniprot_ids", []),
@@ -360,3 +365,33 @@ TASK_GUIDES = {
         "source_label": "UniProt · DHFR",
     },
 }
+
+
+# These are display translations of the frozen labels, not new biological
+# annotations. Preserve the seven reaction-specific, sourced explanations above.
+for _task_id, _name_zh in DISPLAY_TRANSLATIONS["task_names"].items():
+    TASK_GUIDES.setdefault(
+        _task_id,
+        {
+            "name_zh": _name_zh,
+            "name_en": _task_id,
+            "description_zh": (
+                f"该任务对应“{_name_zh}”，汇总知识库中关联反应获得的表达支持。"
+            ),
+            "description_en": (
+                f"This task describes {_task_id} and summarises expression support "
+                "for its associated reactions in the knowledge base."
+            ),
+            "scope_zh": (
+                "中文译名按冻结知识库任务名称整理；任务分数须结合关联基因覆盖解读，"
+                "不直接表示实测代谢通量或整个生物过程的活性。"
+            ),
+            "scope_en": (
+                "The display translation follows the frozen task label. Interpret the score "
+                "with associated-gene coverage; it is not measured flux or validation "
+                "of the complete biological process."
+            ),
+            "source_url": "https://sccellfie.readthedocs.io/en/latest/",
+            "source_label": "scCellFie · human Recon2",
+        },
+    )

@@ -1,0 +1,467 @@
+{
+  "id": "measured_a40955b0de73475a9d628e05",
+  "cell_line": "K562",
+  "perturbation": "ALDOA",
+  "max_cells": 256,
+  "seed": 42,
+  "status": "completed",
+  "progress": 100,
+  "message": "实测数据分析完成",
+  "error_message": null,
+  "created_at": "2026-10-22T09:19:45",
+  "updated_at": "2026-10-22T09:21:50",
+  "source_kind": "measured",
+  "summary": {
+    "analysis_id": "measured_a40955b0de73475a9d628e05",
+    "analysis_version": "measured-expression-v1",
+    "source_kind": "measured",
+    "cell_line": "K562",
+    "perturbation": "ALDOA",
+    "input_counts": {
+      "control": 3000,
+      "observed": 77
+    },
+    "counts": {
+      "control": 2145,
+      "observed": 77
+    },
+    "source_cell_count": 77,
+    "gene_count": 6546,
+    "expression_units": "mean(log1p(CP10K))",
+    "top_genes": [
+      {
+        "gene": "SLC25A37",
+        "control": 0.6177675797,
+        "observed": 1.1646774899,
+        "observed_delta": 0.5469099102
+      },
+      {
+        "gene": "TUBA1B",
+        "control": 2.8591615124,
+        "observed": 2.3420961902,
+        "observed_delta": -0.5170653223
+      },
+      {
+        "gene": "BLVRB",
+        "control": 0.7083036728,
+        "observed": 1.215472485,
+        "observed_delta": 0.5071688122
+      },
+      {
+        "gene": "SDF2L1",
+        "control": 1.8886829243,
+        "observed": 1.3921472546,
+        "observed_delta": -0.4965356697
+      },
+      {
+        "gene": "NME1",
+        "control": 2.1060254085,
+        "observed": 1.6239595196,
+        "observed_delta": -0.4820658888
+      },
+      {
+        "gene": "EBNA1BP2",
+        "control": 1.2120732221,
+        "observed": 0.7406662199,
+        "observed_delta": -0.4714070021
+      },
+      {
+        "gene": "ODC1",
+        "control": 1.6746995273,
+        "observed": 1.232901334,
+        "observed_delta": -0.4417981933
+      },
+      {
+        "gene": "SRM",
+        "control": 1.5405186878,
+        "observed": 1.0994279299,
+        "observed_delta": -0.4410907578
+      },
+      {
+        "gene": "MRPL41",
+        "control": 1.3098378686,
+        "observed": 0.8689672277,
+        "observed_delta": -0.4408706409
+      },
+      {
+        "gene": "FTL",
+        "control": 4.0237718615,
+        "observed": 3.6122432746,
+        "observed_delta": -0.4115285869
+      },
+      {
+        "gene": "GAPDH",
+        "control": 3.1059825341,
+        "observed": 2.7034547724,
+        "observed_delta": -0.4025277617
+      },
+      {
+        "gene": "NEAT1",
+        "control": 1.6995896055,
+        "observed": 2.0925762839,
+        "observed_delta": 0.3929866784
+      },
+      {
+        "gene": "TSC22D1",
+        "control": 0.3026848669,
+        "observed": 0.6929766559,
+        "observed_delta": 0.390291789
+      },
+      {
+        "gene": "ENO1",
+        "control": 2.5591756889,
+        "observed": 2.1729336613,
+        "observed_delta": -0.3862420276
+      },
+      {
+        "gene": "RANBP1",
+        "control": 3.3607793822,
+        "observed": 2.9751391767,
+        "observed_delta": -0.3856402055
+      },
+      {
+        "gene": "UCHL5",
+        "control": 0.9865156234,
+        "observed": 0.6015453671,
+        "observed_delta": -0.3849702563
+      },
+      {
+        "gene": "TOMM5",
+        "control": 1.3095145048,
+        "observed": 0.924919815,
+        "observed_delta": -0.3845946898
+      },
+      {
+        "gene": "LDHA",
+        "control": 1.7666887951,
+        "observed": 1.3992424197,
+        "observed_delta": -0.3674463754
+      },
+      {
+        "gene": "PSMC3",
+        "control": 1.0612088487,
+        "observed": 0.6952235683,
+        "observed_delta": -0.3659852804
+      },
+      {
+        "gene": "TUBB",
+        "control": 2.3262695024,
+        "observed": 1.9604725575,
+        "observed_delta": -0.365796945
+      }
+    ],
+    "metabolism": {
+      "available": true,
+      "database_version": "scCellFie-0.6.2-human-Recon2",
+      "task_count": 186,
+      "reaction_count": 536,
+      "top_tasks": [
+        {
+          "task": "Synthesis of spermidine from ornithine",
+          "control": 2.7396091076,
+          "observed": 1.9086534558,
+          "observed_delta": -0.8309556518,
+          "gene_fraction": 0.8333333333,
+          "missing_genes": "MAT1A",
+          "label": "Synthesis of spermidine from ornithine"
+        },
+        {
+          "task": "ATP generation from glucose (hypoxic conditions) - glycolysis",
+          "control": 4.0930350064,
+          "observed": 3.3753380016,
+          "observed_delta": -0.7176970049,
+          "gene_fraction": 0.5333333333,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;PGAM2;PGK2",
+          "label": "ATP generation from glucose (hypoxic conditions) - glycolysis"
+        },
+        {
+          "task": "Glucose to lactate conversion",
+          "control": 3.7653478002,
+          "observed": 3.0886692737,
+          "observed_delta": -0.6766785265,
+          "gene_fraction": 0.4285714286,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;LDHAL6A;LDHAL6B;LDHB;LDHC;PGAM2;PGK2;UEVLD",
+          "label": "Glucose to lactate conversion"
+        },
+        {
+          "task": "Synthesis of bilirubin",
+          "control": 1.2414898952,
+          "observed": 1.8808777505,
+          "observed_delta": 0.6393878552,
+          "gene_fraction": 0.75,
+          "missing_genes": "HMOX1",
+          "label": "Synthesis of bilirubin"
+        },
+        {
+          "task": "Glucuronate synthesis (via inositol)",
+          "control": 4.1901950566,
+          "observed": 4.7755117284,
+          "observed_delta": 0.5853166718,
+          "gene_fraction": 0.1818181818,
+          "missing_genes": "GCK;HK1;HK2;HK3;HKDC1;IMPA2;ISYNA1;MIOX;MTMR1",
+          "label": "Glucuronate synthesis (via inositol)"
+        },
+        {
+          "task": "Synthesis of inositol",
+          "control": 4.1901950566,
+          "observed": 4.7755117284,
+          "observed_delta": 0.5853166718,
+          "gene_fraction": 0.2,
+          "missing_genes": "GCK;HK1;HK2;HK3;HKDC1;IMPA2;ISYNA1;MTMR1",
+          "label": "Synthesis of inositol"
+        },
+        {
+          "task": "GDP-mannose synthesis",
+          "control": 1.2638683305,
+          "observed": 0.687594119,
+          "observed_delta": -0.5762742116,
+          "gene_fraction": 0.4,
+          "missing_genes": "GCK;GMPPB;HK1;HK2;HK3;HKDC1",
+          "label": "GDP-mannose synthesis"
+        },
+        {
+          "task": "Gluconeogenesis from Lactate",
+          "control": 3.2138843269,
+          "observed": 2.6829406216,
+          "observed_delta": -0.5309437052,
+          "gene_fraction": 0.4074074074,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;FBP1;FBP2;G6PC1;G6PC2;GAPDHS;LDHB;LDHD;PC;PCK1;PCK2;PGAM2;PGK2",
+          "label": "Gluconeogenesis from Lactate"
+        },
+        {
+          "task": "Hydroxymethylglutaryl-CoA synthesis",
+          "control": 2.9944789019,
+          "observed": 2.473270652,
+          "observed_delta": -0.5212082498,
+          "gene_fraction": 0.6538461538,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;HMGCS2;PDHA2;PGAM2;PGK2",
+          "label": "Hydroxymethylglutaryl-CoA synthesis"
+        },
+        {
+          "task": "Gluconeogenesis from pyruvate",
+          "control": 3.0970652027,
+          "observed": 2.5991830128,
+          "observed_delta": -0.4978821899,
+          "gene_fraction": 0.44,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;FBP1;FBP2;G6PC1;G6PC2;GAPDHS;PC;PCK1;PCK2;PGAM2;PGK2",
+          "label": "Gluconeogenesis from pyruvate"
+        },
+        {
+          "task": "Gluconeogenesis from Alanine",
+          "control": 3.0970652027,
+          "observed": 2.5991830128,
+          "observed_delta": -0.4978821899,
+          "gene_fraction": 0.4074074074,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;FBP1;FBP2;G6PC1;G6PC2;GAPDHS;GPT;GPT2;PC;PCK1;PCK2;PGAM2;PGK2",
+          "label": "Gluconeogenesis from Alanine"
+        },
+        {
+          "task": "Acetoacetate synthesis",
+          "control": 2.7316297174,
+          "observed": 2.2539424459,
+          "observed_delta": -0.4776872715,
+          "gene_fraction": 0.6428571429,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;HMGCLL1;HMGCS2;PDHA2;PGAM2;PGK2",
+          "label": "Acetoacetate synthesis"
+        },
+        {
+          "task": "Synthesis of acetone",
+          "control": 2.7316297174,
+          "observed": 2.2539424459,
+          "observed_delta": -0.4776872715,
+          "gene_fraction": 0.6428571429,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;HMGCLL1;HMGCS2;PDHA2;PGAM2;PGK2",
+          "label": "Synthesis of acetone"
+        },
+        {
+          "task": "(R)-3-Hydroxybutanoate synthesis",
+          "control": 2.7316297174,
+          "observed": 2.2539424459,
+          "observed_delta": -0.4776872715,
+          "gene_fraction": 0.6206896552,
+          "missing_genes": "ALDOB;ALDOC;BDH1;BPGM;ENO3;GAPDHS;HMGCLL1;HMGCS2;PDHA2;PGAM2;PGK2",
+          "label": "(R)-3-Hydroxybutanoate synthesis"
+        },
+        {
+          "task": "Serine synthesis",
+          "control": 2.4157763538,
+          "observed": 1.94462532,
+          "observed_delta": -0.4711510338,
+          "gene_fraction": 0.5,
+          "missing_genes": "ALDOB;ALDOC;GAPDHS;GCK;HK1;HK2;HK3;HKDC1;PFKM;PGK2",
+          "label": "Serine synthesis"
+        },
+        {
+          "task": "Proline synthesis",
+          "control": 2.8422658033,
+          "observed": 2.3719119847,
+          "observed_delta": -0.4703538186,
+          "gene_fraction": 0.6428571429,
+          "missing_genes": "ALDH4A1;ALDOB;ALDOC;BPGM;ENO3;GAPDHS;PC;PDHA2;PGAM2;PGK2",
+          "label": "Proline synthesis"
+        },
+        {
+          "task": "Alanine synthesis",
+          "control": 2.9289281608,
+          "observed": 2.4672756871,
+          "observed_delta": -0.4616524737,
+          "gene_fraction": 0.6071428571,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;GPT;GPT2;PC;PDHA2;PGAM2;PGK2",
+          "label": "Alanine synthesis"
+        },
+        {
+          "task": "Glutamate synthesis",
+          "control": 2.9289281608,
+          "observed": 2.4672756871,
+          "observed_delta": -0.4616524737,
+          "gene_fraction": 0.6538461538,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;PC;PDHA2;PGAM2;PGK2",
+          "label": "Glutamate synthesis"
+        },
+        {
+          "task": "Aspartate synthesis",
+          "control": 2.778021048,
+          "observed": 2.3419953933,
+          "observed_delta": -0.4360256547,
+          "gene_fraction": 0.6666666667,
+          "missing_genes": "ALDOB;ALDOC;BPGM;ENO3;GAPDHS;PC;PDHA2;PGAM2;PGK2",
+          "label": "Aspartate synthesis"
+        },
+        {
+          "task": "Glycine synthesis",
+          "control": 2.2108465312,
+          "observed": 1.7928308738,
+          "observed_delta": -0.4180156574,
+          "gene_fraction": 0.5238095238,
+          "missing_genes": "ALDOB;ALDOC;GAPDHS;GCK;HK1;HK2;HK3;HKDC1;PFKM;PGK2",
+          "label": "Glycine synthesis"
+        }
+      ],
+      "units": "expression-derived scCellFie task/reaction support score",
+      "coverage": {
+        "available_metabolic_genes": 526,
+        "database_metabolic_genes": 931,
+        "full_gene_panel": 6546
+      },
+      "database_provenance": {
+        "manifest_sha256": "8abad7a25ffe134b99c4f6c79cb4c0c2ab02de727eca83bb59fca41e11a60c61",
+        "files": {
+          "Rxn-Info-Recon2-2.json": "3930736d67ff6beda56d5173c3e4b7ebeb768eb92c4aa7e872d1823d5cf136c1",
+          "Task-Info.csv": "1d5b148f8a1b440d6d7556bed346ea6e818e78b00a495c0d304996cb5a4222d3",
+          "Task_by_Rxn.csv": "5abd0aff87d02b29a0725c8f828deb62d2a03f536fc92c083c6c26d46c4a3447",
+          "Task_by_Gene.csv": "e19001535af75e99ed2e55965d5d5845bae0e6638188142a44dc99045d467c94",
+          "Rxn_by_Gene.csv": "5d800dc02c0741b15c7a4ffaa7ee82c722dfc1ebbace118641748f6c6fb0d7fc",
+          "Thresholds.csv": "10cf06e90df4f267426d34c7725a44dfe576e6cf9e739467a51b71500626eda0"
+        },
+        "source": "https://github.com/earmingol/scCellFie/tree/main/task_data/homo_sapiens",
+        "organism": "human"
+      }
+    },
+    "projections": {
+      "pca": {
+        "available": true,
+        "method": "control-reference-pca"
+      },
+      "umap": {
+        "available": true,
+        "method": "joint-umap"
+      }
+    },
+    "batch_matching": {
+      "status": "common_batches_only",
+      "batch_key": "gem_group",
+      "common_batches": [
+        "1",
+        "10",
+        "11",
+        "12",
+        "13",
+        "15",
+        "17",
+        "19",
+        "2",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "3",
+        "30",
+        "31",
+        "33",
+        "34",
+        "35",
+        "36",
+        "38",
+        "39",
+        "40",
+        "41",
+        "43",
+        "44",
+        "45",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "input_cells": {
+        "control": 3000,
+        "observed": 77
+      },
+      "selected_cells": {
+        "control": 2145,
+        "observed": 77
+      },
+      "limitation": "保持共有批次原有频率，不重加权；细胞记录不等于独立生物学重复"
+    },
+    "warnings": [],
+    "provenance": {
+      "source": {
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "kind": "measured_rna",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "source_cell_count": 77,
+      "sampling": {
+        "max_observed_cells": 256,
+        "seed": 42,
+        "with_replacement": false
+      },
+      "groups": {
+        "control": {
+          "path": "data/raw/replogle-k562/control.h5ad",
+          "sha256": "38fba985d1ad907ab2d583e109795031dc67ec3cc7e2c3b4a70cd7aabc9e6678",
+          "expression_scale": "log1p_cp10k",
+          "origin": "registered_control",
+          "dataset_id": "replogle-k562-control-v1",
+          "source_revision_verified": false,
+          "note": "旧登记对照按路径和摘要核验；不补造文件中未记录的来源 revision"
+        },
+        "observed": {
+          "path": "data/raw/measured-comparison-v1/k562/ALDOA.h5ad",
+          "sha256": "bdd3b7137f38347eed16c3a29dfc975a8fe18cb468f0ae5f88ee0f19d7533dd7",
+          "expression_scale": "log1p_cp10k",
+          "origin": "registered_observation",
+          "source": {
+            "repo": "arcinstitute/State-Replogle-Filtered",
+            "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+            "file": "replogle_concat.h5ad",
+            "kind": "measured_rna",
+            "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+          }
+        }
+      }
+    },
+    "limitations": [
+      "本次仅分析真实对照与目标扰动实测，未执行 STATE 预测。",
+      "表达和任务变化为未配对群体的描述性比较；细胞记录不等于独立生物学重复。",
+      "scCellFie 分数来自表达推断，不是实测代谢通量。",
+      "PCA/UMAP 坐标表示特征分布，不是细胞形态、物理位置或逐细胞迁移轨迹。",
+      "实测数据的存在与本次分析完成不证明预测模型的泛化能力。"
+    ]
+  }
+}

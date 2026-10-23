@@ -43,7 +43,7 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' }
         }
         if (-not (Test-Path -LiteralPath 'frontend/dist/index.html')) { throw 'Build is missing; remove -SkipBuild' }
-        Write-Host "Starting CellLens: http://127.0.0.1:$ApiPort/workbench"
+        Write-Host "Starting CellLens: http://127.0.0.1:$ApiPort/measured"
     } else {
         $env:CELLLENS_API_PROXY_TARGET = "http://127.0.0.1:$ApiPort"
         $vitePath = Join-Path $repositoryPath 'frontend/node_modules/vite/bin/vite.js'
@@ -51,7 +51,7 @@ try {
         $frontendArguments = @(('"{0}"' -f $vitePath), '--host', $HostAddress, '--port', $FrontendPort, '--strictPort')
         Assert-StartupPortAvailable -Address $HostAddress -Port $FrontendPort -Service 'Frontend'
         $frontendProcess = Start-Process -FilePath $nodePath -ArgumentList $frontendArguments -WorkingDirectory (Join-Path $repositoryPath 'frontend') -WindowStyle Hidden -PassThru
-        Write-Host "CellLens development: http://127.0.0.1:$FrontendPort/workbench"
+        Write-Host "CellLens development: http://127.0.0.1:$FrontendPort/measured"
     }
     Assert-StartupPortAvailable -Address $HostAddress -Port $ApiPort -Service 'API'
     Assert-NoWorkerOverride

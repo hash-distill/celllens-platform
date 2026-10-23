@@ -1,0 +1,466 @@
+{
+  "id": "measured_678b672019124ac8a8662cbe",
+  "cell_line": "K562",
+  "perturbation": "AAAS",
+  "max_cells": 32,
+  "seed": 42,
+  "status": "completed",
+  "progress": 100,
+  "message": "实测数据分析完成",
+  "error_message": null,
+  "created_at": "2026-10-22T09:28:10",
+  "updated_at": "2026-10-22T09:30:35",
+  "source_kind": "measured",
+  "summary": {
+    "analysis_id": "measured_678b672019124ac8a8662cbe",
+    "analysis_version": "measured-expression-v2",
+    "source_kind": "measured",
+    "cell_line": "K562",
+    "perturbation": "AAAS",
+    "input_counts": {
+      "control": 3000,
+      "observed": 32
+    },
+    "counts": {
+      "control": 1360,
+      "observed": 32
+    },
+    "source_cell_count": 202,
+    "gene_count": 6546,
+    "expression_units": "mean(log1p(CP10K))",
+    "top_genes": [
+      {
+        "gene": "HIST1H4C",
+        "control": 1.8054107939,
+        "observed": 2.2311574779,
+        "observed_delta": 0.425746684
+      },
+      {
+        "gene": "RPF2",
+        "control": 0.5114627671,
+        "observed": 0.2298133047,
+        "observed_delta": -0.2816494624
+      },
+      {
+        "gene": "DYNC1LI1",
+        "control": 1.115548474,
+        "observed": 0.835790053,
+        "observed_delta": -0.279758421
+      },
+      {
+        "gene": "DAXX",
+        "control": 0.6207384851,
+        "observed": 0.3415069571,
+        "observed_delta": -0.279231528
+      },
+      {
+        "gene": "CD46",
+        "control": 0.5426384751,
+        "observed": 0.8186875563,
+        "observed_delta": 0.2760490812
+      },
+      {
+        "gene": "RAB11FIP1",
+        "control": 0.7872523382,
+        "observed": 0.5167707512,
+        "observed_delta": -0.270481587
+      },
+      {
+        "gene": "GSTK1",
+        "control": 0.4914774561,
+        "observed": 0.2425573366,
+        "observed_delta": -0.2489201195
+      },
+      {
+        "gene": "MLF2",
+        "control": 0.6160162984,
+        "observed": 0.8524339311,
+        "observed_delta": 0.2364176327
+      },
+      {
+        "gene": "PWP1",
+        "control": 0.5692280528,
+        "observed": 0.8053788673,
+        "observed_delta": 0.2361508145
+      },
+      {
+        "gene": "DHX9",
+        "control": 1.2226602587,
+        "observed": 1.4578394685,
+        "observed_delta": 0.2351792098
+      },
+      {
+        "gene": "EIF3F",
+        "control": 0.8770413184,
+        "observed": 1.1105919722,
+        "observed_delta": 0.2335506538
+      },
+      {
+        "gene": "GGH",
+        "control": 0.2573610731,
+        "observed": 0.4887093622,
+        "observed_delta": 0.2313482892
+      },
+      {
+        "gene": "NUP62",
+        "control": 0.5169270944,
+        "observed": 0.7475594189,
+        "observed_delta": 0.2306323245
+      },
+      {
+        "gene": "VPS29",
+        "control": 0.8315247123,
+        "observed": 1.0612793677,
+        "observed_delta": 0.2297546554
+      },
+      {
+        "gene": "CAB39",
+        "control": 0.6098966042,
+        "observed": 0.8391447375,
+        "observed_delta": 0.2292481332
+      },
+      {
+        "gene": "ELP6",
+        "control": 0.543601943,
+        "observed": 0.7720417846,
+        "observed_delta": 0.2284398416
+      },
+      {
+        "gene": "ATP5MPL",
+        "control": 1.2488057088,
+        "observed": 1.4769434398,
+        "observed_delta": 0.228137731
+      },
+      {
+        "gene": "NCOR1",
+        "control": 0.5165566684,
+        "observed": 0.7437381968,
+        "observed_delta": 0.2271815284
+      },
+      {
+        "gene": "ZNF326",
+        "control": 0.7574135174,
+        "observed": 0.5312391855,
+        "observed_delta": -0.2261743319
+      },
+      {
+        "gene": "TUBA1C",
+        "control": 1.5699360354,
+        "observed": 1.7942695506,
+        "observed_delta": 0.2243335152
+      }
+    ],
+    "metabolism": {
+      "available": true,
+      "database_version": "scCellFie-0.6.2-human-Recon2",
+      "task_count": 186,
+      "reaction_count": 536,
+      "top_tasks": [
+        {
+          "task": "AMP salvage from adenine",
+          "control": 4.2320643881,
+          "observed": 3.661150276,
+          "observed_delta": -0.5709141121,
+          "gene_fraction": 1.0,
+          "missing_genes": "",
+          "label": "AMP salvage from adenine"
+        },
+        {
+          "task": "Mevalonate synthesis",
+          "control": 1.1746850697,
+          "observed": 1.5613345751,
+          "observed_delta": 0.3866495053,
+          "gene_fraction": 1.0,
+          "missing_genes": "",
+          "label": "Mevalonate synthesis"
+        },
+        {
+          "task": "Glycogen degradation",
+          "control": 0.8756286101,
+          "observed": 1.2069403579,
+          "observed_delta": 0.3313117478,
+          "gene_fraction": 0.25,
+          "missing_genes": "PYGB;PYGL;PYGM",
+          "label": "Glycogen degradation"
+        },
+        {
+          "task": "Synthesis of creatine from arginine",
+          "control": 2.4933580147,
+          "observed": 2.1852933473,
+          "observed_delta": -0.3080646674,
+          "gene_fraction": 0.5,
+          "missing_genes": "GATM",
+          "label": "Synthesis of creatine from arginine"
+        },
+        {
+          "task": "Fructose degradation (to glucose-3-phosphate)",
+          "control": 5.0091877946,
+          "observed": 5.2732124789,
+          "observed_delta": 0.2640246842,
+          "gene_fraction": 1.0,
+          "missing_genes": "",
+          "label": "Fructose degradation (to glucose-3-phosphate)"
+        },
+        {
+          "task": "Degradation of adenine to urate",
+          "control": 2.467820927,
+          "observed": 2.2515981269,
+          "observed_delta": -0.2162228,
+          "gene_fraction": 0.6666666667,
+          "missing_genes": "XDH",
+          "label": "Degradation of adenine to urate"
+        },
+        {
+          "task": "Conversion of glycine to pyruvate",
+          "control": 0.3570921691,
+          "observed": 0.1500613193,
+          "observed_delta": -0.2070308498,
+          "gene_fraction": 1.0,
+          "missing_genes": "",
+          "label": "Conversion of glycine to pyruvate"
+        },
+        {
+          "task": "Oxidative phosphorylation via succinate-coenzyme Q oxidoreductase (COMPLEX II)",
+          "control": 0.3786434273,
+          "observed": 0.1848001368,
+          "observed_delta": -0.1938432905,
+          "gene_fraction": 1.0,
+          "missing_genes": "",
+          "label": "Oxidative phosphorylation via succinate-coenzyme Q oxidoreductase (COMPLEX II)"
+        },
+        {
+          "task": "Phosphatidyl-inositol to glucosaminyl-acylphosphatidylinositol",
+          "control": 0.3374454435,
+          "observed": 0.5227049142,
+          "observed_delta": 0.1852594707,
+          "gene_fraction": 0.875,
+          "missing_genes": "PIGA",
+          "label": "Phosphatidyl-inositol to glucosaminyl-acylphosphatidylinositol"
+        },
+        {
+          "task": "Synthesis of kynate from tryptophan",
+          "control": 0.4856257797,
+          "observed": 0.305443322,
+          "observed_delta": -0.1801824577,
+          "gene_fraction": 0.2,
+          "missing_genes": "IDO1;IDO2;KYAT1;TDO2",
+          "label": "Synthesis of kynate from tryptophan"
+        },
+        {
+          "task": "Synthesis of L-kynurenine from tryptophan",
+          "control": 0.4856257797,
+          "observed": 0.305443322,
+          "observed_delta": -0.1801824577,
+          "gene_fraction": 0.25,
+          "missing_genes": "IDO1;IDO2;TDO2",
+          "label": "Synthesis of L-kynurenine from tryptophan"
+        },
+        {
+          "task": "Synthesis of quinolinate from tryptophan",
+          "control": 0.4856257797,
+          "observed": 0.305443322,
+          "observed_delta": -0.1801824577,
+          "gene_fraction": 0.1428571429,
+          "missing_genes": "HAAO;IDO1;IDO2;KMO;KYNU;TDO2",
+          "label": "Synthesis of quinolinate from tryptophan"
+        },
+        {
+          "task": "Conversion of glutamate to glutamine",
+          "control": 0.9710929283,
+          "observed": 0.802954577,
+          "observed_delta": -0.1681383512,
+          "gene_fraction": 0.5,
+          "missing_genes": "LGSN",
+          "label": "Conversion of glutamate to glutamine"
+        },
+        {
+          "task": "Inosine monophosphate synthesis (IMP)",
+          "control": 1.4568708153,
+          "observed": 1.2976461664,
+          "observed_delta": -0.1592246489,
+          "gene_fraction": 0.6666666667,
+          "missing_genes": "GCK;HK1;HK2;HK3;HKDC1;PRPS1L1",
+          "label": "Inosine monophosphate synthesis (IMP)"
+        },
+        {
+          "task": "Homocysteine synthesis (need methionine)",
+          "control": 1.2647355428,
+          "observed": 1.1063139009,
+          "observed_delta": -0.1584216419,
+          "gene_fraction": 0.7142857143,
+          "missing_genes": "GNMT;MAT1A",
+          "label": "Homocysteine synthesis (need methionine)"
+        },
+        {
+          "task": "Cysteine synthesis (need serine and methionine)",
+          "control": 1.2647355428,
+          "observed": 1.1063139009,
+          "observed_delta": -0.1584216419,
+          "gene_fraction": 0.5555555556,
+          "missing_genes": "CBS;CTH;GNMT;MAT1A",
+          "label": "Cysteine synthesis (need serine and methionine)"
+        },
+        {
+          "task": "NAD synthesis from nicotinamide",
+          "control": 5.0861271163,
+          "observed": 5.2439841527,
+          "observed_delta": 0.1578570364,
+          "gene_fraction": 0.3333333333,
+          "missing_genes": "NMNAT2;NMNAT3",
+          "label": "NAD synthesis from nicotinamide"
+        },
+        {
+          "task": "Conversion of aspartate to arginine",
+          "control": 0.7087892718,
+          "observed": 0.8585336694,
+          "observed_delta": 0.1497443976,
+          "gene_fraction": 0.5,
+          "missing_genes": "ASS1",
+          "label": "Conversion of aspartate to arginine"
+        },
+        {
+          "task": "UDP-galactose synthesis",
+          "control": 0.8516718803,
+          "observed": 0.9979984384,
+          "observed_delta": 0.146326558,
+          "gene_fraction": 0.6666666667,
+          "missing_genes": "GALT",
+          "label": "UDP-galactose synthesis"
+        },
+        {
+          "task": "Synthesis of alanine from glutamine",
+          "control": 0.9693513079,
+          "observed": 0.825862215,
+          "observed_delta": -0.1434890928,
+          "gene_fraction": 1.0,
+          "missing_genes": "",
+          "label": "Synthesis of alanine from glutamine"
+        }
+      ],
+      "units": "expression-derived scCellFie task/reaction support score",
+      "coverage": {
+        "available_metabolic_genes": 526,
+        "database_metabolic_genes": 931,
+        "full_gene_panel": 6546
+      },
+      "database_provenance": {
+        "manifest_sha256": "8abad7a25ffe134b99c4f6c79cb4c0c2ab02de727eca83bb59fca41e11a60c61",
+        "files": {
+          "Rxn-Info-Recon2-2.json": "3930736d67ff6beda56d5173c3e4b7ebeb768eb92c4aa7e872d1823d5cf136c1",
+          "Task-Info.csv": "1d5b148f8a1b440d6d7556bed346ea6e818e78b00a495c0d304996cb5a4222d3",
+          "Task_by_Rxn.csv": "5abd0aff87d02b29a0725c8f828deb62d2a03f536fc92c083c6c26d46c4a3447",
+          "Task_by_Gene.csv": "e19001535af75e99ed2e55965d5d5845bae0e6638188142a44dc99045d467c94",
+          "Rxn_by_Gene.csv": "5d800dc02c0741b15c7a4ffaa7ee82c722dfc1ebbace118641748f6c6fb0d7fc",
+          "Thresholds.csv": "10cf06e90df4f267426d34c7725a44dfe576e6cf9e739467a51b71500626eda0"
+        },
+        "source": "https://github.com/earmingol/scCellFie/tree/main/task_data/homo_sapiens",
+        "organism": "human"
+      }
+    },
+    "projections": {
+      "pca": {
+        "available": true,
+        "method": "control-reference-pca"
+      },
+      "umap": {
+        "available": true,
+        "method": "joint-umap"
+      }
+    },
+    "batch_matching": {
+      "status": "common_batches_only",
+      "batch_key": "gem_group",
+      "common_batches": [
+        "11",
+        "13",
+        "14",
+        "2",
+        "20",
+        "23",
+        "25",
+        "28",
+        "29",
+        "3",
+        "30",
+        "31",
+        "32",
+        "35",
+        "39",
+        "40",
+        "41",
+        "45",
+        "47",
+        "48",
+        "7"
+      ],
+      "input_cells": {
+        "control": 3000,
+        "observed": 32
+      },
+      "selected_cells": {
+        "control": 1360,
+        "observed": 32
+      },
+      "limitation": "保持共有批次原有频率，不重加权；细胞记录不等于独立生物学重复"
+    },
+    "warnings": [],
+    "provenance": {
+      "source": {
+        "kind": "measured_rna",
+        "repo": "arcinstitute/State-Replogle-Filtered",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "file": "replogle_concat.h5ad",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+      },
+      "source_cell_count": 202,
+      "source_catalog_sha256": "92ac71a83f0872c1d5023ff00efbb21175b87cb75b8651d646eb73ebd4ce4972",
+      "sampling": {
+        "max_observed_cells": 32,
+        "seed": 42,
+        "with_replacement": false
+      },
+      "groups": {
+        "control": {
+          "path": "data/raw/replogle-k562/control.h5ad",
+          "sha256": "38fba985d1ad907ab2d583e109795031dc67ec3cc7e2c3b4a70cd7aabc9e6678",
+          "expression_scale": "log1p_cp10k",
+          "origin": "registered_control",
+          "dataset_id": "replogle-k562-control-v1",
+          "source_revision_verified": false,
+          "note": "旧登记对照按路径和摘要核验；不补造文件中未记录的来源 revision"
+        },
+        "observed": {
+          "path": "data/derived/measured/measured_678b672019124ac8a8662cbe/inputs/observed.h5ad",
+          "sha256": "c4858aaee9935c8227ee291fe0f1513ee0dc760efe80cd0d08f3c4f2876e0761",
+          "expression_scale": "log1p_cp10k",
+          "origin": "fixed_source_range_extraction",
+          "source": {
+            "kind": "measured_rna",
+            "repo": "arcinstitute/State-Replogle-Filtered",
+            "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+            "file": "replogle_concat.h5ad",
+            "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5"
+          }
+        }
+      },
+      "analysis_assets": {
+        "data/registry/gene_identity/manifest.json": "d07cc44f3242c344caaa0ed80e6610649b59b971775420adcc4fc8bcf545f843",
+        "data/registry/gene_identity/human.json": "1a1104da220148474d08e69cd52a4910e0fe5a3a565c87519fa21270689bc807",
+        "data/registry/sccellfie/human/manifest.json": "8abad7a25ffe134b99c4f6c79cb4c0c2ab02de727eca83bb59fca41e11a60c61",
+        "data/registry/sccellfie/human/Rxn-Info-Recon2-2.json": "3930736d67ff6beda56d5173c3e4b7ebeb768eb92c4aa7e872d1823d5cf136c1",
+        "data/registry/sccellfie/human/Task-Info.csv": "1d5b148f8a1b440d6d7556bed346ea6e818e78b00a495c0d304996cb5a4222d3",
+        "data/registry/sccellfie/human/Task_by_Rxn.csv": "5abd0aff87d02b29a0725c8f828deb62d2a03f536fc92c083c6c26d46c4a3447",
+        "data/registry/sccellfie/human/Task_by_Gene.csv": "e19001535af75e99ed2e55965d5d5845bae0e6638188142a44dc99045d467c94",
+        "data/registry/sccellfie/human/Rxn_by_Gene.csv": "5d800dc02c0741b15c7a4ffaa7ee82c722dfc1ebbace118641748f6c6fb0d7fc",
+        "data/registry/sccellfie/human/Thresholds.csv": "10cf06e90df4f267426d34c7725a44dfe576e6cf9e739467a51b71500626eda0"
+      }
+    },
+    "limitations": [
+      "本次仅分析真实对照与目标扰动实测，未执行 STATE 预测。",
+      "表达和任务变化为未配对群体的描述性比较；细胞记录不等于独立生物学重复。",
+      "scCellFie 分数来自表达推断，不是实测代谢通量。",
+      "PCA/UMAP 坐标表示特征分布，不是细胞形态、物理位置或逐细胞迁移轨迹。",
+      "实测数据的存在与本次分析完成不证明预测模型的泛化能力。"
+    ]
+  }
+}

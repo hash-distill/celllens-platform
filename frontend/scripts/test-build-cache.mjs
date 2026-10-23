@@ -37,3 +37,24 @@ test('reuse only a complete build of identical inputs, environment and outputs',
     rmSync(root, { recursive: true, force: true })
   }
 })
+
+test('shared biology display translations invalidate the frontend build', () => {
+  const workspace = mkdtempSync(join(tmpdir(), 'celllens-build-localization-'))
+  try {
+    const root = join(workspace, 'frontend')
+    const resources = join(workspace, 'backend', 'app', 'resources')
+    mkdirSync(join(root, 'dist'), { recursive: true })
+    mkdirSync(resources, { recursive: true })
+    writeFileSync(join(root, 'index.html'), '<main></main>')
+    writeFileSync(join(root, 'dist', 'index.html'), '<main>compiled</main>')
+    const dictionary = join(resources, 'biology_zh.json')
+    writeFileSync(dictionary, JSON.stringify({ task_names: { original: '旧译名' } }))
+    saveBuildState(root, sourceFingerprint(root, {}), {})
+    assert.equal(isBuildCurrent(root, {}), true)
+    writeFileSync(dictionary, JSON.stringify({ task_names: { original: '新译名' } }))
+    assert.equal(isBuildCurrent(root, {}), false)
+  } finally {
+    assert.ok(workspace.startsWith(join(tmpdir(), 'celllens-build-localization-')))
+    rmSync(workspace, { recursive: true, force: true })
+  }
+})

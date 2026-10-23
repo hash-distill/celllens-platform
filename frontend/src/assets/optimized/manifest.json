@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "encoder": "Pillow 12.3.0",
+  "webp": {
+    "quality": 82,
+    "method": 6,
+    "preserve_dimensions": true
+  },
+  "icon": {
+    "max_dimensions": [
+      96,
+      96
+    ],
+    "resampling": "LANCZOS"
+  },
+  "files": [
+    {
+      "source": "frontend/src/assets/theme/back.png",
+      "source_sha256": "51ca7c1df8cc25f09fe30c87174a7c1341ac45a8e4102842fa7045faf357d277",
+      "output": "frontend/src/assets/optimized/back.webp",
+      "output_sha256": "54d37f3390ef682e5c2deda8e28da4ebf0ec9cde50fdb050c9f63be087a79fec",
+      "source_bytes": 612203,
+      "output_bytes": 22016,
+      "dimensions": [
+        897,
+        675
+      ]
+    },
+    {
+      "source": "frontend/src/assets/theme/image1.png",
+      "source_sha256": "0337e4a97518866a3a4a8b499dd649087bf72af538d7984325bdf4245f5f6651",
+      "output": "frontend/src/assets/optimized/image1.webp",
+      "output_sha256": "ea56b7fc6e37a9e10620fa42ba525e7f503243c87c3ff82cb28519d33b5a5644",
+      "source_bytes": 2443882,
+      "output_bytes": 104642,
+      "dimensions": [
+        1677,
+        1090
+      ]
+    },
+    {
+      "source": "frontend/src/assets/theme/image2.png",
+      "source_sha256": "20c597237a0f65fedafc9e0ba7767be8edae35727125572161c0be59c610f83b",
+      "output": "frontend/src/assets/optimized/image2.webp",
+      "output_sha256": "bde4ea7109127bf71c6dfc9d48d935212e926223ecfca3cb4a9b51a2ff9f2522",
+      "source_bytes": 1369411,
+      "output_bytes": 54182,
+      "dimensions": [
+        1462,
+        808
+      ]
+    },
+    {
+      "source": "frontend/src/assets/theme/image3.png",
+      "source_sha256": "b0d93c88d3188ea7bb7a4afaee9cc7943858177c16b13fed73f4188af6a416ac",
+      "output": "frontend/src/assets/optimized/image3.webp",
+      "output_sha256": "a8c200b153fa79f73f9936375b924590ff9518af498cffa37907359c5e3caabe",
+      "source_bytes": 1716070,
+      "output_bytes": 66918,
+      "dimensions": [
+        1477,
+        949
+      ]
+    },
+    {
+      "source": "frontend/src/assets/theme/image4.png",
+      "source_sha256": "45bc58ac01b64c48f0e45f12d74eab2b9c543bc2d4aa29b08c9c488828cdb607",
+      "output": "frontend/src/assets/optimized/image4.webp",
+      "output_sha256": "ef877edd947fa1ee9df4858c1cdceeb8b2e5bd14012ccf509ad4a7ec2170b2ef",
+      "source_bytes": 3020271,
+      "output_bytes": 157756,
+      "dimensions": [
+        2100,
+        1063
+      ]
+    },
+    {
+      "source": "frontend/public/favicon.png",
+      "source_sha256": "831bb329a6afa8e8d625b744665c329615c16c87334c9b7d53edd871064901ea",
+      "output": "frontend/src/assets/optimized/brand-icon.png",
+      "output_sha256": "70336bb6b7bc199a5ebdad06b4831c004339d9b020c1a8b3e17c2217c5032a1a",
+      "source_bytes": 497830,
+      "output_bytes": 7935,
+      "dimensions": [
+        96,
+        96
+      ]
+    }
+  ]
+}

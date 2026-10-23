@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from backend.app.api.runs import _artifact_path, get_completeness, get_provenance
 from backend.app.core.errors import CellLensError
 from backend.app.core.run_manifest import file_sha256
+from backend.app.services.catalog_snapshot import model_catalog_response
 from backend.app.services.coverage_catalog import cached_completeness, coverage_catalog
 from backend.app.services.gene_education import TASK_GUIDES, categories_for, classify_gene, load_annotations
 from backend.app.services.gene_identity import GeneIdentityAdapter
@@ -23,6 +24,23 @@ def get_coverage(
     cell_line: str | None = Query(default=None, max_length=128),
     run_id: str | None = Query(default=None, pattern=r"^run_[a-zA-Z0-9_-]{1,56}$"),
 ) -> JSONResponse:
+    if run_id is not None or set(request.query_params) - {"cell_line", "run_id"}:
+        return _build_coverage(request, cell_line, run_id)
+    container = request.app.state.container
+    if not (container.settings.sccellfie_database_root / 'manifest.json').is_file():
+        return _build_coverage(request, cell_line, run_id)
+    try:
+        return model_catalog_response(
+            container.settings.project_root, cell_line, container.registry.models,
+            lambda: _build_coverage(request, cell_line, run_id),
+        )
+    except (OSError, ValueError, TypeError, ImportError) as exc:
+        raise HTTPException(
+            503, detail={"code": "COVERAGE_UNAVAILABLE", "message": "覆盖来源发生变化或暂不可用，请重试"}
+        ) from exc
+
+
+def _build_coverage(request: Request, cell_line: str | None, run_id: str | None) -> JSONResponse:
     if set(request.query_params) - {"cell_line", "run_id"}:
         raise HTTPException(
             422, detail={"code": "INVALID_COVERAGE_SOURCE", "message": "不支持的覆盖来源参数"}
@@ -34,7 +52,15 @@ def get_coverage(
     container = request.app.state.container
     settings = container.settings
     models = [
-        {"id": row["id"], "cell_line": row["cell_line"]}
+        {
+            "id": row["id"],
+            "cell_line": row["cell_line"],
+            "panel_sha256": str(row["gene_list_sha256"]).lower()
+            if container.registry.asset_is_valid_cached(
+                container.registry.model_for(row["cell_line"]), "gene_list_path", "gene_list_sha256"
+            )
+            else None,
+        }
         for row in container.registry.models
         if row.get("enabled") and row.get("gene_list_path")
     ]

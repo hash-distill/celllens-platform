@@ -172,6 +172,26 @@
         }
       }
     },
+    "/api/v1/catalog/data-summary": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Data Summary",
+        "description": "Registry and verified obs metadata; never load weights or expression matrices.",
+        "operationId": "data_summary_api_v1_catalog_data_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/catalog/contexts": {
       "get": {
         "tags": [
@@ -221,6 +241,7 @@
             "schema": {
               "enum": [
                 "online",
+                "measured",
                 "precomputed",
                 "validation"
               ],
@@ -240,6 +261,638 @@
                   "additionalProperties": true,
                   "title": "Response Perturbations Api V1 Catalog Perturbations Get"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-catalog": {
+      "get": {
+        "tags": [
+          "data-catalog"
+        ],
+        "summary": "Catalog",
+        "operationId": "catalog_api_v1_data_catalog_get",
+        "parameters": [
+          {
+            "name": "cell_line",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cell Line"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "default": "",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "availability",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "measured",
+                "missing",
+                "unknown"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Availability"
+            }
+          },
+          {
+            "name": "model_supported",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Supported"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Catalog Api V1 Data Catalog Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-catalog/pair": {
+      "get": {
+        "tags": [
+          "data-catalog"
+        ],
+        "summary": "Pair",
+        "operationId": "pair_api_v1_data_catalog_pair_get",
+        "parameters": [
+          {
+            "name": "cell_line",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cell Line"
+            }
+          },
+          {
+            "name": "perturbation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Perturbation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Pair Api V1 Data Catalog Pair Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-catalog/download.csv": {
+      "get": {
+        "tags": [
+          "data-catalog"
+        ],
+        "summary": "Download",
+        "operationId": "download_api_v1_data_catalog_download_csv_get",
+        "parameters": [
+          {
+            "name": "cell_line",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cell Line"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "default": "",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "availability",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "measured",
+                "missing",
+                "unknown"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Availability"
+            }
+          },
+          {
+            "name": "model_supported",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Supported"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/measured/analyses": {
+      "get": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "List Analyses",
+        "operationId": "list_analyses_api_v1_measured_analyses_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_v1_measured_analyses_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasuredRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/measured/analyses/{identifier}": {
+      "get": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "Detail",
+        "operationId": "detail_api_v1_measured_analyses__identifier__get",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/measured/analyses/{identifier}/cancel": {
+      "post": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "Cancel",
+        "operationId": "cancel_api_v1_measured_analyses__identifier__cancel_post",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/measured/analyses/{identifier}/table": {
+      "get": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "Table",
+        "operationId": "table_api_v1_measured_analyses__identifier__table_get",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "genes",
+                "tasks",
+                "reactions"
+              ],
+              "type": "string",
+              "default": "genes",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "default": "",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/measured/analyses/{identifier}/projection": {
+      "get": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "Projection",
+        "operationId": "projection_api_v1_measured_analyses__identifier__projection_get",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          },
+          {
+            "name": "embedding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pca",
+                "umap"
+              ],
+              "type": "string",
+              "default": "pca",
+              "title": "Embedding"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/measured/analyses/{identifier}/download": {
+      "get": {
+        "tags": [
+          "measured"
+        ],
+        "summary": "Download",
+        "operationId": "download_api_v1_measured_analyses__identifier__download_get",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "bundle",
+                "genes",
+                "tasks",
+                "reactions",
+                "projection",
+                "report"
+              ],
+              "type": "string",
+              "default": "bundle",
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -1238,6 +1891,127 @@
         }
       }
     },
+    "/api/v1/resources": {
+      "get": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "List Resources",
+        "operationId": "list_resources_api_v1_resources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resources/{cell_line}/download": {
+      "post": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "Start Download",
+        "operationId": "start_download_api_v1_resources__cell_line__download_post",
+        "parameters": [
+          {
+            "name": "cell_line",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "K562",
+                "RPE1",
+                "Jurkat",
+                "HepG2"
+              ],
+              "type": "string",
+              "title": "Cell Line"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resources/{cell_line}/cancel": {
+      "post": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "Cancel Download",
+        "operationId": "cancel_download_api_v1_resources__cell_line__cancel_post",
+        "parameters": [
+          {
+            "name": "cell_line",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "K562",
+                "RPE1",
+                "Jurkat",
+                "HepG2"
+              ],
+              "type": "string",
+              "title": "Cell Line"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/runs/{run_id}/comparison": {
       "get": {
         "tags": [
@@ -1337,6 +2111,142 @@
         }
       }
     },
+    "/api/v1/runs/{run_id}/export/table": {
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Get Export Table",
+        "operationId": "get_export_table_api_v1_runs__run_id__export_table_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "table",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "genes",
+                "tasks",
+                "reactions"
+              ],
+              "type": "string",
+              "default": "genes",
+              "title": "Table"
+            }
+          },
+          {
+            "name": "population",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "original",
+                "comparison"
+              ],
+              "type": "string",
+              "default": "original",
+              "title": "Population"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/export": {
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Get Export Bundle",
+        "operationId": "get_export_bundle_api_v1_runs__run_id__export_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "package",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "analysis",
+                "single-cell",
+                "network",
+                "ranking"
+              ],
+              "type": "string",
+              "default": "analysis",
+              "title": "Package"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512,
+              "default": "",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assistant/capabilities": {
       "get": {
         "tags": [
@@ -1360,6 +2270,49 @@
         }
       }
     },
+    "/api/v1/assistant/models": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Discover Models",
+        "operationId": "discover_models_api_v1_assistant_models_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoveryConnection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Discover Models Api V1 Assistant Models Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assistant/context": {
       "get": {
         "tags": [
@@ -1373,7 +2326,10 @@
             "in": "query",
             "required": true,
             "schema": {
-              "const": "run",
+              "enum": [
+                "run",
+                "measured"
+              ],
               "type": "string",
               "title": "Source Kind"
             }
@@ -1384,8 +2340,78 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^run_[a-zA-Z0-9_-]{1,56}$",
+              "pattern": "^(run_[a-zA-Z0-9_-]{1,56}|measured_[a-f0-9]{24})$",
               "title": "Source Id"
+            }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "overview",
+                "chart",
+                "genes",
+                "metabolism",
+                "comparison"
+              ],
+              "type": "string",
+              "default": "overview",
+              "title": "View"
+            }
+          },
+          {
+            "name": "embedding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pca",
+                "umap"
+              ],
+              "type": "string",
+              "default": "pca",
+              "title": "Embedding"
+            }
+          },
+          {
+            "name": "space",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "expression",
+                "metabolic"
+              ],
+              "type": "string",
+              "default": "expression",
+              "title": "Space"
+            }
+          },
+          {
+            "name": "feature_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "gene",
+                "task"
+              ],
+              "type": "string",
+              "default": "gene",
+              "title": "Feature Kind"
+            }
+          },
+          {
+            "name": "feature_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "default": "",
+              "title": "Feature Id"
             }
           }
         ],
@@ -1736,26 +2762,32 @@
             "maxLength": 512,
             "title": "Base Url"
           },
+          "api_key": {
+            "type": "string",
+            "maxLength": 4096,
+            "format": "password",
+            "title": "Api Key",
+            "default": "",
+            "writeOnly": true
+          },
           "model": {
             "type": "string",
             "maxLength": 128,
             "minLength": 1,
             "title": "Model"
           },
-          "api_key": {
-            "type": "string",
-            "maxLength": 4096,
-            "minLength": 1,
-            "format": "password",
-            "title": "Api Key",
-            "writeOnly": true
-          },
           "max_tokens": {
-            "type": "integer",
-            "maximum": 8192.0,
-            "minimum": 256.0,
-            "title": "Max Tokens",
-            "default": 2048
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2000000.0,
+                "minimum": 256.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
           },
           "token_parameter": {
             "type": "string",
@@ -1765,14 +2797,59 @@
             ],
             "title": "Token Parameter",
             "default": "max_completion_tokens"
+          },
+          "reasoning_effort": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "none",
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ],
+            "title": "Reasoning Effort",
+            "default": "auto"
+          },
+          "thinking_mode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "enabled",
+              "adaptive",
+              "disabled"
+            ],
+            "title": "Thinking Mode",
+            "default": "auto"
+          },
+          "thinking_budget": {
+            "type": "integer",
+            "maximum": 7168.0,
+            "minimum": 1024.0,
+            "title": "Thinking Budget",
+            "default": 1024
+          },
+          "context_window": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2000000.0,
+                "minimum": 4096.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "base_url",
-          "model",
-          "api_key"
+          "model"
         ],
         "title": "Connection"
       },
@@ -2004,6 +3081,56 @@
         ],
         "title": "DatabaseProvenance"
       },
+      "DiscoveryConnection": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "deepseek",
+              "siliconflow",
+              "gemini",
+              "anthropic",
+              "custom"
+            ],
+            "title": "Provider",
+            "default": "custom"
+          },
+          "base_url": {
+            "type": "string",
+            "maxLength": 512,
+            "title": "Base Url"
+          },
+          "api_key": {
+            "type": "string",
+            "maxLength": 4096,
+            "format": "password",
+            "title": "Api Key",
+            "default": "",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_url"
+        ],
+        "title": "DiscoveryConnection"
+      },
+      "DownloadRequest": {
+        "properties": {
+          "accepted_license": {
+            "type": "boolean",
+            "title": "Accepted License"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accepted_license"
+        ],
+        "title": "DownloadRequest"
+      },
       "EvidenceItem": {
         "properties": {
           "id": {
@@ -2122,6 +3249,51 @@
       },
       "InterpretationRequest": {
         "properties": {
+          "view": {
+            "type": "string",
+            "enum": [
+              "overview",
+              "chart",
+              "genes",
+              "metabolism",
+              "comparison"
+            ],
+            "title": "View",
+            "default": "overview"
+          },
+          "embedding": {
+            "type": "string",
+            "enum": [
+              "pca",
+              "umap"
+            ],
+            "title": "Embedding",
+            "default": "pca"
+          },
+          "space": {
+            "type": "string",
+            "enum": [
+              "expression",
+              "metabolic"
+            ],
+            "title": "Space",
+            "default": "expression"
+          },
+          "feature_kind": {
+            "type": "string",
+            "enum": [
+              "gene",
+              "task"
+            ],
+            "title": "Feature Kind",
+            "default": "gene"
+          },
+          "feature_id": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Feature Id",
+            "default": ""
+          },
           "provider": {
             "type": "string",
             "enum": [
@@ -2140,26 +3312,32 @@
             "maxLength": 512,
             "title": "Base Url"
           },
+          "api_key": {
+            "type": "string",
+            "maxLength": 4096,
+            "format": "password",
+            "title": "Api Key",
+            "default": "",
+            "writeOnly": true
+          },
           "model": {
             "type": "string",
             "maxLength": 128,
             "minLength": 1,
             "title": "Model"
           },
-          "api_key": {
-            "type": "string",
-            "maxLength": 4096,
-            "minLength": 1,
-            "format": "password",
-            "title": "Api Key",
-            "writeOnly": true
-          },
           "max_tokens": {
-            "type": "integer",
-            "maximum": 8192.0,
-            "minimum": 256.0,
-            "title": "Max Tokens",
-            "default": 2048
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2000000.0,
+                "minimum": 256.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
           },
           "token_parameter": {
             "type": "string",
@@ -2170,14 +3348,63 @@
             "title": "Token Parameter",
             "default": "max_completion_tokens"
           },
+          "reasoning_effort": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "none",
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ],
+            "title": "Reasoning Effort",
+            "default": "auto"
+          },
+          "thinking_mode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "enabled",
+              "adaptive",
+              "disabled"
+            ],
+            "title": "Thinking Mode",
+            "default": "auto"
+          },
+          "thinking_budget": {
+            "type": "integer",
+            "maximum": 7168.0,
+            "minimum": 1024.0,
+            "title": "Thinking Budget",
+            "default": 1024
+          },
+          "context_window": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2000000.0,
+                "minimum": 4096.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
+          },
           "source_kind": {
             "type": "string",
-            "const": "run",
+            "enum": [
+              "run",
+              "measured"
+            ],
             "title": "Source Kind"
           },
           "source_id": {
             "type": "string",
-            "pattern": "^run_[a-zA-Z0-9_-]{1,56}$",
+            "pattern": "^(run_[a-zA-Z0-9_-]{1,56}|measured_[a-f0-9]{24})$",
             "title": "Source Id"
           },
           "context_sha256": {
@@ -2190,10 +3417,20 @@
             "enum": [
               "interpret",
               "coverage",
-              "next_steps"
+              "next_steps",
+              "figure",
+              "genes",
+              "metabolism",
+              "comparison"
             ],
             "title": "Purpose",
             "default": "interpret"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 1200,
+            "title": "Question",
+            "default": ""
           }
         },
         "additionalProperties": false,
@@ -2201,12 +3438,52 @@
         "required": [
           "base_url",
           "model",
-          "api_key",
           "source_kind",
           "source_id",
           "context_sha256"
         ],
         "title": "InterpretationRequest"
+      },
+      "MeasuredRequest": {
+        "properties": {
+          "cell_line": {
+            "type": "string",
+            "enum": [
+              "K562",
+              "RPE1",
+              "Jurkat",
+              "HepG2"
+            ],
+            "title": "Cell Line"
+          },
+          "perturbation": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Perturbation"
+          },
+          "max_cells": {
+            "type": "integer",
+            "maximum": 4096.0,
+            "minimum": 1.0,
+            "title": "Max Cells",
+            "default": 256
+          },
+          "seed": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "default": 42
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cell_line",
+          "perturbation"
+        ],
+        "title": "MeasuredRequest"
       },
       "RunListResponse": {
         "properties": {

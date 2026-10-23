@@ -184,7 +184,7 @@ export async function apiFetchRaw(path: string, opts: RequestOptions = {}): Prom
       kind: 'network',
       status: null,
       code: null,
-      message: '无法连接后端服务（网络错误或跨域被拦截）',
+      message: '暂时无法连接服务，请检查网络后重试。',
       endpoint,
     })
   } finally {

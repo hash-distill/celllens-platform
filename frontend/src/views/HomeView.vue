@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useCatalogStore } from '../stores/catalog'
 import UiIcon from '../components/UiIcon.vue'
-import image1 from '../assets/theme/image1.png'
-import image2 from '../assets/theme/image2.png'
-import image3 from '../assets/theme/image3.png'
-import image4 from '../assets/theme/image4.png'
-
-const catalog = useCatalogStore()
-
-const onlineContexts = computed(() =>
-  catalog.contexts.filter(ctx => ctx.online_ready).map(ctx => ctx.cell_line),
-)
+import image1 from '../assets/optimized/image1.webp'
+import image2 from '../assets/optimized/image2.webp'
+import image3 from '../assets/optimized/image3.webp'
+import image4 from '../assets/optimized/image4.webp'
 
 function storyImageStyle(url: string): { backgroundImage: string } {
   return {
@@ -27,22 +20,22 @@ function browseImageStyle(url: string): { backgroundImage: string } {
 
 const storySections = [
   {
-    key: 'predict',
-    eyebrow: 'PERTURBATION FORECAST',
-    title: '从一次基因扰动开始，把变化先看见',
+    key: 'measured',
+    eyebrow: 'MEASURED PERTURBATION',
+    title: '先查看真实扰动，再决定下一步实验',
     body:
-      '选择细胞背景与目标基因后，CellLens 会把在线预测流程组织成一条清晰的实验路径；已有结果可以从实验记录继续阅读。',
-    metrics: ['背景可用性以服务目录为准', '64–4,096 个预测细胞', '在线推演 · 历史结果查询'],
+      '先在数据目录核对当前固定源的实测覆盖，再直接比较实测对照与目标扰动。需要探索或评估模型时，可明确选择模型预测，预测与实测结果分别保留。',
+    metrics: ['固定源覆盖可查询', '实测分析无需 GPU', '实测与预测分别追溯'],
     accent: 'teal',
     image: image3,
   },
   {
     key: 'state',
     eyebrow: 'CELL STATE',
-    title: '不只给结果，也把细胞状态的空间关系展开',
+    title: '比较扰动前后细胞表达状态的分布变化',
     body:
-      '在共同对照坐标下比较对照、预测与可用观测，结合基因或代谢任务着色，把群体迁移、分布偏移和不同区域的变化放到同一视图里阅读。',
-    metrics: ['共同坐标', '逐细胞散点', '表达与任务着色'],
+      '实测分析通过 PCA／UMAP 比较对照与扰动群体；模型结果可另行查看预测与可用实测的分布。图中位置表示表达特征，不表示细胞形态或物理位置。',
+    metrics: ['共同特征坐标', '逐细胞表达分布', '基因与任务着色'],
     accent: 'sand',
     image: image2,
   },
@@ -61,8 +54,8 @@ const storySections = [
     eyebrow: 'TRACEABILITY',
     title: '关键结果可以回看来源、覆盖范围与导出记录',
     body:
-      '参数、版本、文件哈希、完整性信息和导出能力被放在同一条证据链里，让展示页面不只是好看，也能真正支撑研究讨论与复核。',
-    metrics: ['来源记录', '完整性信息', 'CSV / JSON / SVG / PDF / PNG 导出'],
+      '每次分析保留参数、数据版本、文件哈希与覆盖信息，可导出结果，支持研究讨论与复核。',
+    metrics: ['来源与采样记录', '基因覆盖与解释边界', '完整数据表与分析报告'],
     accent: 'plum',
     image: image1,
   },
@@ -70,56 +63,63 @@ const storySections = [
 
 const entries = [
   {
-    to: '/workbench',
+    to: '/research?type=measured',
     icon: 'chart',
     number: '01',
-    title: '实验工作台',
-    text: '从细胞背景与扰动条件开始，提交分析并阅读单细胞状态、表达变化与代谢功能。',
-    action: '进入工作台',
+    title: '实测分析',
+    text: '比较真实对照与扰动细胞的表达均值、差值和可用代谢任务评分，下载完整分析结果。',
+    action: '开始实测分析',
     image: image3,
   },
   {
-    to: '/records',
+    to: '/data-catalog',
     icon: 'file',
     number: '02',
-    title: '实验记录',
-    text: '检索已运行实验，继续查看历史结果与来源，保持研究过程的连续性。',
-    action: '浏览记录',
+    title: '数据目录',
+    text: '按背景与基因查询固定源实测覆盖、本地可用数据和模型支持范围，选择分析路径。',
+    action: '查询实测覆盖',
     image: image1,
   },
   {
-    to: '/compare',
+    to: '/research?type=prediction',
     icon: 'compare',
     number: '03',
-    title: '实验比较',
-    text: '把多个实验并排放在同一视图里，核对变化方向、强度与证据覆盖范围。',
-    action: '开始比较',
+    title: '模型预测',
+    text: '明确选择 STATE 模型预测，在需要时对照可用实测进行评估；结果完成不代表已验证泛化。',
+    action: '进入模型预测',
     image: image2,
   },
   {
-    to: '/demo',
+    to: '/records',
     icon: 'play',
     number: '04',
-    title: '结果解读',
-    text: '沿着章节结构阅读一次完整实验，从问题提出到证据回看，逐段理解结果。',
-    action: '查看解读',
+    title: '实验记录',
+    text: '集中查看实测分析与模型预测记录，核对来源，继续比较与解读。',
+    action: '浏览实验记录',
     image: image4,
   },
 ] as const
 
-const revealNodes = ref<HTMLElement[]>([])
+// DOM handles do not participate in rendering; keep them outside deep reactivity.
+const revealNodes: HTMLElement[] = []
 const browseSection = ref<HTMLElement | null>(null)
+const heroSection = ref<HTMLElement | null>(null)
 const visibleKeys = ref<string[]>([])
 const isAtPageBottom = ref(false)
+const heroInView = ref(false)
+const pageVisible = ref(!document.hidden)
+const heroAnimating = computed(() => heroInView.value && pageVisible.value)
 let observer: IntersectionObserver | null = null
+let heroObserver: IntersectionObserver | null = null
+let scrollFrame = 0
 
 function setRevealNode(element: Element | { $el?: Element } | null, index: number): void {
   if (element && '$el' in element && element.$el instanceof HTMLElement) {
-    revealNodes.value[index] = element.$el
+    revealNodes[index] = element.$el
     return
   }
   if (!(element instanceof HTMLElement)) return
-  revealNodes.value[index] = element
+  revealNodes[index] = element
 }
 
 function isVisible(key: string): boolean {
@@ -132,6 +132,18 @@ function updateScrollState(): void {
   const viewportHeight = window.innerHeight
   const pageHeight = document.documentElement.scrollHeight
   isAtPageBottom.value = scrollTop + viewportHeight >= pageHeight - 24
+}
+
+function scheduleScrollState(): void {
+  if (scrollFrame) return
+  scrollFrame = window.requestAnimationFrame(() => {
+    scrollFrame = 0
+    updateScrollState()
+  })
+}
+
+function updateVisibility(): void {
+  pageVisible.value = !document.hidden
 }
 
 function jumpPageEdge(): void {
@@ -150,29 +162,39 @@ onMounted(() => {
         const key = entry.target.getAttribute('data-key')
         if (!key || visibleKeys.value.includes(key)) continue
         visibleKeys.value = [...visibleKeys.value, key]
+        observer?.unobserve(entry.target)
       }
     },
     { threshold: 0.24, rootMargin: '0px 0px -8% 0px' },
   )
 
-  for (const node of revealNodes.value) observer.observe(node)
+  for (const node of revealNodes) observer.observe(node)
   if (browseSection.value) observer.observe(browseSection.value)
+  heroObserver = new IntersectionObserver(entries => {
+    heroInView.value = entries.some(entry => entry.isIntersecting)
+  })
+  if (heroSection.value) heroObserver.observe(heroSection.value)
+  updateVisibility()
   updateScrollState()
-  window.addEventListener('scroll', updateScrollState, { passive: true })
-  window.addEventListener('resize', updateScrollState)
+  window.addEventListener('scroll', scheduleScrollState, { passive: true })
+  window.addEventListener('resize', scheduleScrollState)
+  document.addEventListener('visibilitychange', updateVisibility)
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
-  window.removeEventListener('scroll', updateScrollState)
-  window.removeEventListener('resize', updateScrollState)
+  heroObserver?.disconnect()
+  window.cancelAnimationFrame(scrollFrame)
+  window.removeEventListener('scroll', scheduleScrollState)
+  window.removeEventListener('resize', scheduleScrollState)
+  document.removeEventListener('visibilitychange', updateVisibility)
 })
 </script>
 
 <template>
   <div class="home-shell">
     <div class="home-fixed-backdrop" aria-hidden="true"></div>
-    <section class="home-hero">
+    <section ref="heroSection" class="home-hero" :class="{ 'hero-animating': heroAnimating }">
       <div class="hero-backdrop" aria-hidden="true">
         <span class="orb orb-a"></span>
         <span class="orb orb-b"></span>
@@ -183,30 +205,30 @@ onBeforeUnmount(() => {
       <div class="hero-copy">
         <span class="hero-kicker">CELLLENS / SINGLE-CELL PERTURBATION</span>
         <h1>
-          从扰动输入开始，
-          <br />
-          读懂细胞状态与功能变化
+          <span>从真实扰动数据开始，</span>
+          <span>读懂表达与代谢状态变化</span>
         </h1>
         <p class="hero-lead">
-          CellLens 将单细胞状态预测、基因响应分析、代谢功能解读与结果溯源整合在同一条阅读路径里，帮助你从一个扰动条件出发，逐步看到细胞如何变化、哪些功能受到影响，以及这些结果来自哪里。
+          CellLens 优先分析公开实测扰动数据，比较表达变化与表达推断的代谢评分。先核对数据覆盖，再按研究问题选择实测分析或模型预测，并追溯每份结果的来源。
         </p>
 
         <div class="hero-actions">
-          <RouterLink to="/workbench" class="btn btn-primary hero-button">
-            开始浏览
+          <RouterLink to="/research?type=measured" class="btn btn-primary hero-button">
+            开始实测分析
             <UiIcon name="arrow" :size="16" />
           </RouterLink>
-          <RouterLink to="/about" class="btn hero-button hero-button-secondary">了解方法与数据</RouterLink>
+          <RouterLink to="/data-catalog" class="btn hero-button hero-button-secondary">查询数据目录</RouterLink>
+          <RouterLink to="/research?type=prediction" class="hero-predict-link">模型预测 →</RouterLink>
         </div>
 
         <dl class="hero-metrics" aria-label="首页摘要信息">
           <div>
-            <dt>AVAILABLE CONTEXTS</dt>
-            <dd>{{ catalog.loading ? '—' : onlineContexts.length }}</dd>
+            <dt>CELL CONTEXTS</dt>
+            <dd>04</dd>
           </div>
           <div>
-            <dt>WORKFLOW LAYERS</dt>
-            <dd>04</dd>
+            <dt>ANALYSIS FIRST</dt>
+            <dd>MEASURED</dd>
           </div>
           <div>
             <dt>OUTPUT TRAIL</dt>
@@ -218,8 +240,8 @@ onBeforeUnmount(() => {
       <div class="hero-stage" aria-label="首页概念画面">
         <div class="stage-card stage-card-main">
           <span class="stage-label">RESEARCH FLOW</span>
-          <h2>预测、解释、追溯</h2>
-          <p>从实验设置、状态分布到功能解释，把一次分析串成连续可读的结果页面。</p>
+          <h2>实测、解释、追溯</h2>
+          <p>从真实数据覆盖、表达差异到代谢功能线索，让一次分析的来源与边界清晰可查。</p>
           <div class="stage-bars">
             <span></span>
             <span></span>
@@ -250,7 +272,7 @@ onBeforeUnmount(() => {
         <h2>沿着一次实验的路径，认识系统的核心能力</h2>
       </div>
       <p>
-        从实验输入、单细胞状态到代谢功能与证据核对，下面几部分对应的是研究中最常被反复查看的几个层面。
+        从实验输入、表达状态分布到代谢任务与证据核对，下面几部分对应的是研究中最常被反复查看的几个层面。
       </p>
     </section>
 
@@ -293,7 +315,7 @@ onBeforeUnmount(() => {
       <div class="browse-header">
         <span class="section-kicker">START EXPLORING</span>
         <h2>选择你要进入的部分，继续查看实验与结果</h2>
-        <p>你可以直接进入实验工作台开始分析，也可以浏览历史记录、比较不同实验，或按章节阅读一次完整结果。</p>
+        <p>先查询实测覆盖或开始实测分析；需要探索性推断或评估模型时，再明确进入预测工作台。</p>
       </div>
 
       <div class="browse-grid">
@@ -312,19 +334,9 @@ onBeforeUnmount(() => {
         </RouterLink>
       </div>
 
-      <RouterLink to="/coverage" class="coverage-entry">
-        <div>
-          <span class="section-kicker">MODEL / METABOLIC COVERAGE</span>
-          <h3>当前模型覆盖哪些代谢基因与任务？</h3>
-          <p>按功能类别查看已覆盖的代谢基因，阅读代谢任务的中英文介绍。</p>
-        </div>
-        <span>查看模型覆盖范围 <UiIcon name="arrow" :size="18" /></span>
-      </RouterLink>
-
       <footer class="browse-foot">
-        <span v-if="onlineContexts.length">当前在线推演背景：{{ onlineContexts.join('、') }}</span>
-        <span v-else>实验可用性仍以工作台中的服务状态与资产状态为准</span>
-        <span>模型预测用于提出研究线索，结论仍需实验验证。</span>
+        <span>K562、RPE1、Jurkat、HepG2 · 具体实测组合以数据目录为准</span>
+        <span>从表达变化发现功能线索，辅助规划下一步实验。</span>
       </footer>
     </section>
 
@@ -358,12 +370,12 @@ onBeforeUnmount(() => {
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(244, 243, 239, 0.36), rgba(244, 243, 239, 0.14) 28%, rgba(244, 243, 239, 0.34)),
-    url('../assets/theme/back.png');
+    url('../assets/optimized/back.webp');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   opacity: 0.34;
-  filter: saturate(0.96) brightness(1.02);
+  contain: strict;
 }
 
 .home-shell > :not(.home-fixed-backdrop) {
@@ -391,15 +403,15 @@ onBeforeUnmount(() => {
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(10px);
   opacity: 0.8;
   animation: drift 18s ease-in-out infinite;
+  animation-play-state: paused;
 }
 
 .orb-a {
   width: 380px;
   height: 380px;
-  background: radial-gradient(circle, rgba(108, 164, 160, 0.34), rgba(108, 164, 160, 0));
+  background: radial-gradient(circle, rgba(108, 164, 160, 0.34), transparent 70%);
   top: 4%;
   left: -4%;
 }
@@ -407,7 +419,7 @@ onBeforeUnmount(() => {
 .orb-b {
   width: 420px;
   height: 420px;
-  background: radial-gradient(circle, rgba(223, 203, 165, 0.26), rgba(223, 203, 165, 0));
+  background: radial-gradient(circle, rgba(223, 203, 165, 0.26), transparent 70%);
   right: -7%;
   top: 16%;
   animation-delay: -6s;
@@ -416,7 +428,7 @@ onBeforeUnmount(() => {
 .orb-c {
   width: 460px;
   height: 460px;
-  background: radial-gradient(circle, rgba(124, 144, 171, 0.2), rgba(124, 144, 171, 0));
+  background: radial-gradient(circle, rgba(124, 144, 171, 0.2), transparent 70%);
   bottom: -16%;
   left: 28%;
   animation-delay: -10s;
@@ -450,18 +462,20 @@ onBeforeUnmount(() => {
 }
 
 .hero-copy h1 {
-  max-width: 9.5em;
-  margin: 24px 0 20px;
-  font-size: clamp(42px, 6.1vw, 82px);
-  line-height: 1.04;
-  letter-spacing: -0.055em;
+  max-width: 100%;
+  margin: 22px 0 24px;
+  font-size: clamp(46px, 4.1vw, 60px);
+  line-height: 1.22;
+  letter-spacing: -0.035em;
   font-weight: 550;
 }
+
+.hero-copy h1 span { display: block; }
 
 .hero-lead {
   max-width: 620px;
   margin: 0;
-  font-size: clamp(15px, 1.5vw, 18px);
+  font-size: clamp(15px, 1.2vw, 17px);
   line-height: 1.9;
   color: var(--muted);
 }
@@ -486,8 +500,9 @@ onBeforeUnmount(() => {
 .hero-button-secondary {
   background: var(--glass-bg-strong);
   border-color: var(--glass-border);
-  backdrop-filter: blur(14px);
 }
+
+.hero-predict-link{font-size:13px;color:var(--primary);padding:12px 0;white-space:nowrap}
 
 .hero-metrics {
   display: grid;
@@ -501,7 +516,6 @@ onBeforeUnmount(() => {
   border: 1px solid var(--glass-border);
   border-radius: 24px;
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
 }
 
 .hero-metrics dt {
@@ -528,7 +542,7 @@ onBeforeUnmount(() => {
   border-radius: 30px;
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(18px);
+  /* Keep the translucent surface without re-sampling moving layers every frame. */
   box-shadow: 0 28px 90px rgba(45, 61, 67, 0.09);
 }
 
@@ -590,6 +604,13 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 6px;
   animation: floatCard 11s ease-in-out infinite;
+  animation-play-state: paused;
+}
+
+.hero-animating .orb,
+.hero-animating .stage-card-float {
+  animation-play-state: running;
+  will-change: transform;
 }
 
 .stage-card-float span {
@@ -737,7 +758,6 @@ onBeforeUnmount(() => {
   background: var(--glass-bg);
   color: var(--muted);
   font-size: 12px;
-  backdrop-filter: blur(14px);
 }
 
 .panel-visual {
@@ -765,7 +785,6 @@ onBeforeUnmount(() => {
   padding: 26px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(18px);
   box-shadow: 0 28px 80px rgba(36, 47, 59, 0.08);
 }
 
@@ -780,7 +799,6 @@ onBeforeUnmount(() => {
   background-repeat: no-repeat;
   background-size: cover;
   opacity: 0.98;
-  filter: saturate(0.9) brightness(1.04) contrast(1.02);
   transform: scale(1.01);
 }
 
@@ -789,7 +807,6 @@ onBeforeUnmount(() => {
     linear-gradient(180deg, rgba(252, 252, 250, 0.06), rgba(252, 252, 250, 0.18) 38%, rgba(252, 252, 250, 0.58)),
     radial-gradient(circle at 22% 82%, rgba(255, 255, 255, 0.22), transparent 28%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02));
-  backdrop-filter: blur(0.5px);
 }
 
 .visual-content {
@@ -817,28 +834,39 @@ onBeforeUnmount(() => {
   width: 360px;
   height: 360px;
   border-radius: 50%;
-  filter: blur(28px);
   opacity: 0.8;
 }
 
-.accent-teal .visual-sheet-back,
-.accent-teal .visual-glow {
+.accent-teal .visual-sheet-back {
   background: linear-gradient(180deg, rgba(116, 186, 176, 0.34), rgba(116, 186, 176, 0.08));
 }
 
-.accent-sand .visual-sheet-back,
-.accent-sand .visual-glow {
+.accent-teal .visual-glow {
+  background: radial-gradient(ellipse, rgba(116, 186, 176, 0.3), transparent 70%);
+}
+
+.accent-sand .visual-sheet-back {
   background: linear-gradient(180deg, rgba(222, 201, 163, 0.3), rgba(222, 201, 163, 0.08));
 }
 
-.accent-slate .visual-sheet-back,
-.accent-slate .visual-glow {
+.accent-sand .visual-glow {
+  background: radial-gradient(ellipse, rgba(222, 201, 163, 0.28), transparent 70%);
+}
+
+.accent-slate .visual-sheet-back {
   background: linear-gradient(180deg, rgba(142, 156, 176, 0.28), rgba(142, 156, 176, 0.08));
 }
 
-.accent-plum .visual-sheet-back,
-.accent-plum .visual-glow {
+.accent-slate .visual-glow {
+  background: radial-gradient(ellipse, rgba(142, 156, 176, 0.26), transparent 70%);
+}
+
+.accent-plum .visual-sheet-back {
   background: linear-gradient(180deg, rgba(171, 147, 174, 0.28), rgba(171, 147, 174, 0.08));
+}
+
+.accent-plum .visual-glow {
+  background: radial-gradient(ellipse, rgba(171, 147, 174, 0.26), transparent 70%);
 }
 
 .browse-section {
@@ -866,7 +894,6 @@ onBeforeUnmount(() => {
   background: var(--glass-bg-strong);
   color: var(--ink);
   text-decoration: none;
-  backdrop-filter: blur(16px);
   transition:
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.2s ease,
@@ -881,7 +908,6 @@ onBeforeUnmount(() => {
   background-repeat: no-repeat;
   background-size: cover;
   box-shadow: inset 0 1px 0 var(--image-frame-highlight);
-  filter: saturate(0.78) brightness(1.03);
 }
 
 .browse-card:hover {
@@ -938,7 +964,6 @@ onBeforeUnmount(() => {
   color: var(--faint);
 }
 
-.coverage-entry{display:flex;align-items:center;justify-content:space-between;gap:28px;margin-top:28px;padding:26px 28px;border:1px solid var(--glass-border);border-radius:var(--radius);background:var(--glass-bg-strong);color:var(--ink);text-decoration:none;backdrop-filter:blur(18px)}.coverage-entry h3{font-size:22px;font-weight:500;margin:12px 0}.coverage-entry p{font-size:12px;color:var(--muted);line-height:1.9;margin:0}.coverage-entry>span{display:flex;gap:14px;align-items:center;white-space:nowrap;font-size:12px;color:var(--primary)}
 
 .page-edge-button {
   position: fixed;
@@ -955,8 +980,6 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--card) 80%, transparent);
   color: var(--primary-strong);
   box-shadow: 0 14px 34px rgba(19, 31, 35, 0.12);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
   cursor: pointer;
   transition:
     transform 180ms ease,
@@ -1010,6 +1033,11 @@ onBeforeUnmount(() => {
     animation: none;
   }
 
+  .hero-animating .orb,
+  .hero-animating .stage-card-float {
+    will-change: auto;
+  }
+
   .story-panel,
   .browse-card {
     transition: none;
@@ -1031,11 +1059,10 @@ onBeforeUnmount(() => {
 :global(html[data-theme='dark'] .home-fixed-backdrop) {
   background:
     linear-gradient(180deg, rgba(20, 27, 31, 0.34), rgba(20, 27, 31, 0.1) 32%, rgba(20, 27, 31, 0.3)),
-    url('../assets/theme/back.png');
+    url('../assets/optimized/back.webp');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   opacity: 0.34;
-  filter: saturate(0.94) brightness(0.88);
 }
 </style>

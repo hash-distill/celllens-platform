@@ -2,6 +2,24 @@
 
 默认 API 前缀 `/api/v1`。运行模型定义在 `backend/app/schemas.py`，辅助解读接口位于 `backend/app/assistant.py`。完整结构见 [openapi.json](openapi.json)；服务的 `/openapi.json` 是实时契约。
 
+## 实测优先入口
+
+`GET /catalog/perturbations?cell_line=K562&mode=measured` 返回该背景完整的固定源实测扰动候选，以及与预测相同结构的 `genes`、`categories` 和 `classification` 注释。分类使用经过校验的 PANTHER/HGNC 快照；实测候选不截断为前 100 条，不以模型支持或 GPU 就绪筛选。默认 `mode=online` 仍返回模型支持候选；这里的目录模式不改变创建实验请求中的运行模式。
+
+`GET /data-catalog` 支持 cell_line、query、availability=all|measured|missing|unknown、model_supported、limit 和 offset；`GET /data-catalog/pair?cell_line=K562&perturbation=ALDOA` 返回单个组合；`GET /data-catalog/download.csv` 下载相同筛选的完整目录。GET 不提取表达或启动预测。source_cell_count 与 local_measured_cells 分开，索引不完整时计数 null、状态 unknown；official_split 仅为上游声明，generalization_verified=false。
+
+| 独立实测接口 | 行为 |
+|---|---|
+| `POST /measured/analyses` | 严格 JSON `{cell_line,perturbation,max_cells:256,seed:42}`，真实观测上限 1–4096，成功 202 |
+| `GET /measured/analyses` | limit/offset 分页历史，items/total/limit/offset |
+| `GET /measured/analyses/{id}` | 状态、进度、实际来源，完成后含 summary |
+| `POST /measured/analyses/{id}/cancel` | 取消本进程拥有的活动任务，保留历史；重试创建新编号 |
+| `GET /measured/analyses/{id}/table` | kind=genes|tasks|reactions、query、limit/offset；items/total/units |
+| `GET /measured/analyses/{id}/projection` | embedding=pca|umap；只含 control/observed 真实群体 |
+| `GET /measured/analyses/{id}/download` | kind=bundle|genes|tasks|reactions|projection|report；ZIP／完整 CSV／JSON／HTML |
+
+状态为 queued/preparing/analysing/completed/failed/cancelled/interrupted。CPU 子进程与预测 worker/GPU 开关独立；请求不接受路径或 URL。无已确认源观测返回 422，跨站 POST 403，繁忙／输入变化／结果不可用 409，缺失编号 404。实测响应不缓存，成功下载包含 Content-Disposition。原预测运行与实测比较接口保留。方法和 ZIP 引用文件边界见[实测说明](MEASURED_ANALYSIS.md)。
+
 ## 真实观测比较
 
 `GET /api/v1/runs/{run_id}/comparison` 返回独立冻结的真实观测比较；`status=available` 时包含完整基因/任务三组均值、差值、表达/DE/任务指标、批次群体、来源和绑定哈希。`preparing` 表示比较准备中，可重试读取；`unavailable` 不含伪造指标，明确说明缺少观测或准备失败。冻结来源变化返回 409 `COMPARISON_SOURCE_CHANGED`。
@@ -10,6 +28,27 @@
 
 扰动目录新增 `measured_comparisons`，仅列当前背景、模型支持且已通过源文件哈希核对的实测扰动与细胞数。比较过程为匹配观测诊断，`held_out_validation=false`。详见[使用说明](guide/MEASURED_COMPARISON.md)。
 
+## 方法与数据概览
+
+`GET /catalog/data-summary` 的每个背景另含 `control_cell_count` 与 `control_metadata_verified`。人数来自哈希有效、背景及 non-targeting 标签一致的对照 H5AD obs 元数据；不读取表达矩阵或权重。缺依赖、来源无效或标签异常时计数为 null、核验标志为 false，注册状态仍由 control_registered 单独表示。当前人数不替代历史运行冻结人数。预测请求 n_cells=64–4096 与真实对照数量独立；范围由平台约束，并非新增实测或准确率指标。
+
+## 科研交换导出
+
+| 接口 | 参数与含义 |
+|---|---|
+| `GET /runs/{run_id}/export` | `package=analysis\|single-cell\|network\|ranking`；返回 ZIP。仅 network 可用 `task_id` 选择任务子网，默认完整网络 |
+| `GET /runs/{run_id}/export/table` | `table=genes\|tasks\|reactions`，`population=original\|comparison`；返回带 BOM 的 UTF-8 完整 CSV |
+
+导出只读取已完成、来源哈希有效的产物，不推理、不新拟合、不写回实验。ZIP 清单包含来源和载荷 SHA-256、表达尺度、实际人数、群体选择与缺失选件；单细胞 H5AD 的 X 为 log1p(CP10K)，不提供 counts/raw。CSV 追加运行、单位、聚合方式、人数、模型/数据库版本和 selection_id；缺失实测数值为空，零变化仍保留。现有 comparison/download CSV 同样携带诊断群体元数据。
+
+未知实验返回 404；参数非法返回 422；未完成、来源缺失/变化、选择不支持返回 409；导出依赖缺失返回 503。成功下载携带 MIME、Content-Disposition 与 Cache-Control:no-store。科研图文件名包含安全的特征 slug 与 SHA-256 前缀，避免不同基因/任务覆盖。详见[导出说明](guide/EXPORTS.md)。
+
+## 按背景准备推理资源
+
+`GET /resources` 返回四个背景的模型文件、真实对照与任务状态，`Cache-Control: no-store`，不触发下载。`POST /resources/{cell_line}/download` 只接收 `{"accepted_license": true}`，成功返回 202。`POST /resources/{cell_line}/cancel` 取消当前服务进程拥有的任务。背景仅接受 K562、RPE1、Jurkat、HepG2；不接受自定义 URL 或路径。
+
+未确认许可、非法背景和额外字段返回 422，跨站来源返回 403，准备繁忙或跨进程取消返回 409。下载任务固定来源、大小和 SHA-256，可取消和重试；如缺对照会从固定真实数据版本按背景提取。资源就绪与在线运行环境分别检查，详见[资源管理](INFERENCE_RESOURCES.md)。
+
 ## 大模型辅助解读
 
 所有辅助解读响应标记 `Cache-Control: no-store`；POST 拒绝跨站浏览器请求并限制请求体为 64 KiB。无需账户，密钥由调用者随请求提供，不保存到数据库。
@@ -17,15 +56,21 @@
 | 接口 | 行为 |
 |---|---|
 | `GET /assistant/capabilities` | 返回提供商预设（ID、名称、地址、协议、预算字段）、允许的服务 origin、超时与只读标记 |
-| `GET /assistant/context?source_kind=run&source_id=run_...` | 根据已保存扰动实验结果构建摘要；`source_kind` 仅接受 `run` |
+| `GET /assistant/context?source_kind=run&source_id=run_...` | 构建已保存预测/历史运行摘要 |
+| `GET /assistant/context?source_kind=measured&source_id=measured_...` | 构建已完成且哈希有效的实测摘要，只含真实 control/observed |
 | `POST /assistant/test` | 使用指定模型发送简短连接检查，可能消耗额度 |
+| `POST /assistant/models` | 使用 provider/base_url/api_key 获取模型目录；无需指定模型，最多 5 页/500 项，返回显式容量元数据和截断标记，不发生成请求 |
 | `POST /assistant/interpret` | 校验预览摘要的哈希后调用模型；不更改科学结果 |
 
-连接请求字段：`provider`（`openai` / `gemini` / `anthropic` / `deepseek` / `siliconflow` / `custom`；缺省 `custom` 以保留旧版兼容协议请求）、`base_url`（最多 512 字符）、`model`（1–128）、`api_key`（1–4096）、`max_tokens`（256–8192，默认 2048）、`token_parameter`（`max_completion_tokens` 默认，或 `max_tokens`）。额外字段拒绝，校验错误统一脱敏。
+连接参数增加 `reasoning_effort`（默认 `auto` 省略）、Claude `thinking_mode` / `thinking_budget`、`context_window` 与 `max_tokens` 默认均为 `null`（模型默认）。手动指定时分别支持 4096–2000000 与 256–2000000；默认省略输出长度参数，由模型服务管理上下文。Claude 原生接口要求输出上限时，读取服务声明的 `max_output_tokens`/`max_tokens`，未提供则提示填写。按提供商验证组合，错误不会返回原输入密钥。`GET /assistant/context` 另返回不计入证据哈希的 `request_budget` 字节计数，供预览估算；生成仍重建科学摘要，仅在手动指定上下文限制时在联网前核对预算，不采信客户端统计或截断证据。完整字段和枚举见 OpenAPI 与 [配置指南](guide/ASSISTANT_SETTINGS.md)。
+
+连接请求字段：`provider`（`openai` / `gemini` / `anthropic` / `deepseek` / `siliconflow` / `custom`；缺省 `custom` 以保留旧版兼容协议请求）、`base_url`（最多 512 字符）、`model`（1–128）、`api_key`（1–4096）、`max_tokens`（可空，默认 `null`；手动指定为 256–2000000）、`token_parameter`（`max_completion_tokens` 默认，或 `max_tokens`）。额外字段拒绝，校验错误统一脱敏。
 
 Claude 使用原生 `/messages`、`x-api-key` 与 `anthropic-version: 2023-06-01`，系统提示单独传入 `system`；其文本块、结束原因与 token 用量归一化为统一响应。Gemini 使用官方兼容 `/chat/completions`。Gemini、Claude、DeepSeek 与硅基流动使用 `max_tokens`；OpenAI 与 custom 使用选择的 `token_parameter`。除管理员额外信任的代理外，预设提供商的地址必须匹配对应官方 origin，避免将密钥发给错误提供商。
 
-解读请求增加 `source_kind`（仅 run）、`source_id`、`context_sha256`（来自预览的 SHA-256）和 `purpose`（interpret / coverage / next_steps，默认 interpret）。客户端不能提交自定义科学上下文、文件路径或模型工具指令。
+解读请求增加 `source_kind`（run 或 measured）、`source_id`、`context_sha256`（来自预览的 SHA-256）和 `purpose`（interpret / figure / genes / metabolism / comparison / coverage / next_steps，默认 interpret），可选 `question`（最多 1200 字）。预览与生成均接受 `view`（overview / chart / genes / metabolism / comparison）、`embedding`（pca / umap）、`space`（expression / metabolic）、`feature_kind`（gene / task）、`feature_id`（最多 500 字）；生成复用预览返回的 `selection` 字段。图表选择及统计参与上下文哈希，变更后须重新预览。客户端不能提交自定义科学上下文、文件路径或模型工具指令。
+
+实测 `source_id` 必须匹配 `measured_` 加 24 位小写十六进制编号，并与清单和摘要身份一致。实测 `view` 仅接受 overview / genes / metabolism，chart 和 comparison 被拒绝；前端实测任务提供 interpret / genes / metabolism / coverage / next_steps。实测摘要包含参数、实际人数、共有批次、共同面板、来源、最多前 20 项基因/任务、覆盖与局限；可按 `feature_kind` 和完整 `feature_id` 追加唯一匹配原表行。没有预测、模型评价、图像、坐标或逐细胞矩阵。缺指标或不支持的选择返回 422，来源变化/未完成返回 409，编号不存在返回 404。客户端选择不能绕过已保存表和哈希核验。
 
 响应包含 `text`、调用的 `provider` / `model` / `base_url`、`finish_reason`、`generated_at`、服务返回的 token `usage`；解读另带来源、任务和摘要哈希。`length` 表示可能截断。未完成或改变的产物返回 409；缺失记录返回 404；不允许或不匹配的地址返回 422；并发繁忙返回 429；上游错误返回 502；超时返回 504。不会自动重试。
 
@@ -75,7 +120,7 @@ Claude 使用原生 `/messages`、`x-api-key` 与 `anthropic-version: 2023-06-01
 
 目录在官方报告上增加 `source`、已启用 `models`、全部代谢库 `genes`，以及任务的 `coverage_status`（full / partial / absent / unmapped）、分类与 `present_genes_all`。基因条目包括符号、HGNC 身份、`in_panel` 和关联任务/反应。完整报告保留全部 tasks/reactions；这些条目是覆盖清单，不表示全部条目均有评分。响应不缓存到浏览器；无可用模型返回 404，来源冲突返回 422，面板或数据库校验失败返回 503。
 
-覆盖目录另含 `gene_categories`、`classification`，基因条目增加 PANTHER 蛋白功能 `category_ids`、原始 `protein_classes` 与 HGNC 英文名称；任务增加双语 `guide`（当前七项已核验介绍）。页面和下载仅展示覆盖项，API 保留原始明细供来源核验。`GET /catalog/perturbations` 保持原 `items` 可用目标列表，同时返回逐基因 `genes`、当前类别 `categories` 与分类来源；分类为多标签，按显式 HGNC ID 对齐，批准符号优先于唯一旧名/别名，未知功能不凭名称猜测。快照损坏时扰动列表仍可读取，分类明确不可用，不删除目标。
+覆盖目录另含 `gene_categories`、`classification`，基因条目增加 PANTHER 蛋白功能 `category_ids`、原始 `protein_classes` 与 HGNC 英文名称；任务增加双语 `guide`，其中七项提供精细生物学介绍。页面展示可用覆盖；下载保留覆盖基因、完整/部分覆盖任务及全部源反应条目以解析引用，并明确纳入规则。API 保留原始明细供来源核验。`GET /catalog/perturbations` 保持原 `items` 可用目标列表，同时返回逐基因 `genes`、当前类别 `categories` 与分类来源；分类为多标签，按显式 HGNC ID 对齐，批准符号优先于唯一旧名/别名，未知功能不凭名称猜测。快照损坏时扰动列表仍可读取，分类明确不可用，不删除目标。
 
 路径均相对 `/api/v1`。
 
@@ -126,7 +171,7 @@ metabolic-tasks 另返回 scope、total；全量分支返回 excluded_count，�
 | `evidence_level` | 当前覆盖规则分类 supported/exploratory/insufficient |
 | `determinant_genes` | 预留决定基因列表；真实任务摘要当前为空 |
 
-总体 coverage 可为 null，代谢降级时应展示 warnings 与转录结果。投影当前是固定种子的随机二维投影，应显示返回 method，不能标注 UMAP 或 t-SNE。
+总体 coverage 可为 null，代谢降级时应展示 warnings 与转录结果。旧 `/projection` 接口保留历史随机投影语义，不能将其标注为 UMAP 或 t-SNE。当前专业图使用 `/cell-state` 的 PCA/UMAP 契约；实测使用自身 `/measured/analyses/{id}/projection`，不能混用旧投影。
 
 ## 错误与缺失
 
@@ -145,3 +190,9 @@ metabolic-tasks 另返回 scope、total；全量分支返回 excluded_count，�
 validation 读取后端指标文件，不在浏览器重算。metrics 保持原代谢任务字段，metric_scope=metabolic_task_delta；其 top-k 默认 10。expression 单独返回 log1p(CP10K) 群体变化的相关性、MSE/MAE、no_change_mse/mae、mse_relative_to_no_change 和改进比例。differential_expression 返回 Wilcoxon/BH/FDR 0.05 的 DEG 数、重叠率、方向、AP；parameters 记录方法、版本和不可用指标原因。无法计算的值返回 null。held_out_validation=false、protocol_status=unconfirmed 表示匹配观测诊断，不能宣称正式留出泛化验收。多个扰动判别能力、效应量排序及训练数据基线尚需独立协议。
 
 更新契约时运行 `uv run --no-sync python scripts/export_openapi.py` 并核对前端类型。`frontend/src/types/run.ts` 为页面使用的 TypeScript 契约镜像。
+
+## 方法数据概览
+
+`GET /api/v1/catalog/data-summary` 返回启用模型的 `contexts`：细胞背景、模型/数据标识、版本、表达尺度、面板校验状态、表达基因数量与列表、可选扰动数量、对照登记及已登记实测条目。只读取注册元数据和小型基因面板，不读取权重或表达矩阵，不创建实验。面板缺失、摘要不匹配或基因重复时，`panel_verified=false`、数量为 null、列表为空。实测范围标记 `observation_scope=registered_metadata`，条目数不是本次文件核验结果；实际比较继续按原流程验证来源。响应使用 `Cache-Control: no-store`，不返回服务器文件路径。
+
+覆盖接口 `/api/v1/coverage` 的 `models` 条目另含 `panel_sha256`：仅在对应面板经过资产校验时返回哈希，失败时返回 `null`。前端在同一数据库下按有效哈希分组展示共享覆盖范围；此字段不说明模型权重、对照或观测相同。

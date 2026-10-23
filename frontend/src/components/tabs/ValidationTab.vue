@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { taskName } from '../../utils/biologyLocale'
 import { computed, ref } from 'vue'
 import { useRunStore } from '../../stores/run'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
@@ -28,7 +29,7 @@ const expressionLabels: Record<string, string> = {
   gene_count:'评价基因数', signed_delta_pearson:'有符号变化 Pearson',
   absolute_delta_pearson:'变化幅度 Pearson', mse:'预测变化 MSE',
   no_change_mse:'不变化基线 MSE', mse_relative_to_no_change:'预测 MSE / 基线 MSE',
-  direction_agreement:'全基因方向一致率（描述性）',
+  direction_agreement:'全基因方向一致率',
 }
 const deLabels: Record<string, string> = {
   observed_significant_genes:'实测显著 DEG 数', predicted_significant_genes:'预测显著 DEG 数',
@@ -63,7 +64,7 @@ const taskPairs = computed<PairRow[]>(() =>
   (tasksBlock.value?.data?.items ?? [])
     .filter((t) => t.observed_delta !== null)
     .map((t) => ({
-      name: t.label,
+      name: taskName(t.id, t.label),
       predicted: t.predicted_delta,
       observed: t.observed_delta ?? 0,
       diff: Math.abs((t.observed_delta ?? 0) - t.predicted_delta),
@@ -97,9 +98,7 @@ function retry(): void {
 <template>
   <div class="validation">
     <!-- online 没有匹配观测 -->
-    <div v-if="isOnline" class="notice notice-info">
-      本次为在线预测，未关联匹配观测。可选择“实测对照”或打开含匹配观测的已完成实验查看比较结果。
-    </div>
+    <p v-if="isOnline" class="muted small"><RouterLink :to="{path:`/runs/${encodeURIComponent(runId)}`,query:{tab:'comparison'}}">查看匹配实测对比 →</RouterLink></p>
     <div v-else-if="isPrecomputed" class="notice notice-warn">
       <span class="pill pill-synthetic">合成参考值</span>
       此历史记录的观测数据为合成数据，不能用于实测比较。
@@ -117,7 +116,7 @@ function retry(): void {
         </template>
       </dl>
       <p class="muted small" style="margin: 8px 0 0">
-        指标基于本次运行完整任务中的有效成对变化计算。当前观测的训练排除关系未核实，数值用于匹配观测比较，不作为独立留出泛化评价。
+        指标用于比较本次预测与匹配实测的代谢任务变化。
       </p>
       <p v-if="validationBlock?.status === 'error' && validationBlock.error?.status !== 404" class="notice notice-warn">
         指标读取失败：{{ validationBlock.error?.message }}
@@ -140,10 +139,9 @@ function retry(): void {
             <dt>{{ label }}</dt><dd>{{ metricValue(validationBlock.data.differential_expression[key]) }}</dd>
           </template>
         </dl>
-        <p class="muted small">Wilcoxon + BH，FDR &lt; 0.05。无显著基因或无法计算时显示缺失；细胞级检验不能替代独立生物学重复。</p>
+        <p class="muted small">差异表达采用 Wilcoxon 检验与 BH 校正，FDR &lt; 0.05。</p>
       </template>
-      <p v-else class="muted small">本次运行未提供表达预测验证。代谢任务指标不能代替基因表达准确率。</p>
-      <p class="notice notice-warn">评价范围为本次匹配观测。训练排除关系未核实，不能据此推断对未见扰动的泛化能力；细胞级比较也不能替代独立生物学重复。</p>
+      <p v-else class="muted small">本次实验暂无表达对比指标。</p>
     </section>
 
     <!-- 成对散点 -->
@@ -186,7 +184,7 @@ function retry(): void {
           </p>
           <ValidationScatter :pairs="pairs" :item-name="view === 'genes' ? '基因' : '代谢任务'" />
 
-          <h4 class="deviation-title">偏差最大的项目（描述性列表，按 |观测 − 预测| 排序）</h4>
+          <h4 class="deviation-title">偏差最大的项目（按 |观测 − 预测| 排序）</h4>
           <div class="table-wrap">
             <table class="table">
               <thead>

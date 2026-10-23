@@ -19,7 +19,7 @@ export interface CoverageTask extends CompletenessRow {
 }
 export interface CoverageCatalogue extends Omit<CompletenessResponse, 'run_id' | 'source_gene_sha256' | 'tasks'> {
   source: {kind: 'model' | 'run'; id: string; title: string; cell_line?: string; model_id?: string; panel_sha256: string}
-  models: {id: string; cell_line: string}[]
+  models: {id: string; cell_line: string; panel_sha256: string | null}[]
   genes: CoverageGene[]
   tasks: CoverageTask[]
   gene_categories: GeneCategory[]

@@ -73,7 +73,7 @@ def main() -> int:
             }""")
                 is True
             )
-            page.get_by_role("button", name="展开高级参数", exact=True).click()
+            expect(page.locator("#n-cells-input")).to_be_editable()
             page.locator("#n-cells-input").fill("64")
             page.locator("#seed-input").fill("42", timeout=3000)
             page.locator("#perturbation-input").fill("MYC")

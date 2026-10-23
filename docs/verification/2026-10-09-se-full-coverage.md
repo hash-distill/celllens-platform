@@ -1,6 +1,6 @@
 # HGNC 适配与四背景 SE 全覆盖推进
 
-日期：2026-10-09。对应 [实施顺序](../METABOLIC_FULL_COVERAGE_PLAN.md)：先完成身份适配，再运行官方 SE/ST-SE 查询链，最后根据验证决定是否训练新输出头。
+日期：2026-10-09。对应 [实施顺序](../research/archive/METABOLIC_FULL_COVERAGE_PLAN.md)：先完成身份适配，再运行官方 SE/ST-SE 查询链，最后根据验证决定是否训练新输出头。
 
 ## 已落实的工程契约
 

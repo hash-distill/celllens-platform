@@ -100,3 +100,22 @@ class RunCacheModel(Base):
         String(40), ForeignKey("runs.run_id", ondelete="CASCADE"), nullable=False, unique=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class MeasuredAnalysisModel(Base):
+    __tablename__ = "measured_analyses"
+    __table_args__ = (Index("ix_measured_status_updated", "status", "updated_at"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    cell_line: Mapped[str] = mapped_column(String(32), nullable=False)
+    perturbation: Mapped[str] = mapped_column(String(64), nullable=False)
+    max_cells: Mapped[int] = mapped_column(Integer, nullable=False)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    request_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    manifest_sha256: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

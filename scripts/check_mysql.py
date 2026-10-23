@@ -18,6 +18,7 @@ EXPECTED_TABLES = {
     "run_events",
     "run_artifacts",
     "run_cache",
+    "measured_analyses",
 }
 
 

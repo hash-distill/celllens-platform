@@ -58,7 +58,7 @@ async def test_completion_is_bounded_and_read_only(token_parameter):
 
     service = AssistantService(Settings(_env_file=None), transport=httpx.MockTransport(handler))
     result = await service.complete(
-        connection(token_parameter=token_parameter), [{"role": "user", "content": "data"}]
+        connection(token_parameter=token_parameter, max_tokens=2048), [{"role": "user", "content": "data"}]
     )
     assert result["text"] == "辅助解读" and result["finish_reason"] == "length"
     assert "secret-key" not in json.dumps(result)
@@ -77,7 +77,11 @@ async def test_gemini_uses_official_compatible_endpoint_and_budget():
         )
 
     result = await AssistantService(Settings(_env_file=None), httpx.MockTransport(handler)).complete(
-        connection(provider="gemini", base_url="https://generativelanguage.googleapis.com/v1beta/openai"),
+        connection(
+            provider="gemini",
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+            max_tokens=2048,
+        ),
         [{"role": "system", "content": "scientific boundary"}, {"role": "user", "content": "summary"}],
     )
     assert result["provider"] == "gemini" and result["text"] == "Gemini text"
@@ -123,7 +127,7 @@ async def test_claude_native_headers_system_text_and_usage(reason, normalized):
         )
 
     result = await AssistantService(Settings(_env_file=None), httpx.MockTransport(handler)).complete(
-        connection(provider="anthropic", base_url="https://api.anthropic.com/v1"),
+        connection(provider="anthropic", base_url="https://api.anthropic.com/v1", max_tokens=2048),
         [{"role": "system", "content": "scientific boundary"}, {"role": "user", "content": "summary"}],
     )
     assert result["provider"] == "anthropic"
@@ -147,7 +151,7 @@ async def test_upstream_errors_do_not_leak(mode, provider, url):
         if mode == "redirect":
             return httpx.Response(302, headers={"location": "http://127.0.0.1:8000"})
         if mode == "large":
-            return httpx.Response(200, content=b"s" * 140_000)
+            return httpx.Response(200, content=b"s" * 8_000_000)
         if mode == "empty":
             return httpx.Response(200, json={"choices": [{"message": {"content": None}}]})
         return httpx.Response(200, text="secret-key")
@@ -156,8 +160,6 @@ async def test_upstream_errors_do_not_leak(mode, provider, url):
     with pytest.raises(HTTPException) as error:
         await service.complete(connection(provider=provider, base_url=url), [])
     assert "secret-key" not in str(error.value.detail)
-
-
 
 
 def test_assistant_api_limits_and_validation_redaction(tmp_path):
@@ -184,6 +186,7 @@ def test_assistant_api_limits_and_validation_redaction(tmp_path):
         response = client.post("/api/v1/assistant/test", content=b"s" * 70_000)
         assert response.status_code == 413
         assert client.get("/api/v1/assistant/capabilities").json()["protocol"] == "chat/completions"
+        assert client.get("/api/v1/assistant/capabilities").json()["model_default_lengths"] is True
         providers = client.get("/api/v1/assistant/capabilities").json()["providers"]
         assert {provider["id"] for provider in providers} == {
             "openai",
@@ -196,7 +199,8 @@ def test_assistant_api_limits_and_validation_redaction(tmp_path):
 
 
 @pytest.mark.parametrize("provider", ["custom", "gemini", "anthropic"])
-def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_path, provider):
+@pytest.mark.parametrize("purpose", ["interpret", "figure", "comparison"])
+def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_path, provider, purpose):
     registry = tmp_path / "data" / "registry"
     registry.mkdir(parents=True)
     for name in ["models", "datasets"]:
@@ -256,22 +260,29 @@ def test_interpret_uses_registered_run_and_checks_preview_before_network(tmp_pat
         ).json()
         assert preview["data"]["top_genes"][0]["predicted_delta"] == -1
         assert "历史结果" in preview["data"]["expression_contract"]
+        assert preview["request_budget"]["system_bytes"] > 0
+        assert preview["request_budget"]["user_bytes"][purpose] > 0
         urls = {
             "custom": "https://api.openai.com/v1",
             "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
             "anthropic": "https://api.anthropic.com/v1",
         }
-        body = connection(provider=provider, base_url=urls[provider]).model_dump(mode="json") | {
+        body = connection(
+            provider=provider, base_url=urls[provider], max_tokens=2048, context_window=32768
+        ).model_dump(mode="json") | {
             "api_key": "secret-key",
             "source_kind": "run",
             "source_id": "run_fixture",
             "context_sha256": "a" * 64,
+            "purpose": purpose,
         }
         assert client.post("/api/v1/assistant/interpret", json=body).status_code == 409
         assert not calls
         body["context_sha256"] = preview["context_sha256"]
         response = client.post("/api/v1/assistant/interpret", json=body)
         assert response.status_code == 200 and response.json()["context_sha256"] == preview["context_sha256"]
+        assert "request_budget" not in json.dumps(calls[0])
+        assert response.json()["input_tokens_estimate"] + body["max_tokens"] <= body["context_window"]
         if provider == "anthropic":
             assert "不等于" in calls[0]["system"]
             assert calls[0]["messages"][0]["role"] == "user"

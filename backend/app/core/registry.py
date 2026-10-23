@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from backend.app.core.errors import AssetNotReadyError, RegistryError
+from backend.app.core.model_assets import companion_files
 from backend.app.core.run_manifest import file_sha256
 
 
@@ -105,7 +106,11 @@ class AssetRegistry:
                 if not S_ISREG(before.st_mode):
                     return False
                 signature = (
-                    before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns
+                    before.st_dev,
+                    before.st_ino,
+                    before.st_size,
+                    before.st_mtime_ns,
+                    before.st_ctime_ns,
                 )
                 cached = self._asset_checks.get(path)
                 if cached and cached[:2] == (signature, expected):
@@ -145,6 +150,28 @@ class AssetRegistry:
                     raise AssetNotReadyError(reason)
                 return entry
         raise RegistryError(f"No model registered for {cell_line}")
+
+    def model_companions_valid_cached(self, entry: RegistryEntry) -> bool:
+        for spec in companion_files(entry.payload):
+            folder = entry.payload.get("model_dir")
+            if not folder:
+                return False
+            item = RegistryEntry(
+                {"path": f"{folder}/{spec['name']}", "sha256": spec["sha256"]}, self.project_root
+            )
+            if not self.asset_is_valid_cached(item, "path", "sha256"):
+                return False
+        return True
+
+    def verify_model_companions(self, entry: RegistryEntry) -> None:
+        for spec in companion_files(entry.payload):
+            folder = entry.payload.get("model_dir")
+            if not folder:
+                raise AssetNotReadyError("Missing official STATE model directory")
+            item = RegistryEntry(
+                {"path": f"{folder}/{spec['name']}", "sha256": spec["sha256"]}, self.project_root
+            )
+            self.verify_entry(item, "path", "sha256")
 
     def dataset_for(self, cell_line: str, require_enabled: bool = True) -> RegistryEntry:
         for row in self.datasets:

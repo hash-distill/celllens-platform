@@ -139,6 +139,8 @@ def load_comparison(root: Path, run_id: str) -> dict[str, Any] | None:
         )
         for name, expected in manifest["inputs"].items():
             _checked(root, name, expected)
+        # Every consumed scientific document must be bound, even if outputs is empty.
+        _checked(bundle, "comparison.json", manifest["outputs"].get("comparison.json"))
         for name, expected in manifest["outputs"].items():
             _checked(bundle, name, expected)
         report = _read(bundle / "comparison.json")
@@ -187,8 +189,11 @@ def _prepare_comparison(
         return None
     registry = registry or AssetRegistry(root, root / "data/registry")
     model = registry.model_for(request.cell_line)
-    dataset = registry.dataset_for(request.cell_line)
     assets = original["assets"]
+    datasets = [row for row in registry.datasets if row["id"] == assets.get("dataset_id")]
+    if len(datasets) != 1:
+        raise ComparisonUnavailable("The prediction's frozen control dataset is no longer registered")
+    dataset = RegistryEntry(datasets[0], root)
     validate_frozen_contract(model, dataset, assets)
     if observation.get("expression_scale") != assets["dataset_expression_scale"]:
         raise ComparisonUnavailable("Measured expression scale differs from the comparison contract")

@@ -24,11 +24,11 @@ const STAGE_ORDER: RunStatus[] = [
 ]
 
 const STAGE_HINT: Partial<Record<RunStatus, string>> = {
-  queued: '没有队列位置信息，不显示虚构排位或剩余时间',
-  state_running: '仅显示后端返回的阶段进度',
-  adapting: '该阶段可能很快，不要求每步都被轮询捕获',
-  metabolic_running: '可能产出转录结果及代谢降级警告',
-  validating: '正在核对来源、计算 PCA / UMAP 并保存默认科研图；图形准备完成后才显示分析完成，不代表实测验证通过',
+  queued: '实验已进入队列，等待计算资源',
+  state_running: 'STATE 正在生成扰动后的基因表达',
+  adapting: '正在整理预测表达，准备功能分析',
+  metabolic_running: '正在计算代谢任务与关联反应分数',
+  validating: '正在生成表达／代谢状态分布图并保存结果',
 }
 
 const currentIndex = computed(() => {
@@ -39,7 +39,7 @@ const currentIndex = computed(() => {
 const statusText = computed(() => {
   const base = STATUS_LABEL[props.record.status]
   if (props.record.status === 'completed' && props.record.warnings.length > 0) {
-    return `${base}（含限制说明）`
+    return `${base}（有运行提示）`
   }
   return base
 })
@@ -124,7 +124,7 @@ const fillClass = computed(() => {
       class="notice notice-warn"
       style="margin-top: 10px"
     >
-      <strong>限制与警告（{{ record.warnings.length }}）：</strong>
+      <strong>运行提示（{{ record.warnings.length }}）：</strong>
       <ul class="warning-list">
         <li v-for="(warning, i) in record.warnings" :key="i">{{ warning }}</li>
       </ul>

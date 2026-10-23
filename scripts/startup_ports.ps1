@@ -4,10 +4,10 @@ function Assert-StartupPortAvailable {
         [Parameter(Mandatory = $true)][int]$Port,
         [Parameter(Mandatory = $true)][string]$Service
     )
-    $listeners = @(Get-NetTCPConnection -State Listen -ErrorAction Stop | Where-Object {
+    $listeners = @(Get-NetTCPConnection -ErrorAction Stop | Where-Object {
         $_.LocalPort -eq $Port -and (
             $Address -eq '0.0.0.0' -or $_.LocalAddress -in @($Address, '0.0.0.0', '::')
-        )
+        ) -and $_.State -in @('Listen', 'Bound', 'Established')
     })
     if ($listeners.Count -eq 0) { return }
     $owners = @($listeners | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object {

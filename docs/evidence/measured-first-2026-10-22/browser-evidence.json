@@ -1,0 +1,159 @@
+{
+  "base": "http://127.0.0.1:8001",
+  "console_errors": [],
+  "failed_api": [],
+  "layout": [
+    {
+      "theme": "light",
+      "width": 1280,
+      "path": "/",
+      "scroll": 1280
+    },
+    {
+      "theme": "light",
+      "width": 1280,
+      "path": "/data-catalog",
+      "scroll": 1280
+    },
+    {
+      "theme": "light",
+      "width": 1280,
+      "path": "/measured/measured_678b672019124ac8a8662cbe",
+      "scroll": 1280
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "path": "/",
+      "scroll": 1440
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "path": "/data-catalog",
+      "scroll": 1440
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "path": "/measured/measured_678b672019124ac8a8662cbe",
+      "scroll": 1440
+    },
+    {
+      "theme": "light",
+      "width": 1920,
+      "path": "/",
+      "scroll": 1920
+    },
+    {
+      "theme": "light",
+      "width": 1920,
+      "path": "/data-catalog",
+      "scroll": 1920
+    },
+    {
+      "theme": "light",
+      "width": 1920,
+      "path": "/measured/measured_678b672019124ac8a8662cbe",
+      "scroll": 1920
+    },
+    {
+      "theme": "dark",
+      "width": 1280,
+      "path": "/",
+      "scroll": 1280
+    },
+    {
+      "theme": "dark",
+      "width": 1280,
+      "path": "/data-catalog",
+      "scroll": 1280
+    },
+    {
+      "theme": "dark",
+      "width": 1280,
+      "path": "/measured/measured_678b672019124ac8a8662cbe",
+      "scroll": 1280
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "path": "/",
+      "scroll": 1440
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "path": "/data-catalog",
+      "scroll": 1440
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "path": "/measured/measured_678b672019124ac8a8662cbe",
+      "scroll": 1440
+    },
+    {
+      "theme": "dark",
+      "width": 1920,
+      "path": "/",
+      "scroll": 1920
+    },
+    {
+      "theme": "dark",
+      "width": 1920,
+      "path": "/data-catalog",
+      "scroll": 1920
+    },
+    {
+      "theme": "dark",
+      "width": 1920,
+      "path": "/measured/measured_678b672019124ac8a8662cbe",
+      "scroll": 1920
+    }
+  ],
+  "downloads": [
+    {
+      "kind": "完整表 CSV",
+      "filename": "measured_678b672019124ac8a8662cbe_tasks.csv",
+      "bytes": 59370
+    },
+    {
+      "kind": "完整结果 ZIP",
+      "filename": "measured_678b672019124ac8a8662cbe.zip",
+      "bytes": 2653710
+    },
+    {
+      "kind": "投影 JSON",
+      "filename": "measured_678b672019124ac8a8662cbe_projection.json",
+      "bytes": 248885
+    },
+    {
+      "kind": "下载 HTML 报告",
+      "filename": "measured_678b672019124ac8a8662cbe_report.html",
+      "bytes": 6261
+    }
+  ],
+  "prediction_query": {
+    "cell_line": [
+      "K562"
+    ],
+    "perturbation": [
+      "ALDOA"
+    ]
+  },
+  "real_extracted_analysis": {
+    "id": "measured_678b672019124ac8a8662cbe",
+    "counts": {
+      "control": 1360,
+      "observed": 32
+    },
+    "input_counts": {
+      "control": 3000,
+      "observed": 32
+    },
+    "genes": 6546,
+    "metabolism": true
+  },
+  "ui_cancelled_analysis": "measured_2955fa40ff4c4e768bb7ed5c"
+}

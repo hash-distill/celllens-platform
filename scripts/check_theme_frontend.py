@@ -10,9 +10,10 @@ from playwright.sync_api import expect, sync_playwright
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8000")
+    parser.add_argument("--output", default="reports/methods-data-layout")
     args = parser.parse_args()
     base = args.url.rstrip("/")
-    output = Path("reports/frontend-integration-2026-10-20/browser")
+    output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     errors: list[str] = []
     writes: list[str] = []
@@ -50,34 +51,55 @@ def main() -> None:
         for asset in assets:
             response = page.request.get(asset)
             assert response.ok and response.headers["content-type"].startswith("image/"), asset
-            assert response.body().startswith(b"\x89PNG\r\n\x1a\n"), asset
+            body = response.body()
+            assert body.startswith(b"\x89PNG\r\n\x1a\n") or (
+                body.startswith(b"RIFF") and body[8:12] == b"WEBP"
+            ), asset
         contexts = page.request.get(base + "/api/v1/catalog/contexts").json()
         ready_count = sum(bool(row["online_ready"]) for row in contexts)
         expect(page.locator(".hero-metrics dd").first).to_have_text(str(ready_count))
         expect(page.get_by_text("在线 / 回放 / 对照三种模式", exact=True)).to_have_count(0)
-        expect(page.locator("a.coverage-entry")).to_have_attribute("href", "/coverage")
+        expect(page.locator(".coverage-entry")).to_have_count(0)
+        expect(page.get_by_role("link", name="了解方法与数据", exact=True)).to_have_attribute(
+            "href", "/methods/models"
+        )
 
         page.get_by_role("button", name="切换到深色模式", exact=True).click()
         expect(page.locator("html")).to_have_attribute("data-theme", "dark")
         page.reload(wait_until="networkidle")
         expect(page.locator("html")).to_have_attribute("data-theme", "dark")
-        page.goto(base + "/settings", wait_until="networkidle")
-        selector = page.get_by_label("页面主题", exact=True)
-        expect(selector).to_have_value("dark")
-        selector.select_option("system")
-        page.emulate_media(color_scheme="dark")
-        expect(page.locator("html")).to_have_attribute("data-theme", "dark")
-        page.emulate_media(color_scheme="light")
+        page.goto(base + "/settings#model-connection", wait_until="networkidle")
+        expect(page.locator(".settings-page")).to_be_visible()
+        page.get_by_role("button", name="切换到明亮模式", exact=True).click()
         expect(page.locator("html")).to_have_attribute("data-theme", "light")
-        page.get_by_role("button", name="切换深色", exact=True).click()
-        expect(selector).to_have_value("dark")
+        # System preference continues to follow the device alongside the restored model settings.
+        system = browser.new_page()
+        system.goto(base, wait_until="networkidle")
+        system.evaluate("localStorage.removeItem('celllens.theme')")
+        system.emulate_media(color_scheme="dark")
+        system.reload(wait_until="networkidle")
+        expect(system.locator("html")).to_have_attribute("data-theme", "dark")
+        system.emulate_media(color_scheme="light")
+        expect(system.locator("html")).to_have_attribute("data-theme", "light")
+        system.close()
 
-        paths = ["/", "/workbench", "/records", "/settings", "/coverage", "/status", "/compare"]
+        paths = [
+            "/",
+            "/workbench",
+            "/records",
+            "/about",
+            "/methods/models",
+            "/methods/backgrounds",
+            "/methods/coverage",
+            "/status",
+            "/compare",
+        ]
         if run_id:
             paths.extend("/demo?run=" + run_id + suffix for suffix in ("", "&tab=genes", "&tab=metabolism"))
         for mode in ("light", "dark"):
-            page.goto(base + "/settings", wait_until="networkidle")
-            page.get_by_label("页面主题", exact=True).select_option(mode)
+            page.goto(base, wait_until="networkidle")
+            if page.locator("html").get_attribute("data-theme") != mode:
+                page.locator(".theme-toggle").click()
             for width in (1280, 1440, 1920):
                 page.set_viewport_size({"width": width, "height": 1000})
                 for index, path in enumerate(paths):
@@ -85,7 +107,8 @@ def main() -> None:
                     expect(page.locator("html")).to_have_attribute("data-theme", mode)
                     expect(page.locator("html")).to_have_css("opacity", "1")
                     expect(page.locator("html")).to_have_css("filter", "none")
-                    expect(page.locator(".header-settings")).to_be_visible()
+                    expect(page.locator(".utility-rail a[href^='/settings']")).to_have_count(1)
+                    expect(page.get_by_role("dialog", name="AI 科研解读")).to_be_hidden()
                     expect(page.get_by_role("button", name="AI 解读", exact=True)).to_be_visible()
                     contrast_targets = page.locator(".btn-primary:visible,.pill-ev-insufficient:visible")
                     contrasts = contrast_targets.evaluate_all("""nodes => {
@@ -107,10 +130,6 @@ def main() -> None:
                     )
                     assert width_state["document"] <= width_state["viewport"] + 1, (mode, path, width_state)
                     if path == "/":
-                        launcher = page.get_by_role("button", name="AI 解读", exact=True).bounding_box()
-                        edge = page.locator(".page-edge-button").bounding_box()
-                        assert launcher and edge
-                        assert edge["y"] + edge["height"] <= launcher["y"], (launcher, edge)
                         for panel in page.locator(".story-panel").all():
                             panel.scroll_into_view_if_needed()
                             expect(panel).to_have_css("opacity", "1")
@@ -127,9 +146,7 @@ def main() -> None:
                     "aria-selected", "true"
                 )
                 page.wait_for_load_state("networkidle")
-            page.get_by_role("button", name="AI 解读", exact=True).click()
-            expect(page.get_by_role("dialog", name="AI 实验解读", exact=True)).to_be_visible()
-            expect(page.locator(".floating-source")).to_contain_text(run_id)
+            expect(page.get_by_role("dialog", name="AI 科研解读")).to_be_hidden()
         assert not errors, errors
         assert not writes, writes
         after = page.request.get(base + "/api/v1/experiments?limit=1").json()

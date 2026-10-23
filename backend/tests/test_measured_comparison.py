@@ -54,6 +54,45 @@ def test_paired_rows_keep_zero_effects_and_reject_missing_or_nonfinite():
     assert rows[1]["absolute_error"] == 1
 
 
+def test_historical_comparison_uses_its_frozen_dataset_after_control_pool_change(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from backend.app.core.registry import RegistryEntry
+    from backend.app.services import measured_comparison
+
+    class FrozenDatasetSelected(Exception):
+        pass
+
+    directory = tmp_path / "data/derived/runs/run_historical"
+    directory.mkdir(parents=True)
+    atomic_write_json(
+        directory / "manifest.json",
+        {
+            "request": {"cell_line": "K562", "perturbation": "ALDOA", "mode": "online", "n_cells": 64},
+            "assets": {"dataset_id": "old-control"},
+        },
+    )
+    old = {"id": "old-control", "cell_line": "K562", "enabled": False}
+    active = {"id": "new-control", "cell_line": "K562", "enabled": True}
+    registry = SimpleNamespace(
+        datasets=[active, old],
+        model_for=lambda _: None,
+        dataset_for=lambda _: RegistryEntry(active, tmp_path),
+    )
+    monkeypatch.setattr(measured_comparison, "load_comparison", lambda *args: None)
+    monkeypatch.setattr(
+        measured_comparison, "observation_for", lambda *args: {"expression_scale": "log1p_cp10k"}
+    )
+
+    def check_dataset(model, dataset, assets):
+        assert dataset.payload["id"] == assets["dataset_id"]
+        raise FrozenDatasetSelected
+
+    monkeypatch.setattr(measured_comparison, "validate_frozen_contract", check_dataset)
+    with pytest.raises(FrozenDatasetSelected):
+        measured_comparison._prepare_comparison(tmp_path, "run_historical", registry, "attempt")
+
+
 def test_no_finite_metabolic_pairs_have_no_error_or_agreement_score():
     import pandas as pd
 

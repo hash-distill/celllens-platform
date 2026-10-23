@@ -56,6 +56,7 @@ def test_development_checks_frontend_port_before_starting_dependencies():
         listener.listen()
         reserved.bind(("127.0.0.1", 0))
         api_port, frontend_port = reserved.getsockname()[1], listener.getsockname()[1]
+        reserved.close()
         result = subprocess.run(
             [
                 POWERSHELL,
@@ -106,3 +107,24 @@ def test_free_port_passes_the_guard():
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "AVAILABLE" in result.stdout
+
+
+def test_bound_client_port_is_reported_even_without_listener():
+    with socket.socket() as reserved:
+        reserved.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        reserved.bind(("127.0.0.1", 0))
+        port = reserved.getsockname()[1]
+        script = (ROOT / "scripts/startup_ports.ps1").as_posix()
+        command = (
+            f". '{script}'; try {{ Assert-StartupPortAvailable "
+            f"-Address 127.0.0.1 -Port {port} -Service API }} "
+            "catch { Write-Output $_.Exception.Message; exit 43 }"
+        )
+        result = subprocess.run(
+            [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.returncode == 43, result.stdout + result.stderr
+        assert "PORT_IN_USE" in result.stdout and str(os.getpid()) in result.stdout

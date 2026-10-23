@@ -7,8 +7,9 @@ import {
 } from './http'
 import { isMockEnabled } from './mockFlag'
 import type { ScientificCellState } from '../types/cellState'
-import { apiUrl } from './http'
 import { toFiniteNumber } from '../utils/number'
+import { fetchDownload, featureFilenameToken } from '../utils/download'
+import type { DownloadFile } from '../utils/download'
 import type { TaskTraceResponse } from '../types/trace'
 import type { CompletenessResponse } from '../types/completeness'
 import type {
@@ -49,24 +50,32 @@ const loadMock = import.meta.env.DEV
 
 export const api = {
   async getCellState(runId: string, kind: 'gene'|'task', feature: string, signal?: AbortSignal, embedding: 'pca'|'umap' = 'pca', space: 'expression'|'metabolic' = 'expression'): Promise<ScientificCellState> {
-    if (isMockEnabled()) throw new ApiError({kind:'http',status:409,code:'CELL_STATE_UNAVAILABLE',message:'Mock 未提供可核验的逐细胞表达。',endpoint:'/cell-state'})
+    if (isMockEnabled()) throw new ApiError({kind:'http',status:409,code:'CELL_STATE_UNAVAILABLE',message:'合成示例未提供可核验的逐细胞表达。',endpoint:'/cell-state'})
     return apiFetch<ScientificCellState>(`/runs/${encodeURIComponent(runId)}/cell-state`, {query:{feature_kind:kind,feature_id:feature,embedding,space},signal,timeoutMs:120000})
   },
-  async getCellStateFigure(runId: string, kind: 'gene'|'task', feature: string, format: 'svg'|'pdf'|'png', signal?: AbortSignal, embedding: 'pca'|'umap' = 'pca', space: 'expression'|'metabolic' = 'expression'): Promise<Blob> {
-    if (isMockEnabled()) throw new Error('Mock 未提供科研图')
-    const response = await window.fetch(apiUrl(`/runs/${encodeURIComponent(runId)}/cell-state/figure`,{feature_kind:kind,feature_id:feature,file_format:format,embedding,space}),{signal})
-    if (!response.ok) {
-      const body = await response.json().catch(() => null)
-      throw new Error(parseDetail(body?.detail,`科研图请求失败：HTTP ${response.status}`).message)
-    }
-    return response.blob()
+  async getCellStateFigure(runId: string, kind: 'gene'|'task', feature: string, format: 'svg'|'pdf'|'png', signal?: AbortSignal, embedding: 'pca'|'umap' = 'pca', space: 'expression'|'metabolic' = 'expression'): Promise<DownloadFile> {
+    if (isMockEnabled()) throw new Error('合成示例未提供科研图')
+    const token = await featureFilenameToken(feature)
+    return fetchDownload(`/runs/${encodeURIComponent(runId)}/cell-state/figure`, {format,filename:`${runId}_cell_state_${space}_${embedding}_${kind}_${token}.${format}`,query:{feature_kind:kind,feature_id:feature,file_format:format,embedding,space},signal})
+  },
+  async getExportTable(runId: string, table: 'genes'|'tasks'|'reactions', population: 'original'|'comparison' = 'original', signal?: AbortSignal): Promise<DownloadFile> {
+    if (isMockEnabled()) throw new Error('合成示例不支持完整结果表导出')
+    return fetchDownload(`/runs/${encodeURIComponent(runId)}/export/table`, {format:'csv',filename:`${runId}_${population}_${table}.csv`,query:{table,population},signal})
+  },
+  async getExportPackage(runId: string, packageKind: 'analysis'|'single-cell'|'network'|'ranking', signal?: AbortSignal, taskId?: string): Promise<DownloadFile> {
+    if (isMockEnabled()) throw new Error('合成示例不支持结果包导出')
+    return fetchDownload(`/runs/${encodeURIComponent(runId)}/export`, {format:'zip',filename:`${runId}_${packageKind}.zip`,query:{package:packageKind,task_id:taskId},signal,timeoutMs:180000})
+  },
+  async getComparisonDownload(runId: string, table: 'json'|'genes'|'tasks', signal?: AbortSignal): Promise<DownloadFile> {
+    if (isMockEnabled()) throw new Error('合成示例不提供实测比较导出')
+    return fetchDownload(`/runs/${encodeURIComponent(runId)}/comparison/download`, {format:table==='json'?'json':'csv',filename:`${runId}_measured_comparison_${table}.${table==='json'?'json':'csv'}`,query:{table},signal})
   },
   async getFunctionTrace(runId: string, taskId: string, signal?: AbortSignal): Promise<TaskTraceResponse> {
-    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: 'Mock 样例未提供真实功能网络。', endpoint: '/task-trace' })
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: '合成示例未提供真实功能网络。', endpoint: '/task-trace' })
     return apiFetch<TaskTraceResponse>(`/runs/${encodeURIComponent(runId)}/task-trace`, { query: { task_id: taskId, scope: 'all' }, signal })
   },
   async getCompleteness(runId: string, signal?: AbortSignal): Promise<CompletenessResponse> {
-    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'COMPLETENESS_UNAVAILABLE', message: 'Mock 样例未提供官方完整性报告。', endpoint: '/completeness' })
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'COMPLETENESS_UNAVAILABLE', message: '合成示例未提供官方完整性报告。', endpoint: '/completeness' })
     return apiFetch<CompletenessResponse>(`/runs/${encodeURIComponent(runId)}/completeness`, { signal })
   },
   async listRuns(query: RunListQuery = {}, signal?: AbortSignal): Promise<RunListResponse> {
@@ -74,7 +83,7 @@ export const api = {
     return apiFetch<RunListResponse>('/runs', { query: { ...query }, signal })
   },
   async getTaskTrace(runId: string, taskId: string, signal?: AbortSignal): Promise<TaskTraceResponse> {
-    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: 'Mock 样例不提供真实知识库追溯。', endpoint: '/task-trace' })
+    if (isMockEnabled()) throw new ApiError({ kind: 'http', status: 404, code: 'TASK_TRACE_UNAVAILABLE', message: '合成示例不提供真实知识库追溯。', endpoint: '/task-trace' })
     return apiFetch<TaskTraceResponse>(`/runs/${encodeURIComponent(runId)}/task-trace`, { query: { task_id: taskId, reaction_limit: 30, gene_limit: 30 }, signal })
   },
   async health(signal?: AbortSignal): Promise<HealthResponse> {
@@ -139,13 +148,13 @@ export const api = {
 
   async getProvenance(runId: string, signal?: AbortSignal): Promise<RunProvenance> {
     if (isMockEnabled()) throw new ApiError({kind:'http', status:404, code:'ARTIFACT_NOT_FOUND',
-      message:'Mock 合成样例不提供真实运行哈希', endpoint:`/runs/${runId}/provenance`})
+      message:'合成示例不提供真实运行哈希', endpoint:`/runs/${runId}/provenance`})
     return apiFetch<RunProvenance>(`/runs/${encodeURIComponent(runId)}/provenance`, {signal})
   },
 
   async getValidation(runId: string, signal?: AbortSignal): Promise<RunValidation> {
     if (isMockEnabled()) throw new ApiError({kind:'http', status:404, code:'ARTIFACT_NOT_FOUND',
-      message:'Mock 合成样例不提供科学验证指标', endpoint:`/runs/${runId}/validation`})
+      message:'合成示例不提供科学验证指标', endpoint:`/runs/${runId}/validation`})
     return apiFetch<RunValidation>(`/runs/${encodeURIComponent(runId)}/validation`, {signal})
   },
 
@@ -231,10 +240,10 @@ export const api = {
   },
 
   /** 报告下载：成功返回 Blob；404 表示未提供报告 */
-  async downloadReport(runId: string): Promise<{ blob: Blob; filename: string }> {
+  async downloadReport(runId: string, signal?: AbortSignal): Promise<{ blob: Blob; filename: string }> {
     if (isMockEnabled()) return (await loadMock()).downloadReport(runId)
     const raw = await apiFetchRaw(`/runs/${encodeURIComponent(runId)}/report`, {
-      timeoutMs: 60000, responseType: 'blob',
+      timeoutMs: 60000, responseType: 'blob', signal,
     })
     if (!raw.ok) {
       const detail =

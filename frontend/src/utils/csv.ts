@@ -1,11 +1,14 @@
-/** CSV 导出：仅导出前端已加载、已公开的数据，文件名注明 run_id、是否截断与来源 */
+/** CSV 清单导出；数字保持数值，文本强制避免电子表格公式解释。 */
+type CsvCell = string | number | null | undefined
 
-function escapeCell(value: string): string {
-  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
-  return value
+function escapeCell(value: CsvCell): string {
+  let text = value == null ? '' : String(value)
+  if (typeof value === 'string' && /^[\s\uFEFF]*[=+\-@]/.test(text)) text = "'" + text
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`
+  return text
 }
 
-export function buildCsv(headers: string[], rows: string[][]): string {
+export function buildCsv(headers: string[], rows: CsvCell[][]): string {
   const lines = [headers.map(escapeCell).join(',')]
   for (const row of rows) lines.push(row.map(escapeCell).join(','))
   return lines.join('\r\n')
@@ -22,7 +25,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function downloadCsv(filename: string, headers: string[], rows: string[][]): void {
+export function downloadCsv(filename: string, headers: string[], rows: CsvCell[][]): void {
   // 带 BOM，保证 Excel 正确识别 UTF-8 中文
   const blob = new Blob([`﻿${buildCsv(headers, rows)}`], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, filename)

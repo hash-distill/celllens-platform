@@ -1,0 +1,245 @@
+/* Interior research surfaces. The homepage keeps its own visual identity. */
+#app > main.research-main {
+  --bg: #ffffff;
+  --card: #ffffff;
+  --card-soft: #f5f8fb;
+  --surface-soft: #f5f8fb;
+  --ink: #203647;
+  --muted: #576c7c;
+  --faint: #728595;
+  --primary: #1b7570;
+  --primary-strong: #155e5a;
+  --primary-weak: #e8f4f1;
+  --border: #dce5ec;
+  --border-strong: #bdcdd9;
+  --field-bg: #ffffff;
+  --field-disabled-bg: #edf2f6;
+  --choice-bg: #ffffff;
+  --choice-disabled-bg: #f3f6f8;
+  --table-head-bg: #f1f5f9;
+  --table-row-hover: #f4f8fb;
+  --table-row-selected: #eaf4f2;
+  --surface-tint: #eef4f8;
+  --surface-tint-strong: #edf4f7;
+  --surface-tint-border: #d4e1e9;
+  --surface-tint-border-strong: #bfced9;
+  --surface-tint-hover: #f1f7f8;
+  --surface-tint-selected: #e8f3f1;
+  --coverage-bg: #f7f9fc;
+  --message-bg: #f2f6fa;
+  --code-bg: #f0f4f8;
+  --figure-soft-bg: #f7f9fb;
+  --figure-track-bg: #e8eef3;
+  --axis-line: #ccd8e2;
+  --panel-index: #99b0bf;
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow: 0 3px 18px rgb(30 58 80 / 3.5%);
+  --research-grid: rgb(96 129 155 / 9%);
+  --research-halo: rgb(126 173 204 / 14%);
+  --research-wash: rgb(113 182 171 / 8%);
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 71px);
+  color: var(--ink);
+  background: var(--bg);
+}
+
+html[data-theme='dark'] #app > main.research-main {
+  --bg: #111c28;
+  --card: #192a39;
+  --card-soft: #1d3040;
+  --surface-soft: #1d3040;
+  --ink: #e6eff6;
+  --muted: #b2c2cf;
+  --faint: #9eb1c1;
+  --primary: #8bd5c7;
+  --primary-strong: #a9e5d9;
+  --primary-weak: #233f43;
+  --border: #304757;
+  --border-strong: #4b687b;
+  --field-bg: #122333;
+  --field-disabled-bg: #253746;
+  --choice-bg: #152737;
+  --choice-disabled-bg: #20313f;
+  --table-head-bg: #203545;
+  --table-row-hover: #203847;
+  --table-row-selected: #264341;
+  --surface-tint: #213746;
+  --surface-tint-strong: #233b49;
+  --surface-tint-border: #38596a;
+  --surface-tint-border-strong: #4b6b7e;
+  --surface-tint-hover: #294350;
+  --surface-tint-selected: #294a4a;
+  --coverage-bg: #1d3040;
+  --message-bg: #1b3040;
+  --code-bg: #132534;
+  --figure-soft-bg: #1c3040;
+  --figure-track-bg: #304758;
+  --axis-line: #506b7e;
+  --panel-index: #7898ac;
+  --shadow: 0 5px 22px rgb(0 0 0 / 10%);
+  --research-grid: rgb(125 165 197 / 10%);
+  --research-halo: rgb(57 107 150 / 19%);
+  --research-wash: rgb(58 133 125 / 11%);
+  background:
+    radial-gradient(ellipse at 88% 0, var(--research-halo), transparent 56%) 0 0 / 100% 480px no-repeat,
+    radial-gradient(ellipse at 12% 0, var(--research-wash), transparent 58%) 0 0 / 100% 420px no-repeat,
+    var(--bg);
+}
+
+#app > .research-main::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 340px;
+  background-image:
+    linear-gradient(var(--research-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--research-grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 58%), transparent);
+  pointer-events: none;
+  z-index: -1;
+}
+
+html:not([data-theme='dark']) #app > .research-main::before { content: none; }
+
+#app .research-main > .page { padding-top: 28px; padding-bottom: 56px; }
+#app .research-main .page-heading { margin-bottom: 24px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+#app .research-main .page-heading h1 { font-size: 30px; font-weight: 600; letter-spacing: -.02em; margin-top: 8px; }
+#app .research-main .page-heading p { font-size: 14px; line-height: 1.8; margin-top: 10px; }
+#app .research-main .eyebrow, #app .research-main .micro { font-size: 11px; letter-spacing: .13em; }
+#app .research-main .card { padding: 22px 24px; }
+#app .research-main .card-title { font-size: 17px; font-weight: 600; }
+#app .research-main .muted, #app .research-main .small { font-size: 13px; }
+#app .research-main .btn { min-height: 36px; padding: 8px 14px; font-size: 13px; line-height: 1.4; }
+#app .research-main .btn-sm { min-height: 32px; padding: 7px 11px; font-size: 12px; }
+#app .research-main .input, #app .research-main .select { min-height: 40px; border-radius: 5px; font-size: 14px; }
+#app .research-main .label { font-size: 13px; color: var(--ink); font-weight: 500; }
+#app .research-main input[type='radio'], #app .research-main input[type='checkbox'] { accent-color: var(--primary); }
+#app .research-main .pill { font-size: 11px; line-height: 1.5; border-radius: 5px; }
+#app .research-main .table th { font-size: 12px; padding: 13px 14px; }
+#app .research-main .table td { font-size: 13px; padding: 13px 14px; }
+#app .research-main .table tbody tr:hover { background: var(--table-row-hover); }
+#app .research-main .tabs { gap: 10px; }
+#app .research-main .tab { padding: 13px 16px; font-size: 14px; }
+#app .research-main .mono, #app .research-main td { font-variant-numeric: tabular-nums; }
+
+/* Experimental context is compact; the scientific result remains the main surface. */
+#app .research-main .workbench-page.has-run > .page-heading { padding: 0; margin-bottom: 16px; border: 0; }
+#app .research-main .workbench-page.has-run > .page-heading h1 { font-size: 20px; margin: 0; }
+#app .research-main .workbench-page.has-run > .page-heading .eyebrow,
+#app .research-main .workbench-page.has-run > .page-heading p { display: none; }
+#app .research-main .workspace-configuration { margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+#app .research-main .workspace-configuration > summary { padding: 15px 20px; font-size: 14px; }
+#app .research-main .workspace-configuration > summary small { font-size: 12px; }
+#app .research-main .configuration-toggle { font-size: 12px; }
+#app .research-main .active-experiment { padding: 18px 22px; margin-bottom: 16px; border-radius: 8px; box-shadow: var(--shadow); border-left: 3px solid var(--primary); }
+#app .research-main .active-experiment h1, #app .research-main .active-experiment h2 { font-size: 23px; margin: 8px 0; }
+#app .research-main .active-experiment .eyebrow { font-size: 10px; }
+#app .research-main .run-identity, #app .research-main .experiment-meta { font-size: 11px; line-height: 1.65; }
+#app .research-main .experiment-actions { max-width: 460px; gap: 8px; }
+#app .research-main .result-tabs { margin-bottom: 18px; }
+#app .research-main .param-panel.horizontal > .card { padding: 24px; gap: 24px 32px; }
+#app .research-main .cell-background-picker .choice { border-radius: 6px; padding: 14px; }
+#app .research-main .cell-background-picker .choice-name { font-size: 15px; }
+#app .research-main .gene-picker .gene-category-select { min-height: 40px; font-size: 13px; }
+#app .research-main .gene-picker .selected-gene-annotation, #app .research-main .gene-picker .dropdown-item small { font-size: 12px; }
+#app .research-main .measured-shortcuts { font-size: 12px; gap: 8px; }
+#app .research-main .measured-shortcuts > button { border-radius: 5px; padding: 8px 12px; }
+#app .research-main .workspace-empty { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 44px 28px; }
+#app .research-main .workspace-empty p, #app .research-main .workspace-empty a { font-size: 14px; }
+
+/* Figure controls and captions are legible without competing with the data. */
+#app .research-main .analysis-panel { padding: 22px 24px; }
+#app .research-main .state-heading { margin-bottom: 16px; align-items: flex-start; }
+#app .research-main .state-heading h2 { font-size: 24px; margin: 8px 0 10px; }
+#app .research-main .state-heading p { font-size: 13px; margin: 0; line-height: 1.8; }
+#app .research-main .state-feature-controls { margin: 18px 0; gap: 16px; }
+#app .research-main .state-feature-controls label { font-size: 12px; }
+#app .research-main .state-feature-controls input, #app .research-main .state-feature-controls select { min-height: 40px; border-radius: 5px; font-size: 13px; }
+#app .research-main .state-source-legend { font-size: 12px; }
+#app .research-main .scientific-figure { margin: 16px 0 22px; border-radius: 6px; background: var(--figure-bg); }
+#app .research-main .scientific-figure figcaption { background: var(--card-soft); font-size: 12px; padding: 12px 16px; }
+#app .research-main .state-numbers { padding-top: 2px; }
+#app .research-main .state-numbers h3 { font-size: 17px; }
+#app .research-main .state-numbers small, #app .research-main .state-numbers p { font-size: 12px; }
+#app .research-main .state-numbers td, #app .research-main .state-numbers th { font-size: 13px; }
+#app .research-main .figure-guide, #app .research-main .state-boundary { padding-top: 15px; margin-top: 18px; border-top: 1px solid var(--border); font-size: 13px; line-height: 1.9; }
+#app .research-main .figure-guide > summary, #app .research-main .state-boundary > summary { color: var(--primary); cursor: pointer; }
+#app .research-main .figure-reading { border: 0; padding: 20px 0 4px; }
+#app .research-main .figure-reading strong { font-size: 13px; }
+#app .research-main .figure-reading p { font-size: 12px; }
+#app .research-main .state-overview .state-heading { display: none; }
+#app .research-main .projection-preview { background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+#app .research-main .projection-preview > summary { padding: 16px 22px; font-size: 13px; }
+#app .research-main .projection-preview .response-panel { border: 0; }
+#app .research-main .response-path { background: transparent; border: 0; border-bottom: 1px solid var(--border); padding: 12px 4px 18px; margin-bottom: 18px; font-size: 12px; }
+#app .research-main .response-panel { border-radius: 8px; padding: 22px; box-shadow: var(--shadow); }
+#app .research-main .response-panel h2 { font-size: 21px; }
+#app .research-main .response-panel .panel-caption { font-size: 13px; line-height: 1.85; }
+#app .research-main .response-panel .panel-footnote, #app .research-main .panel-footnote { font-size: 12px; line-height: 1.8; }
+#app .research-main .row-name, #app .research-main .delta-row strong { font-size: 12px; }
+#app .research-main .function-heading { margin: 18px 0; }
+#app .research-main .function-heading h2 { font-size: 25px; }
+#app .research-main .function-heading p { font-size: 13px; }
+#app .research-main .task-browser, #app .research-main .function-main, #app .research-main .node-detail { border-radius: 8px; box-shadow: var(--shadow); }
+#app .research-main .task-option span, #app .research-main .projection-label { font-size: 12px; }
+#app .research-main .task-option small, #app .research-main .task-browser label { font-size: 11px; }
+
+/* Records are a readable research ledger, with quieter chrome and denser rows. */
+#app .research-main .records-panel { border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+#app .research-main .record-filters { padding: 22px; gap: 16px; grid-template-columns: minmax(200px,1fr) 160px auto auto; }
+#app .research-main .record-filters .label { font-size: 12px; }
+#app .research-main .record-filters .input, #app .research-main .record-filters .select { font-size: 13px; min-height: 40px; }
+#app .research-main .records-count { padding: 13px 22px; font-size: 12px; background: var(--card-soft); }
+#app .research-main .records-table th { padding: 14px 20px; font-size: 12px; }
+#app .research-main .records-table td { padding: 12px 20px; font-size: 13px; }
+#app .research-main .records-table tbody tr:hover { background: var(--table-row-hover); }
+#app .research-main .record-title { font-size: 15px; color: var(--ink); }
+#app .research-main .record-title:hover { color: var(--primary); }
+#app .research-main .record-id { font-size: 11px; margin: 5px 0; }
+#app .research-main .records-table small, #app .research-main .record-source { font-size: 12px; }
+#app .research-main .record-time { font-size: 12px !important; }
+#app .research-main .record-status { font-size: 12px; padding: 5px 10px; border-radius: 5px; }
+#app .research-main .record-actions { gap: 8px; }
+#app .research-main .record-pagination { padding: 16px 22px; font-size: 12px; }
+
+/* Methods use a paper-like hierarchy around the existing scientific diagrams. */
+#app .research-main .methods-heading { padding: 4px 0 22px; }
+#app .research-main .methods-heading h1 { font-size: 30px; font-weight: 600; margin: 10px 0; }
+#app .research-main .methods-heading p { font-size: 14px; }
+#app .research-main .methods-nav { margin-bottom: 24px; gap: 32px; }
+#app .research-main .methods-nav a { padding: 14px 0; font-size: 14px; }
+#app .research-main .methods-intro { max-width: none; margin: 0 0 24px; padding: 20px 24px; border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; background: var(--card); }
+#app .research-main .methods-intro h2 { font-size: 25px; margin: 8px 0 12px; }
+#app .research-main .methods-intro p { font-size: 14px; margin: 0; max-width: 1000px; }
+#app .research-main .method-section { padding: 26px; margin-bottom: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
+#app .research-main .method-index { font-size: 34px; color: var(--panel-index); }
+#app .research-main .method-name h2 { font-size: 28px; margin: 8px 0; }
+#app .research-main .method-lead { margin: 18px 0 20px; font-size: 14px; }
+#app .research-main .method-facts { gap: 24px; }
+#app .research-main .method-facts dt { font-size: 13px; font-weight: 500; color: var(--ink); }
+#app .research-main .method-facts dd { font-size: 13px; }
+#app .research-main .method-version, #app .research-main .method-section footer { font-size: 12px; }
+#app .research-main .method-diagram { margin-top: 22px; }
+#app .research-main .diagram-caption { font-size: 14px; }
+#app .research-main .diagram-caption a, #app .research-main .method-diagram figcaption p { font-size: 12px; }
+#app .research-main .background-choice { border-radius: 8px; background: var(--card); }
+#app .research-main .background-choice.active { background: var(--primary-weak); border-color: var(--primary); }
+#app .research-main .data-intro p, #app .research-main .background-description p { font-size: 14px; }
+#app .research-main .expression-explorer, #app .research-main .data-source { background: var(--card); border-radius: 8px; border-color: var(--border); }
+#app .research-main .coverage-metrics { gap: 1px; border-radius: 8px; overflow: hidden; border-color: var(--border); box-shadow: var(--shadow); }
+#app .research-main .coverage-metrics > div { background: var(--card); padding: 23px 26px; border-color: var(--border); }
+#app .research-main .coverage-metrics strong { color: var(--ink); font-size: 36px; }
+#app .research-main .coverage-metrics span, #app .research-main .coverage-metrics p { font-size: 12px; }
+#app .research-main .catalogue-detail { border-top: 3px solid var(--primary); }
+#app .research-main .catalogue-title h2, #app .research-main .catalogue-detail h2 { font-size: 21px; }
+#app .research-main .catalogue-title p, #app .research-main .catalogue-detail p, #app .research-main .scope-explanation { font-size: 13px; }
+#app .research-main .task-guide-card { border-radius: 8px; background: var(--card-soft); border-color: var(--border); }
+#app .research-main .status-overview { border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+#app .research-main .status-overview > div { background: var(--card); border-color: var(--border); }
+#app .research-main .status-page dl, #app .research-main .worker-row > span { font-size: 13px; }
+#app .research-main .status-overview span, #app .research-main .status-overview small { font-size: 12px; }
+#app .research-main .guide-list { font-size: 14px; line-height: 1.9; gap: 12px; }
+#app .research-main .about-page .page-title { font-size: 27px; font-weight: 600; margin-bottom: 16px; }

@@ -88,6 +88,24 @@ def test_cached_model_coverage_still_rejects_tampered_panel(coverage_app):
         assert response.json()["detail"]["code"] == "COVERAGE_UNAVAILABLE"
 
 
+def test_coverage_model_panels_group_only_verified_identical_assets(coverage_app):
+    app, settings, _ = coverage_app
+    with TestClient(app) as client:
+        models = client.get("/api/v1/coverage").json()["models"]
+        assert models[0]["panel_sha256"] != models[1]["panel_sha256"]
+        assert all(row["panel_sha256"] for row in models)
+        # A second background can legitimately use the same panel without sharing weights or controls.
+        duplicate = dict(app.state.container.registry.models[0])
+        duplicate.update(id="model-RPE1", cell_line="RPE1")
+        app.state.container.registry.models.append(duplicate)
+        models = client.get("/api/v1/coverage").json()["models"]
+        assert models[0]["panel_sha256"] == models[2]["panel_sha256"]
+        (settings.registry_root / "Jurkat.txt").write_text("TAMPERED\n")
+        models = client.get("/api/v1/coverage").json()["models"]
+        assert models[1]["panel_sha256"] is None
+        assert models[0]["panel_sha256"] == models[2]["panel_sha256"]
+
+
 def test_database_snapshot_change_invalidates_cached_computation(coverage_app):
     app, _, database = coverage_app
     with TestClient(app) as client:

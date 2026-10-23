@@ -1,0 +1,481 @@
+{
+  "files_checked": 95,
+  "mismatches": 0,
+  "checks": [
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "comparison.json",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "differential_expression.csv",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "expression_contract.json",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "gene_deltas.csv",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "projection.json",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "reaction_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "task_trace.json",
+      "matches": true
+    },
+    {
+      "record": "run_47d09620968f48cf",
+      "file": "validation_metrics.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "comparison.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "differential_expression.csv",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "expression_contract.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "gene_deltas.csv",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "projection.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "reaction_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "task_trace.json",
+      "matches": true
+    },
+    {
+      "record": "run_aef55809479e4c21",
+      "file": "validation_metrics.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "comparison.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "differential_expression.csv",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "expression_contract.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "gene_deltas.csv",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "projection.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "reaction_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "task_trace.json",
+      "matches": true
+    },
+    {
+      "record": "run_34737097754841fd",
+      "file": "validation_metrics.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "comparison.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "differential_expression.csv",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "expression_contract.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "gene_deltas.csv",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "projection.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "reaction_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "task_trace.json",
+      "matches": true
+    },
+    {
+      "record": "run_41504106326f404d",
+      "file": "validation_metrics.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "comparison.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "differential_expression.csv",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "expression_contract.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "gene_deltas.csv",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "projection.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "reaction_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "task_trace.json",
+      "matches": true
+    },
+    {
+      "record": "run_ed570bb58ec74739",
+      "file": "validation_metrics.json",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "genes.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "projection-pca.json",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "projection-umap.json",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "reactions.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "report.html",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "summary.json",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "tasks.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_678b672019124ac8a8662cbe",
+      "file": "inputs/observed.h5ad",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "genes.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "projection-pca.json",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "projection-umap.json",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "reactions.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "report.html",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "summary.json",
+      "matches": true
+    },
+    {
+      "record": "measured_a40955b0de73475a9d628e05",
+      "file": "tasks.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "genes.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "gene_identity.json",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "metabolic_coverage.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "metabolic_task_scores.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "official_completeness.json",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "projection-pca.json",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "projection-umap.json",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "reactions.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "report.html",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "summary.json",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "tasks.csv",
+      "matches": true
+    },
+    {
+      "record": "measured_e1c8497f6ccb4908ab7d0dcb",
+      "file": "inputs/observed.h5ad",
+      "matches": true
+    }
+  ]
+}

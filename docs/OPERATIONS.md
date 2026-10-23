@@ -1,121 +1,94 @@
 # 运行与检查
 
-环境准备、数据库初始化、开发/构建模式、Windows 脚本及服务器部署统一见 [部署与启动](DEPLOYMENT.md)。本文用于启动后的检查、维护与故障排查，命令均在仓库根目录执行。
+更新日期：2026-10-22。首次安装、依赖、数据库初始化与服务器配置见[部署与启动](DEPLOYMENT.md)。本文命令在仓库根目录执行，示例显式使用端口 **8001**；启动脚本默认仍为 **8000**，更换端口后同步调整访问地址。
 
-## 日常启动与停止
+## 启动与运行检查
 
-已配置的 Windows 本机，前端构建最新时：
+已有本机项目 MySQL 时：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -SkipBuild
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -ApiPort 8001
 ```
 
-前端修改后去掉 `-SkipBuild`。使用 Docker 或外部数据库时省略 `-StartLocalMysql`，并提前启动实际数据库。首次空数据库必须先迁移，详见部署文档。
+使用容器或外部数据库时先启动对应实例，再省略 `-StartLocalMysql`。脚本迁移数据库、检查表结构并按需构建前端；只有确定现有构建对应当前代码时才用 `-SkipBuild`。访问 `http://127.0.0.1:8001/measured`。`Ctrl+C` 停止应用，独立数据库仍继续运行。
 
-生产页面为 `http://127.0.0.1:8000/workbench`，开发页面默认端口为 `5173`。Ctrl+C 停止应用服务；独立 MySQL 继续运行。当前本机独立实例没有开机自动启动，重启电脑后需再运行数据库或系统脚本。
+无 GPU 时将 `.env` 中 `CELLLENS_WORKER_ENABLED=false`、`CELLLENS_GPU_AVAILABLE=false`，安装 `analysis` 和所需 `report` 依赖后使用实测 CPU 分析。页面启动和实测分析不要求 STATE 权重；新预测仍需相应 GPU、依赖与资产。模型下载不安装 Python 依赖或驱动。
 
-## 服务与模式检查
-
-| 地址 | 检查内容 |
+| 接口或入口 | 检查内容 |
 |---|---|
-| `/api/v1/health` | 响应应包含 `status=ok`、`database=ok` |
-| `/api/v1/ready` | 数据库与 worker/GPU 开关就绪状态 |
-| `/api/v1/catalog/contexts` | 细胞系的在线、预计算及验证资产状态 |
-| `/api/v1/catalog/perturbations?cell_line=K562&mode=precomputed` | 当前通过清单/哈希校验的预计算组合 |
-| `/docs`、`/openapi.json` | 实时接口契约与请求调试 |
+| `/api/v1/health` | 读取响应中的服务与数据库字段，不只看 HTTP 状态 |
+| `/api/v1/ready` | 预测运行的数据库、worker/GPU 开关状态；不能代替真实推理 |
+| `/api/v1/catalog/contexts` | 按背景查看在线资产与不可用原因 |
+| `/api/v1/measured/analyses` | 独立实测任务历史；不执行模型预测 |
+| `/api/v1/runs` | 预测及保留的历史运行列表 |
+| `/status` | 后端实际主机的服务、硬件与按背景资源准备 |
+| `/docs`、`/openapi.json` | 运行服务的实时接口契约 |
 
-`health` 在数据库故障时仍可能返回 HTTP 200，要读取响应字段。`ready` 未满足全部开关时返回 503；关闭 GPU/worker 的结果回放环境可正常使用预计算，不能把该 503 直接判成回放不可用。在线资产状态以 catalog 与资产审计为准，硬件/依赖调用仍需真实推理验证。
+预测开关关闭时 `/ready` 可能返回 503；这本身不说明实测 CPU 分析或已保存结果读取失败。验证实测能力应实际提交有真实数据的背景/目标，检查完成状态、输入人数、结果文件和导出。服务页未取得的信息不等于正常或零。
 
-## 检查命令
+## 工程与运行验收
 
-基础工程检查需要 `dev` 依赖组：
+依赖与静态、回归检查：
 
-```bash
+```powershell
 uv pip check
-uv run --no-sync pytest -q
-uv run --no-sync ruff check backend scripts
+uv run --no-sync pytest backend/tests -q
+uv run --no-sync ruff check backend/app scripts
 uv run --no-sync basedpyright
-npm --prefix frontend run build
+npm.cmd --prefix frontend run typecheck
+npm.cmd --prefix frontend run build
 ```
 
-数据库、资产与接口检查：
+测试需要 `dev` 依赖组；科学计算检查还需要相应 extras。数据库与资产检查：
 
-```bash
+```powershell
 uv run --no-sync python scripts/check_mysql.py
 uv run --no-sync alembic check
 uv run --no-sync python scripts/audit_registry.py
 uv run --no-sync python scripts/export_openapi.py
 ```
 
-`check_mysql.py` 检查迁移表、命名锁与临时运行记录，结束时清理自身记录。`alembic check` 比较数据库与模型，需要数据库可用；`audit_registry.py` 检查启用资产的文件与哈希，刚克隆且未准备科学资产时不应宣称该审计已通过。`export_openapi.py` 会更新 `docs/openapi.json`，接口变更后将快照一并提交。
+数据库检查需要已启动实例。注册表审计遍历登记资产；未下载的可选背景可以报告缺失，不能仅因页面可打开就宣称完整资产审计通过。`export_openapi.py` 更新仓库快照，接口改动后应核对差异。
 
-### 真实在线冒烟
+完整体验验收至少分别记录：
 
-在具有完整 `model`、`report` 依赖、GPU、资产和数据库的环境中：
+1. **实测链路：**从数据目录选择真实组合，提交 CPU 分析，核对共同批次、真实人数、共同面板、关键数值和完整下载；确认没有生成预测群体。
+2. **预测链路：**具备 GPU 和资产后提交在线预测，记录 `run_id`、是否命中缓存、实际命令日志及产物；检查 `/runs/:runId` 刷新和旧链接跳转。
+3. **匹配比较：**有真实观测时核对比较群体、共同面板、不变化基线及失败案例；没有时显示原因，不补造数值。
+4. **AI 辅助：**分别核对实测与预测摘要、任务限制、来源和切换行为。受控回复验证协议，真实模型质量需要独立人工评价。
 
-```bash
-uv run --no-sync python scripts/smoke_backend.py
-```
+`scripts/smoke_backend.py` 会提交真实在线请求，可能使用 GPU、创建持久记录及文件；命中缓存不算新推理。浏览器检查按[脚本索引](../scripts/README.md)选择当前脚本和适用入口，需要相应浏览器依赖。历史专项脚本的旧路由、截图和测试数不自动代表当前版本。
 
-脚本使用真实 MySQL 和应用生命周期，提交 K562/MYC、64 细胞、seed=42 的在线请求，检查六类结果接口。它可能调用 GPU、创建持久运行与磁盘产物，不属于纯静态检查。`cache_hit=true` 表示读取已有结果，不能记为本次新推理。
+历史证据保留在[文档验收索引](README.md#截图与检查记录)。每次验收应记录代码版本、日期、依赖/资产、命令、范围、失败与未验收事项；工程通过不能替代独立生物学验证。目标服务器与公开访问状态必须现场核验，不从历史本机记录推断。
 
-### 前端回归
+## 备份、迁移与清理
 
-先启动开发服务，再执行：
+数据库包括 `runs`、`run_attempts`、`run_events`、`run_artifacts`、`run_cache`、`measured_analyses` 六张业务表，以及 `alembic_version`。备份应在停止新增提交、等待当前分析结束后进行，保留数据库和文件的一致快照：
 
-```bash
-uv run --no-sync python scripts/check_frontend.py --url http://127.0.0.1:5173
-```
+- 数据库、Git 提交、迁移版本、依赖锁文件和配置；`.env` 含凭据，应限制访问。
+- `data/registry/`、`configs/`、登记引用的模型和真实输入文件。
+- `data/derived/runs/`、`data/derived/measured/`、匹配观测比较包及其依赖输入；不能只备份预测目录。
+- 资源准备状态、源目录缓存和完整历史冻结包；按 manifest 保存相关文件和 SHA-256。
 
-此检查需要执行命令的 Python 环境另外安装 Playwright 与 Chromium；它们尚未纳入仓库依赖组。检查覆盖响应正文超时/取消/中断、串行轮询、Mock 来源与刷新、来源隔离和基因分页，使用独立浏览器上下文，不修改用户浏览器。
+最稳妥的迁移包含完整 `data/derived/` 及所有被引用的输入。仅复制数据库不能恢复科学产物，仅复制文件不能恢复历史记录。恢复后检查迁移版本、登记路径/哈希，并抽查一条实测和一条预测记录的详情及导出。
 
-Windows 构建入口使用 `frontend/.cache/build-tmp` 隔离临时文件，避免共享临时目录中的 esbuild 访问错误；缓存不纳入 Git。
+更新代码前备份，再按部署文档迁移和构建。不要单独删除运行或实测目录；清理须同时处理数据库、缓存、manifest 和输入引用。配置中的保留天数不代表已有自动清理任务。历史失败案例、科学数据、来源和许可证不属于无用缓存。
 
-## 已有验收记录
+## 常见故障
 
-2026-10-04 本机联调记录：
-
-- 38 项后端测试、Ruff、basedpyright 通过；测试有两条上游弃用警告。
-- 前端生产构建通过，无大包警告；9 项浏览器缺陷回归通过。
-- 新建 K562/MYC、64 细胞、seed=42 在线运行 `run_5fff9141331b469d`，`cache_hit=false`，STATE 与代谢分析实际完成，warnings 为空。
-- 详情刷新、2000 行基因 CSV、141 项已生成有效任务、HTML 报告及 1366/1100/768 宽度检查通过。
-
-这是历史验收状态，不能代替更新代码、更换依赖、迁移数据库或更换资产后的重新检查。当前匹配验证协议仍待确认，也没有完成目标 Linux 服务器和 Docker MySQL 的部署验收。
-
-## 数据持久化与维护
-
-MySQL 保存六张表：`runs`、`run_attempts`、`run_events`、`run_artifacts`、`run_cache`、`alembic_version`。模型、输入与结果文件保存在磁盘；文件清单与数据库产物记录需要一致。
-
-备份至少包含数据库、`.env`、`data/registry/`、`configs/`、所引用的模型/输入文件及 `data/derived/runs/`，同时记录 Git 提交和迁移版本。真实回放包也应完整备份。仅复制数据库不能恢复文件产物；仅复制结果文件也不会重建运行记录。
-
-更新前等待分析完成，备份后执行部署文档中的更新流程。不要从文件系统单独删除运行目录来做清理：当前没有已实现的自动保留策略或运行删除接口，需同时考虑产物、缓存和数据库记录。`configs/app.yaml` 的保留天数不是已执行的清理任务。
-
-## 常见问题
-
-| 现象 | 原因与处理 |
+| 现象 | 检查与处理 |
 |---|---|
-| 数据库报 2003 / 10061、连接被拒绝 | 先检查 `3307` 是否监听，启动实际数据库，再核对主机与端口 |
-| Navicat 报 1045 / Access denied | 检查账号与密码；本机使用 `celllens` / `celllens_dev`，不是未验证的 root 凭据 |
-| 1044 指向 `performance_schema` | 账号已认证，但没有监控库权限；默认数据库选 `celllens`，项目不依赖性能库 |
-| 一键脚本提示 Missing MySQL tables | 新数据库先执行 `alembic upgrade head`；脚本检查在其内部迁移之前 |
-| 页面返回 503 | 缺少 `frontend/dist/index.html`；构建前端或去掉 `-SkipBuild` |
-| 页面显示旧版本 | 重建前端；确认实际服务使用的仓库与构建目录 |
-| 8000 / 5173 已被占用 | 检查已运行的项目进程；选择其他端口并同步开发代理，避免重复启动 |
-| PowerShell 拦截 npm.ps1 | 使用同一命令的 `npm.cmd` 入口 |
-| online 返回 503 | 检查 worker/GPU、注册资产、catalog 原因；开关不代表真实 GPU 检测成功 |
-| 预计算列表为空 | 生成或恢复相应包，核对 manifest 与文件哈希；目录存在不等于包有效 |
-| 请求返回 422 | 扰动支持列表、细胞数/seed 范围或额外字段不符合契约 |
-| validation 接受后失败 | 匹配观测可能没有该扰动；前端当前不开放提交，协议仍待确认 |
-| completed 但无代谢结果 | 查看 warnings、覆盖等级、冻结数据库与表达要求 |
-| 单个结果返回 404 | 该运行没有生成对应产物；历史或部分结果可能缺少对应产物，应核对该运行文件清单 |
-| 浏览器跨域失败 | 当前后端无 CORS；开发用 Vite 代理，构建运行用后端同源页面 |
-| Compose 修改密码后连接仍失败 | 初始化变量不更新已有数据卷账户，需核对实际账户与 `.env` |
+| MySQL 2003 / WinError 10061 | 确认 `.env` 实际端口有监听，先启动数据库；默认项目实例是 3307 |
+| 新库缺表或迁移不一致 | 按部署流程执行 Alembic 迁移，核对包含 `measured_analyses`，不要手工拼表 |
+| 页面 503 或显示旧界面 | 检查前端构建与运行的仓库位置；构建后刷新 |
+| 端口被占用 | 检查占用进程或改 `-ApiPort`，同步浏览器与开发代理地址 |
+| PowerShell 拦截 npm.ps1 | 使用 `npm.cmd` |
+| 无法新建预测 | 查看背景资产、worker/GPU 开关和真实驱动/依赖；新建只接受 `online` |
+| 实测提取失败 | 核对固定源网络、真实数据范围和 analysis 依赖；上限不等于实际人数 |
+| 实测中断或取消 | 查看该分析状态与错误，修复后重新提交；临时目录不当作已发布结果 |
+| completed 但部分图/代谢不可用 | 读取 warnings 与对应产物；完成不保证所有可选分析可用 |
+| 旧记录缺少关联或比较 | 按原清单显示可用范围，不拿其他运行或当前数据库补造结果 |
+| AI 实测任务不能选图表/比较 | 实测当前只支持结果概要、基因、代谢、覆盖和后续建议 |
+| Compose 改密码仍认证失败 | 初始化变量不会改写已有数据卷账户，核对实际账户与 `.env` |
 
-Windows 端口检查：
-
-```powershell
-Get-NetTCPConnection -LocalPort 3307 -State Listen
-Get-NetTCPConnection -LocalPort 8000 -State Listen
-```
-
-本机数据库错误日志为 `D:\Mysql\celllens-data\celllens-mysql.err`；容器数据库查看 `docker compose logs --tail 100 mysql`。科学计算错误详情先查运行接口，再查对应结果目录中的 `failure.json`、STATE 标准输出和错误日志。
+Windows 可用 `Get-NetTCPConnection -LocalPort 3307 -State Listen` 和实际 API 端口检查监听。数据库日志位置取决于实例配置；容器可查看 Compose 的 MySQL 日志。科学计算故障先查状态接口，再查看相应结果/临时目录和 STATE 输出日志，避免将凭据或原始细胞数据贴入公开日志。

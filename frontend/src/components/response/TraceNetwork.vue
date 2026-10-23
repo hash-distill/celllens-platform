@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import type { TaskTraceResponse } from '../../types/trace'
 import { fmtDelta } from '../../utils/format'
+import { taskName } from '../../utils/biologyLocale'
 
 const props = defineProps<{ data: TaskTraceResponse; selectedReaction: string }>()
 const emit = defineEmits<{ select: [id: string] }>()
@@ -84,7 +85,7 @@ function build() {
     mesh.userData = {id, label, value, kind}
     group.add(mesh); clickable.push(mesh)
   }
-  node(props.data.task.id, props.data.task.label, props.data.task.predicted_delta, 'task', new THREE.Vector3(3.2, 0, 0))
+  node(props.data.task.id, taskName(props.data.task.id, props.data.task.label), props.data.task.predicted_delta, 'task', new THREE.Vector3(3.2, 0, 0))
   reactions.forEach((r, i) => node(r.id, r.label, r.predicted_delta, 'reaction', new THREE.Vector3(0, (i - (reactions.length - 1) / 2) * .62, Math.sin(i * 1.7) * .6)))
   genes.forEach((g,i) => node(g.id,g.label,g.predicted_delta,'gene',new THREE.Vector3(-3.2,(i % 12 - Math.min(11,genes.length-1)/2)*.38,(Math.floor(i/12)-(Math.ceil(genes.length/12)-1)/2)*.55)))
   function edge(a: string, b: string, highlighted: boolean) {

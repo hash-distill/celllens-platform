@@ -92,7 +92,7 @@ def main():
                 else:
                     svg = target.read_text(encoding="utf-8")
                     assert "UMAP 1" in svg and "Joint UMAP" in svg and "control variance" not in svg
-            page.get_by_role("tab", name="单细胞状态", exact=True).click()
+            page.get_by_role("tab", name="表达状态分布", exact=True).click()
             expect(page.locator(".scientific-figure figcaption")).to_contain_text(
                 "共同对照参考 PCA", timeout=120000
             )

@@ -1,319 +1,164 @@
 # 部署与启动
 
-本文按「准备环境 → 配置数据库 → 迁移 → 准备资产 → 构建 → 启动 → 检查」组织。所有相对路径和命令均从仓库根目录执行。
+日常 Windows 启动请先看[项目 README](../README.md#快速开始)。本页补充本机 MySQL、Linux 手动运行、配置和排错；命令均在仓库根目录执行。本文统一使用 API 端口 **8001**，脚本默认仍是 8000。
 
-Windows 本机支持在线运行、手动服务入口及一键启动；Docker MySQL 与 Linux 常驻服务方案尚未在目标服务器实测。这里提供现有代码对应的部署流程，不表示仓库已经包含完整应用镜像或公网服务。
+实测优先入口为 `/measured`，覆盖目录为 `/data-catalog`。CPU 实测分析无需 STATE 权重或 GPU，安装 analysis/report extras 并迁移数据库即可；原 `/workbench` 用于明确预测。详见[实测分析](MEASURED_ANALYSIS.md)和本页末尾实测部署补充。
 
-## 1. 选择运行方式
+## 环境与运行方式
 
-| 场景 | 所需进程 | 访问入口 |
-|---|---|---|
-| 前后端开发 | MySQL + Uvicorn + Vite | `http://127.0.0.1:5173/workbench` |
-| 构建后运行完整系统 | MySQL + Uvicorn；Vue 构建产物由后端提供 | `http://127.0.0.1:8000/workbench` |
-| 无 GPU 历史查询 | MySQL + Uvicorn + 前端构建；关闭 STATE worker/GPU | 从实验记录打开已保存结果 |
-| Linux 内部服务器 | MySQL + 单进程 Uvicorn + 进程管理；可接入反向代理 | 取决于服务器域名与网关 |
+| 项目 | 要求 |
+|---|---|
+| Python | `>=3.11,<3.13`，以下使用 3.11；uv 按 `uv.lock` 安装 |
+| 前端 | Node.js / npm，依赖由 `frontend/package-lock.json` 锁定 |
+| 数据库 | 支持事务与 `GET_LOCK` 的 MySQL；Compose 使用 8.4 |
+| 科学依赖 | 实测 `--extra analysis --extra report`；预测另加 `--extra model`，STATE 0.11.1、scCellFie 0.6.2 |
+| 在线推理 | NVIDIA GPU 与兼容当前锁定 PyTorch 2.14.0 / CUDA 13.2 包的驱动 |
+| 页面 | 桌面现代浏览器，最小宽度 1280px |
+| 存储 | 模型、真实对照、运行文件和数据库各自保留；下载单背景至少留出两份模型大小，另留环境与实验空间 |
 
-后端由 Uvicorn 运行，Vue 开发服务由 Vite 运行；PowerShell 只是 Windows 脚本的执行工具。Docker Compose 当前仅管理 MySQL，不会启动应用或下载科学资产。
+页面可以先于权重启动。GPU 不可用时，在 `.env` 中将 worker/GPU 两项设为 `false`，安装 analysis/report 后仍可运行真实数据分析、准备资源和浏览已有结果；新建 STATE 预测不可用。新部署不会自动获得旧数据库或实验结果。
 
-## 2. 获取源码与准备依赖
-
-获取项目源码：
+## 安装与配置
 
 ```bash
 git clone https://github.com/hash-distill/celllens-platform.git
 cd celllens-platform
-```
-
-环境要求：Python `>=3.11,<3.13`、uv、Node.js/npm，以及可连接的 MySQL。本机已验证 Python 3.11.15、Node.js 24.19.0、npm 11.13.0、uv 0.12.5；依赖版本以 `uv.lock` 与 `frontend/package-lock.json` 为准。
-
-完整在线环境：
-
-```bash
-uv sync --locked --python 3.11 --extra model --extra report --group dev
+uv sync --locked --python 3.11 --extra model --extra report
 npm --prefix frontend ci
-uv pip check
 ```
 
-仅 API/预计算开发环境：
-
-```bash
-uv sync --locked --python 3.11 --group dev
-npm --prefix frontend ci
-uv pip check
-```
-
-两种 Python 安装命令按用途选择一组。`uv sync` 默认精确同步，在线环境再次同步时要保留 `--extra model --extra report`，否则这些额外依赖可能被移除。本文后续使用 `uv run --no-sync`，不会自动补装缺失依赖。
-
-当前 `model` 依赖固定 PyTorch 2.14.0，并使用 CUDA 13.2 的专用索引。在线环境需核对 NVIDIA 驱动与安装包兼容性；预计算路径不安装该依赖组，也不要求 GPU。
-
-## 3. 创建环境配置
-
-Windows PowerShell：
+Windows 如拦截 `npm.ps1`，使用 `npm.cmd`。缺失时从 `.env.example` 复制 `.env`；不要覆盖原配置：
 
 ```powershell
-if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item -LiteralPath .env.example -Destination .env
-}
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
 ```
 
-Linux/macOS shell：
+Linux 对应 `if [ ! -f .env ]; then cp .env.example .env; fi`。
 
-```bash
-if [ ! -f .env ]; then cp .env.example .env; fi
-```
+| 配置 | 说明 |
+|---|---|
+| `CELLLENS_DATABASE_URL` | 实际业务库连接；本地模板 `127.0.0.1:3307/celllens` |
+| `CELLLENS_CREATE_DATABASE_SCHEMA=false` | 表结构通过 Alembic 管理 |
+| `CELLLENS_WORKER_ENABLED=true` | 随 Web 进程启动任务执行器 |
+| `CELLLENS_GPU_AVAILABLE=true` | 允许在线 GPU 入口，仍需实际硬件及依赖检测 |
+| `CELLLENS_STATE_EXECUTABLE=state` | 运行当前环境中的 STATE |
+| `CELLLENS_ALLOW_SYNTHETIC_RESULTS=false` | 正式运行不以合成结果替代模型结果 |
+| `CELLLENS_ASSISTANT_EXTRA_ORIGINS` | 部署者额外允许的 AI 服务精确 origin，缺省留空 |
+| `CELLLENS_ASSISTANT_TIMEOUT_SECONDS=90` | AI 请求超时，允许 5–90 秒 |
 
-以上只创建缺失配置，不覆盖已有 `.env`。后端自动读取仓库根目录的 `.env`；不需要在 shell 中逐项设置环境变量。环境变量如已由进程管理器设置，会优先于文件配置。
+进程环境变量优先于 `.env`。Windows 启动器拒绝遗留的 worker/GPU 环境覆盖，防止文件与实际运行不一致；按错误提示清除覆盖后重试。AI Key 通过设置页按会话提供，勿写入结果或提交到仓库。
 
-主要配置：
+## 数据库：选择一种方式
 
-```dotenv
-CELLLENS_DATABASE_URL=mysql+pymysql://celllens:celllens_dev@127.0.0.1:3307/celllens?charset=utf8mb4
-CELLLENS_CREATE_DATABASE_SCHEMA=false
-CELLLENS_WORKER_ENABLED=true
-CELLLENS_GPU_AVAILABLE=true
-CELLLENS_STATE_EXECUTABLE=state
-```
+### Docker MySQL
 
-这是当前本机开发示例。其他机器使用自己的数据库地址和密码；连接 URL 中的特殊字符需要进行 URL 编码。表结构由 Alembic 管理，保持 `CELLLENS_CREATE_DATABASE_SCHEMA=false`。
-
-无 GPU 历史查询请编辑 `.env`，将以下两项设为 `false`：
-
-```dotenv
-CELLLENS_WORKER_ENABLED=false
-CELLLENS_GPU_AVAILABLE=false
-```
-
-`GPU_AVAILABLE=true` 只是允许在线路径的配置开关，不代表已检测到 GPU；完整在线就绪仍需硬件、依赖及资产检查。
-
-## 4. 启动数据库
-
-### 4.1 当前 Windows 本机实例
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_mysql.ps1
-```
-
-脚本启动或复用 `127.0.0.1:3307` 的独立实例。当前脚本中的路径为：
-
-- 程序：`D:\Mysql\mysql-9.2.0-winx64\bin\mysqld.exe`。
-- 数据目录：`D:\Mysql\celllens-data`。
-- 错误日志：`D:\Mysql\celllens-data\celllens-mysql.err`。
-
-程序目录保留历史版本名称，当前实例实测版本为 **9.7.2**，不能由目录名判断版本。脚本要求安装程序及已有数据目录存在，不负责初始化新数据库或创建账户；换电脑需要修改路径并先准备实例。
-
-该实例由脚本启动，尚未为它配置开机自动启动。重启电脑后再次运行脚本，或使用带 `-StartLocalMysql` 的系统启动命令。
-
-### 4.2 新环境使用 Docker MySQL
-
-此方案与上面的独立实例二选一，同一台机器不能同时占用 `3307`。
+先启动 Docker Desktop / Docker daemon，然后执行：
 
 ```bash
 docker compose up -d mysql
 docker compose ps mysql
 ```
 
-等待容器状态为 `healthy` 后继续迁移；失败时查看 `docker compose logs --tail 100 mysql`。容器使用 MySQL 8.4，宿主机 `3307` 映射到容器 `3306`，数据存入命名卷 `celllens_mysql_data`。
+等待 `healthy`。默认映射 **宿主机 3307 → 容器 3306**，与 `.env.example` 对应；Compose 只管理 MySQL，不启动应用。数据保存在 `celllens_mysql_data` 命名卷。
 
-Compose 文件会在**空数据卷首次初始化**时创建 `celllens` 库及账户。现有数据卷的账户密码不会因为修改初始化环境变量而自动改变。这里的 `celllens_dev`、`celllens_root_dev` 是本地开发凭据；服务器使用前应配置实际密码，并将数据库端口绑定到本机地址或受控网络。
+本地模板账户不是公开部署凭据。更换账户时同步修改 Compose 的初始化环境、healthcheck 和 `.env`。初始化变量仅对空数据卷生效；已有库通过数据库管理操作更新账户，保留原数据卷。
 
-当前 `docker-compose.yml` 写有固定密码。只修改根目录 `.env` 的连接 URL，不会同步修改 Compose 里的数据库密码，需要两边一致。
+### 本机 MySQL
 
-### 4.3 连接现有 MySQL
+使用数据库服务管理器启动已有实例，并把真实业务库和应用账户连接写入 `.env`。仓库提供的 Windows 辅助脚本只负责启动**已初始化**的项目实例，不安装 MySQL，也不创建账户。
 
-让数据库管理员预先创建 `celllens` 库与应用账户，授予该库的业务读写和迁移所需权限，再设置 `CELLLENS_DATABASE_URL`。运行时需支持项目使用的事务与命名锁。
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_mysql.ps1 `
+  -MysqlExecutable 'C:\mysql\bin\mysqld.exe' `
+  -DataDirectory 'C:\mysql\celllens-data'
+```
 
-项目访问的是 `celllens` 业务库，没有依赖 `performance_schema`。Navicat 本机连接参数如下：
+以上路径需替换为实际路径。也可在运行脚本的 PowerShell 终端设置 `CELLLENS_MYSQL_EXECUTABLE` 与 `CELLLENS_MYSQL_DATA_DIRECTORY`，再运行 `start_system.ps1 -StartLocalMysql -ApiPort 8001`。这两个变量由启动脚本读取，写入 `.env` 不会让 PowerShell 自动读取它们。
 
-| 项目 | 本机开发值 |
-|---|---|
-| 主机 | `127.0.0.1` |
-| 端口 | `3307` |
-| 用户名 / 密码 | `celllens` / `celllens_dev` |
-| 默认数据库 | `celllens` |
+脚本固定启动本机项目端口 3307，支持从 PATH 查找 mysqld；保留当前开发电脑旧安装路径作为兼容回退。3307 已监听时直接返回。使用其他端口、托管数据库或系统服务时，通过对应的服务管理方式启动，不加 `-StartLocalMysql`。
 
-## 5. 迁移与验证数据库
+数据库与业务账户需预先存在并具备本库读写、迁移权限。其他实例即使运行在 3306，也不能代替 `.env` 指向的 3307 实例。本机与 Docker 数据库二选一，避免争用端口。
 
-数据库可连接后，先建表，再执行完整数据库检查：
+### 连接与表结构检查
+
+Windows `start_system.ps1` 会依次完成以下步骤；手动启动时自行执行：
 
 ```bash
+uv run --no-sync python scripts/check_mysql.py --connection-only
 uv run --no-sync alembic upgrade head
 uv run --no-sync python scripts/check_mysql.py
 ```
 
-检查成功应输出 `MySQL schema and durable run round trip: OK`。脚本检查十张表、命名锁与运行写入/读取，并清理自己创建的临时检查记录。
+最后应输出 `MySQL schema and durable run round trip: OK`，覆盖表结构、命名锁和临时记录写入/读取，检查记录随后清理。`uv run --no-sync` 复用已安装环境，不负责安装依赖或启动数据库。
 
-Windows 一键脚本先检查连接，再执行迁移和完整结构检查，支持已有版本的表结构升级；数据库与应用账户仍需事先准备。
+## 启动应用
 
-## 6. 准备在线模型与数据
-
-### 6.1 在线计算
-
-从有权限的来源准备模型权重与输入 H5AD，按照 `data/registry/models.json`、`datasets.json` 的路径放置文件；保留已登记的模型配置、基因面板、数据拆分及冻结代谢数据库。
-
-| 资产 | 当前位置或登记入口 |
-|---|---|
-| STATE checkpoint | `models/state-replogle-k562/checkpoints/final.ckpt` |
-| 模型配置与面板 | `configs/models/`、`data/registry/state_k562_genes.txt` |
-| 对照与观测 H5AD | `data/registry/datasets.json` 指向的 `data/raw/` 文件 |
-| scCellFie 数据库 | `data/registry/sccellfie/human/manifest.json` 及其六个文件 |
-| 数据拆分 | `configs/splits/replogle-v1.json` |
-
-执行检查：
-
-```bash
-uv run --no-sync python scripts/audit_registry.py
-uv run --no-sync python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
-uv run --no-sync state --help
-```
-
-资产哈希失败时先确认实际文件、版本和来源，不要通过随意改哈希绕过检查。资产准备与科学解释见 [模型与数据](MODEL_AND_DATA.md)。当前没有自动下载完整模型和输入数据的安装步骤。
-
-### 6.2 无 GPU 历史查询
-
-已有结果从“实验记录”直接读取。迁移部署时需一并迁移数据库记录和对应文件产物，保持路径与哈希一致。无需创建回放任务。
-
-
-正式配置保持 `CELLLENS_ALLOW_SYNTHETIC_RESULTS=false`；历史合成记录保留来源说明。新建实验只接受在线推演。
-
-## 7. 手动启动
-
-### 7.1 前后端开发
-
-两个终端均保持在仓库根目录。
-
-终端一，启动后端：
-
-```bash
-uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
-```
-
-终端二，启动 Vite：
-
-```bash
-npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173 --strictPort
-```
-
-打开 `http://127.0.0.1:5173/workbench`。Vite 代理 `/api` 到 `http://127.0.0.1:8000`，浏览器使用 `VITE_API_BASE=/api`。修改后端代码后重启后端；Vite 会处理前端开发热更新。
-
-后端端口变更时，在 `frontend/.env.local` 中配置实际 `CELLLENS_API_PROXY_TARGET`，然后重启 Vite。后端当前未配置 CORS，不要直接把浏览器 API 地址改成另一个端口。
-
-### 7.2 构建后同源运行
-
-```bash
-npm --prefix frontend run build
-uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
-```
-
-打开 `http://127.0.0.1:8000/workbench`。前端构建包含 TypeScript 检查，产物位于 `frontend/dist/`；后端提供 HTML、静态资源和 API。这种方式无需单独运行 Vite，缺少构建时页面返回 503，API 仍可用。
-
-运行时采用单个 Uvicorn 进程，不添加 `--workers`。当前 worker 随 Web 进程启动，队列尚未拆成独立服务，多实例部署未验收。日常正式运行也不使用开发重载。
-
-Windows PowerShell 若拦截 `npm.ps1`，使用 `npm.cmd --prefix frontend ...`。这是 shell 入口差异，不改变前端命令含义。
-
-## 8. Windows 一键启动
-
-先完成依赖、配置、首次数据库迁移和在线模型与数据准备。
-
-构建并运行：
+### Windows：构建后运行
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -ApiPort 8001
 ```
 
-默认会检查前端源码、配置、依赖锁、Node 环境和产物内容指纹，未变化时直接复用构建；变化、产物丢失或损坏时重新进行类型检查与构建。首次启动仍需完整构建。需要强制重建时使用：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -Rebuild
-```
-
-启动前会检查 API 端口，开发模式还会检查 Vite 端口；发现占用时，在数据库操作和构建之前停止，并显示 `[PORT_IN_USE]`、端口与进程 PID。已有 CellLens 服务时可直接打开页面；重启须先停止旧服务（原终端按 Ctrl+C），再执行启动命令。脚本不自动终止占用进程。改用其他端口可指定 `-ApiPort 8001`，开发前端可指定 `-FrontendPort 5174`。构建后启动前会再次检查端口，以识别过程中新增的占用。
-
-
-开发模式：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -StartLocalMysql -Mode Development
-```
+已有本机项目 MySQL 可追加 `-StartLocalMysql`。构建后 Vue 页面、静态文件和 API 由同一个 FastAPI 进程提供，访问 <http://127.0.0.1:8001/workbench>。`Ctrl+C` 停止应用。
 
 | 参数 | 行为 |
 |---|---|
-| `-StartLocalMysql` | 运行当前本机数据库脚本；使用 Docker/外部数据库时省略 |
-| `-Rebuild` | 生产模式强制重新执行类型检查和构建，与 `-SkipBuild` 互斥 |
-| `-SkipBuild` | 生产模式跳过构建，要求 `frontend/dist/index.html` 存在且版本最新 |
-| `-Mode Development` | 启动 Vite 与后端；默认页面端口 5173 |
-| `-ApiPort 8001` | 更改后端端口；开发模式同步设置代理目标 |
-| `-FrontendPort 5174` | 更改开发前端端口，必须与后端不同 |
-| `-HostAddress 0.0.0.0` | 允许受控局域网访问；访问时使用机器实际 IP |
+| `-Rebuild` | 强制重建前端；默认按内容指纹复用 |
+| `-SkipBuild` | 跳过构建检查，要求已有正确的 dist；不能与 Rebuild 同用 |
+| `-Mode Development` | 额外启动 Vite，退出时停止对应前端进程 |
+| `-FrontendPort 5173` | 开发页面端口，必须与 API 端口不同 |
+| `-HostAddress 0.0.0.0` | 受控网络访问，浏览器使用实际主机地址 |
 
-脚本会检查工具、数据库和迁移，前端依赖缺失时执行 `npm ci`；Python 依赖及科学资产仍需提前准备。Ctrl+C 停止 API，开发模式同时停止它启动的 Vite；独立 MySQL 不随之停止。
+### Windows：前后端开发
 
-## 9. Linux 内部服务器部署
-
-此部分为待实测部署方案。当前仓库没有应用 Dockerfile、独立 worker 服务或公网访问控制，不能将 Docker MySQL 启动成功等同于整个系统已部署。
-
-服务器先完成第 2–6 节，在部署账户下安装依赖、准备配置与资产、迁移数据库、构建前端，再按第 7.2 节前台启动一次。数据库可用、网页和实际所需模式检查通过后，再接入进程管理。
-
-### 常驻服务示例
-
-以下示例假设源码位于 `/srv/celllens`，已创建 `celllens` 系统账户，该账户能读取模型与输入数据、写入 `data/derived/`，且 `.venv` 已创建。路径和账户应按实际服务器修改。
-
-保存为 `/etc/systemd/system/celllens.service`：
-
-```ini
-[Unit]
-Description=CellLens web and analysis service
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=celllens
-WorkingDirectory=/srv/celllens
-Environment=PATH=/srv/celllens/.venv/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/srv/celllens/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
-Restart=on-failure
-RestartSec=5
-TimeoutStopSec=120
-
-[Install]
-WantedBy=multi-user.target
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -Mode Development -ApiPort 8001 -FrontendPort 5173
 ```
 
-后端自动读取 `/srv/celllens/.env`。服务依赖数据库可用，`After=network-online.target` 只代表网络启动顺序，不保证 MySQL 已就绪；在启动服务前检查数据库，需要与实际数据库服务绑定时另外配置对应依赖。
+访问 <http://127.0.0.1:5173/workbench>。启动器自动把 Vite 代理目标设为所选 API 端口。
+
+### Linux / 手动运行
+
+完成配置、启动数据库、执行迁移后：
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now celllens
-sudo systemctl status celllens
-sudo journalctl -u celllens -n 100 --no-pager
+npm --prefix frontend run build
+uv run --no-sync uvicorn backend.app.main:app --host 127.0.0.1 --port 8001
 ```
 
-`127.0.0.1:8000` 仅供本机访问或反向代理使用。内部局域网直连时可以将绑定地址改为 `0.0.0.0`，并使用服务器实际 IP；公网交付还需要实际网关上的认证、TLS 和网络限制，分析结果、预设实验和历史运行均为共享入口，应用不提供个人账号权限。反向代理应将网页、`/assets` 和 `/api` 一起转发到同一后端，避免跨域和详情刷新路径失效。
+访问 <http://127.0.0.1:8001/workbench>。开发模式可在另一终端进入 `frontend` 后运行 `CELLLENS_API_PROXY_TARGET=http://127.0.0.1:8001 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort`。
 
-### 发布更新
+当前任务执行器随 Web 进程运行，部署使用**单个 Uvicorn 进程**，不添加 `--workers`，正式运行不使用 `--reload`。跨主机与多实例未验收。进程管理、访问控制、TLS、反向代理超时和 GPU 驱动需在目标服务器验证；本仓库不宣称已交付完整应用容器或公网部署。
 
-1. 停止提交新任务，等待正在执行的分析完成，再停止应用服务。
-2. 备份 `.env`、MySQL、注册资产与 `data/derived/runs/`；记录当前 Git 提交。
-3. 更新源码，按原依赖集合重新同步 Python 与 npm 依赖；在线部署保留 `model`、`report`。
-4. 执行 `alembic upgrade head`、数据库检查与前端构建。
-5. 启动服务，检查网页、数据库、模式目录及已有结果，再开放任务提交。
+## 页面准备模型与真实对照
 
-不要只回退源码而忽略迁移版本；数据库恢复需要与备份和迁移兼容性一起考虑。Windows 日常更新采用相同步骤，再运行带构建的一键命令。
+启动页面后，打开 <http://127.0.0.1:8001/status>，在“按需准备细胞背景”选择所需背景。无需手动放置四套权重，也无需先下载完整训练数据。
 
-## 10. 启动后验收与停止
+每个背景约 467 MiB / 6 个模型文件；已有文件校验通过后复用。缺少真实对照时，从固定官方版本范围读取该背景最多 1,024 个 non-targeting 细胞。进度、取消、失败重试和文件状态均在页面展示。资源准备完成会刷新目录，无需重启后端；在线推理还需 GPU、worker 与依赖就绪。
 
-| 检查 | 预期结果 |
+具体来源、目录、历史保留、固定版本和许可见[资源管理](INFERENCE_RESOURCES.md)。完整注册表审计会检查所有背景，未下载的可选背景会报告缺失；不要求为了使用一个背景先准备全部背景。
+
+## 启动验收与排错
+
+| 检查 | 含义 |
 |---|---|
-| `/workbench` | 构建后页面可打开，浏览器无整体渲染错误 |
-| `/api/v1/health` | `status=ok`、`database=ok`；不要只看 HTTP 200 |
-| `/api/v1/ready` | 在线环境检查数据库与 worker/GPU 开关；仅历史查询环境的 503 可符合 STATE worker/GPU 配置 |
-| `/api/v1/catalog/contexts` | 所选细胞系、所选模式可用 |
-| 已完成运行详情 | 基因、代谢及报告按实际产物可访问，详情刷新正常 |
+| `/api/v1/health` | API 进程响应 |
+| `/api/v1/ready` | 数据库连接与 worker/GPU 配置开关，不检测全部科学依赖 |
+| `/api/v1/resources` | 各背景模型与真实对照是否通过校验 |
+| 工作台所选背景在线就绪 | 该背景登记资产及 worker/GPU 开关通过；硬件与依赖仍需实际核验 |
+| 一次真实推理完成 | 特定模型和输入上的流程验收，不替代独立留出评价 |
 
-`ready` 不会实际执行 GPU 推理，catalog 也不能证明模型依赖与硬件调用都成功。完整在线验收需要真实运行；命中缓存的请求只验证结果复用。检查命令与常见问题见 [运行与检查](OPERATIONS.md)。
+- **MySQL 2003 / WinError 10061：**核对 `.env` 主机和端口，先启动数据库。Docker 查看 `docker compose ps mysql` 和 `docker compose logs --tail 100 mysql`；本机实例查看其错误日志。
+- **端口占用：**Windows 预检会报告 Listen、Bound 或 Established 的本地占用。使用其他 API 端口，或通过原终端管理已有服务；脚本不会终止占用者。
+- **缺少前端：**运行构建，确认 `frontend/dist/index.html` 存在，或移除 SkipBuild。
+- **资源准备失败：**按页面原因检查官方源网络、磁盘及 model/report 依赖，重试恢复；不要修改登记哈希跳过校验。
+- **资源就绪而在线不可用：**查看页面环境原因，运行 `uv run --no-sync python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"` 和 `uv run --no-sync state --help`。
+- **旧实验缺失：**确认同时迁移 MySQL、冻结登记及对应运行文件，不能只复制截图或 demo 目录。
 
-手动运行用各终端的 Ctrl+C 停止服务；systemd 使用 `sudo systemctl stop celllens`。Docker MySQL 可使用 `docker compose stop mysql` 停止，不需要删除数据卷。MySQL 的存储与应用结果目录应持续保留。
+更多运行检查见 [OPERATIONS.md](OPERATIONS.md)。
 
-## 参考文档
+## 实测分析部署补充（2026-10-22）
 
-运行方式对应现有源码；工具参数参考 [FastAPI / Uvicorn](https://fastapi.tiangolo.com/deployment/manually/)、[Vite 6](https://v6.vite.dev/guide/)、[uv 同步与额外依赖](https://docs.astral.sh/uv/concepts/projects/sync/)、[Docker Compose 启动](https://docs.docker.com/reference/cli/docker/compose/up/)、[MySQL 容器初始化](https://hub.docker.com/_/mysql) 与 [systemd 服务](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html)。
+系统默认使用实测优先流程。仅运行 CPU 实测分析时安装 `uv sync --locked --python 3.11 --extra analysis --extra report`，在 `.env` 关闭 `CELLLENS_WORKER_ENABLED` 与 `CELLLENS_GPU_AVAILABLE`；仍需 MySQL 和 `alembic upgrade head`，新迁移只增加 `measured_analyses` 表。预测需要额外 model 依赖、对应权重和 GPU。首页实测入口 `/measured`、覆盖目录 `/data-catalog`，原 `/workbench` 为明确预测入口。详细启动以[README](../README.md)为准。
+
+实测任务单独占用一个 CPU 子进程，允许取消；服务中断后显示 interrupted，可重新提交。失败或取消的隐藏 `.partial` 目录保留用于诊断，不会作为完成结果公开；维护者可在停止相关任务后按确切路径清理。迁移时同时备份 MySQL、`data/derived/measured` 和清单引用的原始输入／冻结知识库，不能只复制网页或数据库。首次范围提取需要访问固定 Hugging Face 数据源；不用提前下载全部 atlas。

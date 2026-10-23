@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
+import SectionNavigation from './components/SectionNavigation.vue'
 import UtilityRail from './components/UtilityRail.vue'
 import FloatingAssistant from './components/FloatingAssistant.vue'
+import { assistantOpen, assistantSource } from './stores/assistantSource'
 import ConnectionBanner from './components/ConnectionBanner.vue'
 import { isMockEnabled } from './api/mockFlag'
 import { useServiceStore } from './stores/service'
@@ -14,6 +17,7 @@ const service = useServiceStore()
 const catalog = useCatalogStore()
 const runs = useRunStore()
 const ui = useUiStore()
+const route = useRoute()
 
 /** 开发数据来源标记（生产构建不启用） */
 const mockOn = isMockEnabled()
@@ -37,10 +41,11 @@ onBeforeUnmount(() => {
 <template>
   <AppHeader />
   <div v-if="mockOn" class="mock-banner" role="status">
-    开发数据模式 · 当前数据为合成数据。请关闭开发开关后连接正式服务。
+    示例数据模式 · 当前显示合成示例。
   </div>
   <ConnectionBanner />
-  <main>
+  <main :class="{'research-main': route.path !== '/', 'assistant-docked': assistantOpen && assistantSource}">
+    <SectionNavigation />
     <RouterView />
   </main>
   <UtilityRail />
@@ -66,6 +71,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+main.assistant-docked{margin-right:516px;min-width:0}
+.assistant-docked :deep(.active-experiment),.assistant-docked :deep(.state-heading),.assistant-docked :deep(.figure-toolbar){flex-wrap:wrap}
+.assistant-docked :deep(.state-feature-controls){flex-wrap:wrap}
+.assistant-docked :deep(.figure-insight){align-items:flex-start}
+.assistant-docked :deep(.active-experiment>div){min-width:0}
+.assistant-docked :deep(.page){padding-left:24px;padding-right:20px}
 .mock-banner {
   background: var(--mock-banner-bg);
   color: var(--mock-banner-ink);

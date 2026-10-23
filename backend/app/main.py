@@ -9,13 +9,19 @@ from fastapi.responses import FileResponse, JSONResponse
 from backend.app.api.catalog import router as catalog_router
 from backend.app.api.comparisons import router as comparisons_router
 from backend.app.api.coverage import router as coverage_router
+from backend.app.api.data_catalog import router as data_catalog_router
 from backend.app.api.experiments import router as experiments_router
+from backend.app.api.exports import router as exports_router
+from backend.app.api.measured import router as measured_router
+from backend.app.api.resources import router as resources_router
 from backend.app.api.runs import router as runs_router
 from backend.app.assistant import AssistantService
 from backend.app.assistant import router as assistant_router
 from backend.app.assistant_middleware import AssistantRequestMiddleware
 from backend.app.config import Settings, get_settings
 from backend.app.container import build_container
+from backend.app.services.measured_jobs import MeasuredJobs
+from backend.app.services.resource_downloads import ResourceManager
 from backend.app.services.system_status import system_status
 
 
@@ -25,12 +31,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        application.state.measured.recover()
         if resolved.worker_enabled:
             await container.queue.start()
             for run_id in container.store.list_recoverable_run_ids():
                 container.store.prepare_recovery(run_id)
                 await container.queue.submit(run_id)
         yield
+        await application.state.measured.close()
+        await application.state.resources.close()
         if resolved.worker_enabled:
             await container.queue.stop()
 
@@ -42,6 +51,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     application.state.container = container
     application.state.assistant = AssistantService(resolved)
+    application.state.resources = ResourceManager(container)
+    application.state.measured = MeasuredJobs(container)
     application.add_middleware(AssistantRequestMiddleware, api_prefix=resolved.api_prefix)
 
     @application.exception_handler(RequestValidationError)
@@ -90,9 +101,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application.include_router(experiments_router, prefix=resolved.api_prefix)
     application.include_router(catalog_router, prefix=resolved.api_prefix)
+    application.include_router(data_catalog_router, prefix=resolved.api_prefix)
+    application.include_router(measured_router, prefix=resolved.api_prefix)
     application.include_router(coverage_router, prefix=resolved.api_prefix)
     application.include_router(runs_router, prefix=resolved.api_prefix)
+    application.include_router(resources_router, prefix=resolved.api_prefix)
     application.include_router(comparisons_router, prefix=resolved.api_prefix)
+    application.include_router(exports_router, prefix=resolved.api_prefix)
     application.include_router(assistant_router, prefix=resolved.api_prefix)
 
     # Register after API routes; only known SPA paths receive the HTML fallback.
@@ -111,10 +126,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         path = (dist / "assets" / asset_path).resolve()
         if not path.is_relative_to(dist / "assets") or not path.is_file():
             raise HTTPException(status_code=404)
-        return FileResponse(path, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+        return FileResponse(
+            path,
+            media_type="image/webp" if path.suffix.lower() == ".webp" else None,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
 
     @application.get("/", include_in_schema=False)
+    @application.get("/research", include_in_schema=False)
     @application.get("/workbench", include_in_schema=False)
+    @application.get("/data-catalog", include_in_schema=False)
+    @application.get("/measured", include_in_schema=False)
+    @application.get("/measured/{analysis_id}", include_in_schema=False)
     @application.get("/records", include_in_schema=False)
     @application.get("/compare", include_in_schema=False)
     @application.get("/demo", include_in_schema=False)
@@ -122,8 +145,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get("/settings", include_in_schema=False)
     @application.get("/status", include_in_schema=False)
     @application.get("/coverage", include_in_schema=False)
+    @application.get("/methods", include_in_schema=False)
+    @application.get("/methods/models", include_in_schema=False)
+    @application.get("/methods/data", include_in_schema=False)
+    @application.get("/methods/backgrounds", include_in_schema=False)
+    @application.get("/methods/coverage", include_in_schema=False)
     @application.get("/runs/{run_id}", include_in_schema=False)
-    def frontend_page(run_id: str | None = None) -> FileResponse:
+    def frontend_page(run_id: str | None = None, analysis_id: str | None = None) -> FileResponse:
         index = dist / "index.html"
         if not index.is_file():
             raise HTTPException(

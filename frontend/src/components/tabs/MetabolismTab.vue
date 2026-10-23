@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRunStore } from '../../stores/run'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
 import DivergingBar, { type DivergingBarItem } from '../../charts/DivergingBar.vue'
@@ -10,6 +10,10 @@ import { usePagedRows } from '../../utils/pagination'
 import TaskTrace from '../response/TaskTrace.vue'
 import { useTaskAssociations } from '../../utils/taskAssociations'
 import { hasPredictionChange } from '../../utils/predictionEvidence'
+import { taskName } from '../../utils/biologyLocale'
+import { api } from '../../api/client'
+import { downloadBlob } from '../../utils/csv'
+import { isSyntheticResult } from '../../utils/source'
 
 /**
  * 代谢功能：任务差异图与表格 + 反应聚合表；覆盖详情在独立目录。
@@ -23,6 +27,21 @@ const runs = useRunStore()
 const entry = computed(() => runs.entry(props.runId))
 const tasksBlock = computed(() => entry.value?.tasks ?? null)
 const reactionsBlock = computed(() => entry.value?.reactions ?? null)
+const exporting = ref(false), exportError = ref('')
+const exportUnavailable = computed(() => isSyntheticResult(entry.value?.record?.request.mode,props.runId,entry.value?.record?.result_kind) || entry.value?.record?.request.mode === 'validation')
+let exportController: AbortController | undefined
+watch(() => props.runId, () => {exportController?.abort();exporting.value=false;exportError.value=''}, {flush:'sync'})
+onBeforeUnmount(() => exportController?.abort())
+async function exportTable(table: 'tasks'|'reactions') {
+  if (exporting.value || exportUnavailable.value) return
+  const id = props.runId, current = exportController = new AbortController()
+  exporting.value=true;exportError.value=''
+  try {
+    const result = await api.getExportTable(id,table,'original',current.signal)
+    if (!current.signal.aborted && id === props.runId) downloadBlob(result.blob,result.filename)
+  } catch(error) {if (!current.signal.aborted) exportError.value=error instanceof Error ? error.message : '结果表导出失败'}
+  finally {if (!current.signal.aborted) exporting.value=false}
+}
 
 const hasOfficial = computed(() => tasksBlock.value?.data?.completeness_available === true)
 function coverageLabel(task: EvidenceItem) {
@@ -54,6 +73,7 @@ const searchedTasks = computed(() => {
   return visibleTasks.value.filter(
     (t) =>
       t.label.toLowerCase().includes(query) ||
+      taskName(t.id, t.label).toLowerCase().includes(query) ||
       t.id.toLowerCase().includes(query),
   )
 })
@@ -64,7 +84,7 @@ const barItems = computed<DivergingBarItem[]>(() =>
     .slice(0, 15)
     .map((t) => ({
       id: t.id,
-      name: t.label,
+      name: taskName(t.id, t.label),
       value: t.predicted_delta,
       extra: coverageLabel(t),
     })),
@@ -111,7 +131,7 @@ const reactionsUnavailableText = computed(() => {
 const reactionsUnavailableHint = computed(() => {
   const err = reactionsBlock.value?.error
   if (err?.code === 'INVALID_ARTIFACT') {
-    return '请使用新版运行重新生成，或联系后端成员处理；页面不会临时聚合出科学结果。'
+    return '该实验暂不支持此结果，请重新运行或联系管理员。'
   }
   return '任务差异与覆盖摘要仍可正常查看。'
 })
@@ -134,6 +154,8 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
 <template>
   <div class="metabolism">
     <p class="muted small">基因和任务的覆盖详情集中在 <RouterLink :to="{path:'/coverage',query:{run:runId}}">查看基因与任务范围 ↗</RouterLink>。部分任务存在缺失关联基因，评分应结合输入范围解读。</p>
+    <div class="btn-row"><button class="btn btn-sm" :disabled="exporting || exportUnavailable" @click="exportTable('tasks')">导出完整任务 CSV</button><button class="btn btn-sm" :disabled="exporting || exportUnavailable || tasksBlock?.data?.reactions_available===false" @click="exportTable('reactions')">导出完整反应 CSV</button><span v-if="exporting" class="muted small" role="status">正在下载…</span><span v-if="exportUnavailable" class="muted small">此数据来源暂不支持完整表导出。</span></div>
+    <p v-if="exportError" class="notice notice-warn" role="alert">{{ exportError }}</p>
 
     <!-- 任务差异 -->
     <section>
@@ -181,11 +203,11 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
             category-name="代谢任务"
             value-label="任务分数变化"
             :height="Math.min(120 + barItems.length * 26, 460)"
-            :selected-name="selectedTask?.label"
+            :selected-name="selectedTask ? taskName(selectedTask.id, selectedTask.label) : undefined"
             @select="selectedTaskId = $event"
           />
           <section v-if="selectedTask" class="task-detail" aria-label="选中代谢任务详情">
-            <h4>{{ selectedTask.label }}</h4>
+            <h4>{{ taskName(selectedTask.id, selectedTask.label) }}</h4>
             <p class="muted small">{{ coverageLabel(selectedTask) }} · {{ selectedTask.id }}</p>
             <dl><div><dt>对照分数</dt><dd>{{ fmtNumber(selectedTask.control ?? null) }}</dd></div><div><dt>预测分数</dt><dd>{{ fmtNumber(selectedTask.predicted ?? null) }}</dd></div><div><dt>预测变化</dt><dd>{{ fmtDelta(selectedTask.predicted_delta) }}</dd></div></dl>
           </section>
@@ -203,7 +225,7 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
               <tbody>
                 <tr v-for="task in taskRows" :key="task.id" :class="{'selected-task-row': selectedTaskId === task.id}">
                   <td>
-                    <button class="task-name-button" :aria-label="'查看任务：'+task.label" :aria-pressed="selectedTaskId === task.id" @click="selectedTaskId = task.id">{{ task.label }}</button>
+                    <button class="task-name-button" :aria-label="'查看任务：'+taskName(task.id, task.label)" :aria-pressed="selectedTaskId === task.id" @click="selectedTaskId = task.id">{{ taskName(task.id, task.label) }}</button>
                     <div class="small faint mono">{{ task.id }}</div>
                   </td>
                   <td>{{ fmtDelta(task.predicted_delta) }}</td>
@@ -218,7 +240,7 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
                       <details v-if="associations[task.id]!.genes.length" class="task-associated-genes"><summary>{{ associations[task.id]!.genes.slice(0,4).join(', ') }}{{ associations[task.id]!.genes.length > 4 ? '…' : '' }} · {{ associations[task.id]!.genes.length }} 个</summary><span class="mono small">{{ associations[task.id]!.genes.join(', ') }}</span></details>
                       <span v-else class="muted small">—</span>
                     </template>
-                    <span v-else-if="associations[task.id]?.status === 'loading'" class="muted small">正在读取冻结关联…</span>
+                    <span v-else-if="associations[task.id]?.status === 'loading'" class="muted small">正在读取关联信息…</span>
                     <span v-else-if="associations[task.id]?.status === 'unavailable'" class="muted small">—</span>
                     <button v-else class="btn btn-sm" :title="associations[task.id]?.error" @click="retryAssociations">关联读取失败 · 重试</button>
                   </td>
@@ -228,9 +250,9 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
           </div>
           <TablePager v-model:page="taskPage" v-model:page-size="taskPageSize" :pages="taskPages" :total="searchedTasks.length" />
         </template>
-        <div v-else class="task-empty notice notice-info" role="status" style="margin-top: 10px">
+        <div v-else class="task-empty muted small" role="status" style="margin-top: 10px">
           当前已加载的{{ tasksBlock?.data?.scope === 'all' ? '任务结果' : ' Top 摘要' }}中没有{{ evidenceFilter === 'all' ? '' : '「'+filterLabel(evidenceFilter)+'」' }}{{ taskSearch.trim() ? '匹配「'+taskSearch.trim()+'」的' : '' }}任务。切换「全部」或清空搜索可查看其他已加载任务。
-          <span v-if="tasksBlock?.data?.scope !== 'all'">摘要未包含该等级，不代表全量任务中没有该等级。</span>
+          <span v-if="tasksBlock?.data?.scope !== 'all'">此分类在当前摘要中暂无记录。</span>
         </div>
         <TaskTrace v-if="selectedTask" :run-id="runId" :task-id="selectedTask.id" :task-label="selectedTask.label" :available="selectedTask.trace_available" />
       </BlockState>

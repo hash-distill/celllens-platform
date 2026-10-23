@@ -6,9 +6,9 @@ export function isSyntheticResult(mode?: RunMode, runId = '', kind?: ResultKind 
 }
 
 export function runSourceLabel(mode?: RunMode, runId = '', kind?: ResultKind | null): string {
-  if (isMockEnabled() || runId.startsWith('mock_run_')) return '合成数据（开发记录）'
-  if (mode === 'precomputed') return kind === 'frozen_model_result' ? '真实结果回放（本次未重新计算）' : '合成数据（历史记录）'
-  if (mode === 'online') return '在线预测（真实计算）'
-  if (mode === 'validation') return '实测对照（匹配观测分析）'
+  if (isMockEnabled() || runId.startsWith('mock_run_')) return '合成示例'
+  if (mode === 'precomputed') return kind === 'frozen_model_result' ? '已保存的模型预测' : '合成数据（历史记录）'
+  if (mode === 'online') return '在线模型预测'
+  if (mode === 'validation') return '实测对照分析'
   return '来源未提供'
 }

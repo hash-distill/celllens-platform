@@ -13,7 +13,7 @@ async function reconnect(): Promise<void> {
 
 <template>
   <div v-if="service.networkDown" class="connection-banner" role="alert">
-    <span>后端连接异常：已保留当前页面已有结果，任务状态不会被改写。恢复后可继续操作。</span>
+    <span>服务连接暂时中断，当前结果已保留。连接恢复后可继续操作。</span>
     <button class="btn btn-sm" :disabled="service.checking" @click="reconnect">
       {{ service.checking ? '重连中…' : '重新连接' }}
     </button>

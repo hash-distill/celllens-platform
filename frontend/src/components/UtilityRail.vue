@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { isDark, setTheme } from '../stores/preferences'
 import UiIcon from './UiIcon.vue'
+import { assistantOpen, openAssistant } from '../stores/assistantSource'
 function scroll(to: 'top' | 'bottom') {
   window.scrollTo({top: to === 'top' ? 0 : document.documentElement.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'})
 }
 </script>
 <template>
   <aside class="utility-rail" aria-label="页面快捷工具">
-    <button type="button" :title="isDark ? '切换浅色' : '切换深色'" :aria-label="isDark ? '切换浅色' : '切换深色'" @click="setTheme(isDark ? 'light' : 'dark')"><UiIcon :name="isDark ? 'sun' : 'moon'" /></button>
+    <button type="button" title="AI 科研解读" aria-label="AI 解读" aria-controls="assistant-dialog" :aria-expanded="assistantOpen" @click="assistantOpen ? assistantOpen = false : openAssistant()"><UiIcon name="sparkle" /></button>
+    <RouterLink to="/settings#model-connection" title="模型设置" aria-label="模型设置"><UiIcon name="settings" /></RouterLink>
     <span class="rail-divider"></span>
     <button type="button" title="直达顶部" aria-label="直达顶部" @click="scroll('top')"><UiIcon name="top" /></button>
     <button type="button" title="直达底部" aria-label="直达底部" @click="scroll('bottom')"><UiIcon name="bottom" /></button>
     <span class="rail-divider"></span>
-    <RouterLink to="/settings" title="系统设置" aria-label="系统设置"><UiIcon name="settings" /></RouterLink>
     <RouterLink to="/about" title="使用说明" aria-label="使用说明"><UiIcon name="help" /></RouterLink>
   </aside>
 </template>

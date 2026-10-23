@@ -1,0 +1,123 @@
+{
+  "url": "http://127.0.0.1:8001",
+  "run_id": "run_41504106326f404d",
+  "measured_id": "measured_02b74496239e4bba841b9efa",
+  "read_only": true,
+  "external_llm_called": false,
+  "checks": [
+    {
+      "name": "health",
+      "passed": true
+    },
+    {
+      "name": "ready",
+      "passed": true
+    },
+    {
+      "name": "system-status",
+      "passed": true
+    },
+    {
+      "name": "catalog/contexts",
+      "passed": true
+    },
+    {
+      "name": "catalog/data-summary",
+      "passed": true
+    },
+    {
+      "name": "data-catalog",
+      "passed": true
+    },
+    {
+      "name": "resources",
+      "passed": true
+    },
+    {
+      "name": "experiments",
+      "passed": true
+    },
+    {
+      "name": "assistant/capabilities",
+      "passed": true
+    },
+    {
+      "name": "model default lengths active",
+      "passed": true
+    },
+    {
+      "name": "measured/analyses",
+      "passed": true
+    },
+    {
+      "name": "nullable lengths accepted before endpoint rejection",
+      "passed": true
+    },
+    {
+      "name": "measured completed",
+      "passed": true
+    },
+    {
+      "name": "measured table genes",
+      "passed": true
+    },
+    {
+      "name": "measured table tasks",
+      "passed": true
+    },
+    {
+      "name": "measured table reactions",
+      "passed": true
+    },
+    {
+      "name": "measured projection pca",
+      "passed": true
+    },
+    {
+      "name": "measured projection umap",
+      "passed": true
+    },
+    {
+      "name": "measured bundle CRC",
+      "passed": true,
+      "entries": 13
+    },
+    {
+      "name": "prediction summary",
+      "passed": true
+    },
+    {
+      "name": "prediction genes",
+      "passed": true
+    },
+    {
+      "name": "prediction metabolic-tasks",
+      "passed": true
+    },
+    {
+      "name": "prediction completeness",
+      "passed": true
+    },
+    {
+      "name": "prediction provenance",
+      "passed": true
+    },
+    {
+      "name": "prediction projection",
+      "passed": true
+    },
+    {
+      "name": "matched comparison available",
+      "passed": true
+    },
+    {
+      "name": "measured context has no prediction",
+      "passed": true
+    },
+    {
+      "name": "latest matched AI context active",
+      "passed": true,
+      "restart_required": false
+    }
+  ]
+}

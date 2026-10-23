@@ -11,6 +11,7 @@ export interface GeneAnnotation {
   approved_symbol: string
   hgnc_id: string | null
   name_en: string
+  name_zh?: string | null
   category_ids: string[]
   protein_classes: {id: string; name_en: string}[]
   uniprot_ids: string[]

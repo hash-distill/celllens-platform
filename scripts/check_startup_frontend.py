@@ -24,7 +24,7 @@ def main():
         expect(page.locator(".home-shell")).to_be_visible()
         metrics = page.evaluate(r"""() => ({
             paint: performance.getEntriesByType('paint').map(e=>({name:e.name,ms:e.startTime})),
-            images: performance.getEntriesByType('resource').filter(e=>/\.png($|\?)/.test(e.name))
+            images: performance.getEntriesByType('resource').filter(e=>/\.(png|webp)($|\?)/.test(e.name))
                 .map(e=>({name:e.name.split('/').pop(),bytes:e.transferSize,duration:e.duration})),
             requests: performance.getEntriesByType('resource').length
         })""")

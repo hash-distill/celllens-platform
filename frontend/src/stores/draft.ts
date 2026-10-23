@@ -12,7 +12,10 @@ export const useDraftStore = defineStore('draft', {
     mode: 'online' as RunMode,
     nCells: '64' as string | number,
     seed: '42' as string | number,
-    advancedOpen: false,
+    measuredMaxCells: '256' as string | number,
+    measuredSeed: '42' as string | number,
+    measuredSubmitting: false,
+    measuredUncertain: false,
   }),
   actions: {
     setCellLine(cellLine: CellLine): void {

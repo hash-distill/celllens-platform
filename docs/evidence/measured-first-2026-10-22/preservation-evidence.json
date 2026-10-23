@@ -1,0 +1,36 @@
+{
+  "original_files_verified": 1065,
+  "changed_originals": [],
+  "original_runs_verified": [
+    "run_ed570bb58ec74739",
+    "run_a69d03a3be9e492b",
+    "run_41504106326f404d",
+    "run_aef55809479e4c21",
+    "run_34737097754841fd",
+    "run_47d09620968f48cf"
+  ],
+  "independent_mean_checks": [
+    "ALDOA",
+    "GAPDH",
+    "SLC25A37",
+    "TUBA1B",
+    "BLVRB"
+  ],
+  "real_analysis": {
+    "id": "measured_a40955b0de73475a9d628e05",
+    "counts": {
+      "control": 2145,
+      "observed": 77
+    },
+    "genes": 6546
+  },
+  "measured_pairs": 5759,
+  "model_supported_pairs": 8092,
+  "source_missing_pairs": 2333,
+  "main_health": {
+    "service": "celllens",
+    "status": "ok",
+    "database": "ok"
+  },
+  "api_path_count": 42
+}

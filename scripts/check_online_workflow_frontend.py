@@ -34,7 +34,8 @@ def check(base: str, executable: str | None = None) -> None:
         expect(page.locator('input[name="run-mode"]')).to_have_count(0)
         expect(page.get_by_text("实测对照", exact=True)).to_have_count(0)
         expect(page.get_by_text("结果回放", exact=True)).to_have_count(0)
-        page.get_by_role("button", name="展开高级参数").click()
+        expect(page.get_by_role("button", name="展开高级参数")).to_have_count(0)
+        expect(page.locator(".param-panel .cell-background-card")).to_have_count(0)
         expect(page.locator("#n-cells-input")).to_be_editable()
         expect(page.locator("#seed-input")).to_be_editable()
         page.locator("#perturbation-input").fill("MYC")
@@ -59,7 +60,6 @@ def check(base: str, executable: str | None = None) -> None:
         if old["items"]:
             page.goto(base + "/workbench?run=" + old["items"][0]["run_id"])
             page.get_by_role("button", name="复用参数", exact=True).click()
-            page.get_by_role("button", name="展开高级参数", exact=True).click()
             expect(page.locator("#n-cells-input")).to_be_editable()
             submit()
         for width in (1440, 1920):

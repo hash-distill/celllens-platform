@@ -68,12 +68,13 @@ def main():
             expect(page.locator(".pager").first).to_contain_text(f"共 {sum(map(changed, genes))} 条")
             assert page.get_by_role("columnheader", name="观测", exact=True).count() == 0
             with page.expect_download() as download:
-                page.get_by_role("button", name="导出全部已加载 CSV", exact=True).click()
+                page.get_by_role("button", name="导出完整基因 CSV", exact=True).click()
             csv_file = output / download.value.suggested_filename
             download.value.save_as(csv_file)
             rows = list(csv.DictReader(io.StringIO(csv_file.read_text(encoding="utf-8-sig"))))
-            assert len(rows) == sum(map(changed, genes)) and all(map(changed, rows))
-            assert "observed" not in rows[0]
+            assert len(rows) == len(genes)
+            assert {row["gene"] for row in rows} == {row["gene"] for row in genes}
+            assert all(row["population"] == "original" and row["run_id"] == run for row in rows)
             page.goto(base + f"/demo?run={run}&tab=metabolism&view=data", wait_until="networkidle")
             expect(page.locator(".metabolism .pager").nth(0)).to_contain_text(
                 f"共 {sum(map(changed, tasks))} 条"
@@ -105,16 +106,15 @@ def main():
                 expect(page.locator(".scientific-figure img")).to_be_visible(timeout=120000)
                 expect(page.locator(".scientific-figure figcaption")).to_contain_text("共同 UMAP")
                 with page.expect_download() as download:
-                    page.get_by_role("button", name="导出关联 JSON", exact=True).click()
+                    page.get_by_role("button", name="导出完整关联 JSON", exact=True).click()
                 file = output / download.value.suggested_filename
                 download.value.save_as(file)
                 trace = json.loads(file.read_text(encoding="utf-8"))
                 assert changed(trace["task"])
-                assert all(
-                    changed(r) and r["genes"] and all(map(changed, r["genes"])) and r["gene_rule"] is None
-                    for r in trace["reactions"]
-                )
-                assert trace["determinant_genes"] == []
+                raw = traces[(run, trace["task"]["id"])]
+                assert all(trace[key] == raw[key] for key in raw)
+                assert trace["display"]["source_counts"]["reactions"] == len(raw["reactions"])
+                assert trace["display"]["displayed_counts"]["reactions"] <= len(raw["reactions"])
                 page.locator(".association-evidence>summary").click()
                 expect(page.locator(".gpr-detail .gene-link").first).to_be_visible()
                 page.get_by_role("button", name="PCA", exact=True).click()
@@ -151,8 +151,8 @@ def main():
         page.get_by_placeholder("搜索基因符号（仅覆盖已加载记录）").fill("EXCLUDED_GENE")
         expect(page.locator(".table-tools")).to_contain_text("0 / 1997 条")
         with page.expect_download() as download:
-            page.get_by_role("button", name="导出全部已加载 CSV", exact=True).click()
-        target = output / "fixture-filtered-genes.csv"
+            page.get_by_role("button", name="导出完整基因 CSV", exact=True).click()
+        target = output / "fixture-server-complete-genes.csv"
         download.value.save_as(target)
         assert "EXCLUDED_GENE" not in target.read_text(encoding="utf-8-sig")
         page.unroute("**/genes?*", incomplete_genes)
@@ -174,7 +174,13 @@ def main():
         page.get_by_placeholder("搜索任务名或任务 ID").fill("EXCLUDED_TASK")
         expect(page.locator(".task-filter-status")).to_contain_text("匹配 0 项")
         page.unroute("**/metabolic-tasks?*", incomplete_tasks)
-        checks.append({"browser_fixtures": "missing/nonfinite/zero rows excluded from lists and CSV"})
+        checks.append(
+            {
+                "browser_fixtures": (
+                    "missing/nonfinite/zero display rows excluded; CSV remains complete server artifact"
+                )
+            }
+        )
         assert not errors, errors
         assert history == page.request.get(base + "/api/v1/experiments").json()
         assert before == {r["id"]: digest_outputs(root, r["id"]) for r in records}

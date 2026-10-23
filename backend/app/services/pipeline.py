@@ -72,6 +72,7 @@ class AnalysisPipeline:
             model = self.registry.model_for(request.cell_line)
             dataset = self.registry.dataset_for(request.cell_line)
             checkpoint_hash = self.registry.verify_entry(model, "checkpoint_path", "checkpoint_sha256")
+            self.registry.verify_model_companions(model)
             control_hash = self.registry.verify_entry(dataset, "control_path", "control_sha256")
             gene_hash = None
             if model.payload.get("gene_list_path"):

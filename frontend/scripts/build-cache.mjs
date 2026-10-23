@@ -22,6 +22,7 @@ export function sourceFingerprint(root, env = process.env) {
     .filter(entry => entry.isFile() && (/\.(?:json|[cm]?[jt]s)$/.test(entry.name) || entry.name.startsWith('.env')))
     .map(entry => join(root, entry.name))
   const inputs = [...topLevel, join(root, 'index.html'), join(root, 'node_modules', '.package-lock.json'),
+    join(root, '..', 'backend', 'app', 'resources', 'biology_zh.json'),
     ...['src', 'public', 'scripts'].flatMap(name => filesUnder(join(root, name)))]
   for (const path of [...new Set(inputs)].filter(existsSync).sort()) {
     hash.update(relative(root, path).replaceAll('\\', '/') + '\0').update(readFileSync(path)).update('\0')

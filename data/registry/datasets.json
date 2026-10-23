@@ -2,10 +2,10 @@
   "schema_version": 1,
   "datasets": [
     {
-      "id": "replogle-k562-control-v1",
+      "id": "replogle-k562-control-1024-v2",
       "cell_line": "K562",
-      "control_path": "data/raw/replogle-k562/control.h5ad",
-      "control_sha256": "38fba985d1ad907ab2d583e109795031dc67ec3cc7e2c3b4a70cd7aabc9e6678",
+      "control_path": "data/raw/replogle-k562/control-1024-v2.h5ad",
+      "control_sha256": "a9928884e064820fdf872ef4ebe1e348b4b205be8a5b356c5f9a6143ee1fbf13",
       "observed_path": "data/raw/replogle-k562/diagnostic-aldoa-v1.h5ad",
       "observed_sha256": "dae5c241c2c9312e73c5ff9a8b857fe4bf90868b5db132441b865af623ff73d2",
       "split_path": "configs/splits/replogle-v1.json",

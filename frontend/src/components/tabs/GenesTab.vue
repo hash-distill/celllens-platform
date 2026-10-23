@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useRunStore } from '../../stores/run'
 import { useUiStore } from '../../stores/ui'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
 import DivergingBar, { type DivergingBarItem } from '../../charts/DivergingBar.vue'
 import { fmtDelta, fmtNumber } from '../../utils/format'
-import { downloadCsv } from '../../utils/csv'
+import { downloadBlob } from '../../utils/csv'
+import { api } from '../../api/client'
 import type { GeneRow } from '../../types/run'
 import TablePager from '../TablePager.vue'
 import { usePagedRows } from '../../utils/pagination'
-import { isSyntheticResult, runSourceLabel } from '../../utils/source'
+import { isSyntheticResult } from '../../utils/source'
 import { hasPredictionChange } from '../../utils/predictionEvidence'
 
 /**
@@ -27,14 +29,21 @@ const entry = computed(() => runs.entry(props.runId))
 const block = computed(() => entry.value?.genes ?? null)
 const summary = computed(() => entry.value?.summary.data ?? null)
 
+const route = useRoute()
 const search = ref('')
 const sortKey = ref<'gene' | 'control' | 'predicted' | 'predicted_delta' | 'observed' | 'observed_delta'>(
   'predicted_delta',
 )
 const sortDir = ref<'asc' | 'desc'>('desc')
 const selectedGene = ref<string | null>(null)
+watch(() => route.query.gene, gene => { if (typeof gene === 'string') { search.value = gene; selectedGene.value = gene } }, {immediate:true})
+const exporting = ref(false), exportError = ref('')
+const exportUnavailable = computed(() => isSyntheticResult(entry.value?.record?.request.mode,props.runId,entry.value?.record?.result_kind) || entry.value?.record?.request.mode === 'validation')
+let exportController: AbortController | undefined
+watch(() => props.runId, () => {exportController?.abort();exporting.value=false;exportError.value=''}, {flush:'sync'})
+onBeforeUnmount(() => exportController?.abort())
 
-const items = computed<GeneRow[]>(() => (block.value?.data?.items ?? []).filter(hasPredictionChange))
+const items = computed<GeneRow[]>(() => (block.value?.data?.items ?? []).filter(row => hasPredictionChange(row) || row.gene === route.query.gene))
 const truncated = computed(() => block.value?.data?.truncated ?? false)
 
 const filtered = computed(() => {
@@ -117,26 +126,18 @@ function retry(): void {
   runs.retryBlock(props.runId, 'genes')
 }
 
-function exportCsv(): void {
-  const data = block.value?.data
-  if (!data) return
-  const source = runSourceLabel(entry.value?.record?.request.mode, props.runId, entry.value?.record?.result_kind)
-  const filename = `celllens-genes-${source}-${props.runId}-${data.truncated ? 'partial' : 'full'}-limit${data.limit}.csv`
-  downloadCsv(
-    filename,
-    ['gene', 'control', 'predicted', 'predicted_delta', ...(hasObserved.value ? ['observed', 'observed_delta'] : [])],
-    items.value.map((row) => [
-      row.gene,
-      row.control === null ? '' : String(row.control),
-      row.predicted === null ? '' : String(row.predicted),
-      row.predicted_delta === null ? '' : String(row.predicted_delta),
-      ...(hasObserved.value ? [row.observed === null ? '' : String(row.observed), row.observed_delta === null ? '' : String(row.observed_delta)] : []),
-    ]),
-  )
-  ui.push(
-    'success',
-    `已导出 ${items.value.length} 行模型预测变化（${data.truncated ? '部分结果，服务端已截断' : '全部符合展示标准的已加载结果'}）`,
-  )
+async function exportCsv(): Promise<void> {
+  if (exporting.value || exportUnavailable.value) return
+  const id = props.runId, current = exportController = new AbortController()
+  exporting.value=true;exportError.value=''
+  try {
+    const result = await api.getExportTable(id,'genes','original',current.signal)
+    if (!current.signal.aborted && id === props.runId) {
+      downloadBlob(result.blob,result.filename)
+      ui.push('success','已导出完整基因汇总表，包含尺度、群体与来源说明')
+    }
+  } catch(error) {if (!current.signal.aborted) exportError.value=error instanceof Error ? error.message : '基因表导出失败'}
+  finally {if (!current.signal.aborted) exporting.value=false}
 }
 </script>
 
@@ -150,9 +151,14 @@ function exportCsv(): void {
     unavailable-hint="其他标签页仍可正常使用。"
     @retry="retry"
   >
+    <template #empty-extra>
+      <button class="btn btn-sm" type="button" :disabled="exporting || exportUnavailable" @click="exportCsv">{{ exporting?'下载中…':'导出完整基因 CSV' }}</button>
+      <p v-if="exportUnavailable" class="muted small">此数据来源暂不支持完整表导出。</p>
+      <p v-if="exportError" class="notice notice-warn" role="alert">{{ exportError }}</p>
+    </template>
     <!-- 后端 Top 基因概览 -->
     <div v-if="summary && summary.top_genes.length > 0" class="overview">
-      <span class="small muted">后端 Top 基因概览（summary.top_genes）：</span>
+      <span class="small muted">主要响应基因：</span>
       <span
         v-for="gene in summary.top_genes.filter(g => items.some(row => row.gene === g.id)).slice(0,4)"
         :key="gene.id"
@@ -164,7 +170,7 @@ function exportCsv(): void {
     </div>
 
     <div v-if="truncated" class="notice notice-warn">
-      当前为部分结果：服务端按 limit={{ block?.data?.limit }} 截断，表格与图表只覆盖已加载记录。
+      当前显示前 {{ block?.data?.limit }} 条基因结果。
     </div>
 
     <div class="gene-analysis-grid">
@@ -231,7 +237,9 @@ function exportCsv(): void {
       />
       <span class="small muted">{{ sorted.length }} / {{ items.length }} 条</span>
       <span class="spacer"></span>
-      <button class="btn btn-sm" type="button" @click="exportCsv">导出全部已加载 CSV</button>
+      <button class="btn btn-sm" type="button" :disabled="exporting || exportUnavailable" @click="exportCsv">{{ exporting?'下载中…':'导出完整基因 CSV' }}</button>
+      <span v-if="exportUnavailable" class="muted small">此数据来源暂不支持完整表导出。</span>
+      <span v-if="exportError" class="notice notice-warn" role="alert">{{ exportError }}</span>
     </div>
 
     <!-- 基因表 -->
@@ -286,7 +294,7 @@ function exportCsv(): void {
     </div>
     <TablePager v-model:page="page" v-model:page-size="pageSize" :pages="pages" :total="sorted.length" />
     <p class="muted small" style="margin: 8px 0 0">
-      「预测变化」为预测减对照的平均归一化表达差（不是 log2FC）；空值表示接口未提供，不以 0 代替。
+      预测变化 = 预测平均表达 − 对照平均表达；“未提供”表示暂无数值。
     </p>
   </BlockState>
 </template>

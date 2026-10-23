@@ -446,5 +446,5 @@ export async function downloadReport(runId: string): Promise<{ blob: Blob; filen
   await delay()
   requireRun(runId, '/report')
   throw new ApiError({kind:'http',status:409,code:'REPORT_UNAVAILABLE',
-    message:'开发演示模式不提供正式 PDF 报告',endpoint:`/runs/${runId}/report`})
+    message:'合成示例不提供科研 PDF 报告',endpoint:`/runs/${runId}/report`})
 }

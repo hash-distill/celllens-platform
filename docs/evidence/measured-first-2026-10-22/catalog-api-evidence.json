@@ -1,0 +1,90 @@
+{
+  "isolated_router_real_registry": true,
+  "source_verified": true,
+  "filtered_total": 2333,
+  "csv_rows": 2333,
+  "csv_header": [
+    "cell_line",
+    "perturbation",
+    "source_cell_count",
+    "source_status",
+    "local_verified",
+    "local_measured_cells",
+    "model_supported",
+    "official_split",
+    "training_exclusion_verified",
+    "generalization_verified",
+    "recommended_action",
+    "source_repo",
+    "source_revision",
+    "source_verified",
+    "source_manifest_sha256"
+  ],
+  "aldoa_pairs": [
+    {
+      "cell_line": "HepG2",
+      "perturbation": "ALDOA",
+      "source_cell_count": 96,
+      "source_status": "measured",
+      "local_verified": true,
+      "local_measured_cells": 96,
+      "model_supported": true,
+      "official_split": "not_declared_held_out",
+      "training_exclusion_verified": false,
+      "generalization_verified": false,
+      "recommended_action": "measured"
+    },
+    {
+      "cell_line": "Jurkat",
+      "perturbation": "ALDOA",
+      "source_cell_count": 75,
+      "source_status": "measured",
+      "local_verified": true,
+      "local_measured_cells": 75,
+      "model_supported": true,
+      "official_split": "test",
+      "training_exclusion_verified": false,
+      "generalization_verified": false,
+      "recommended_action": "measured"
+    },
+    {
+      "cell_line": "K562",
+      "perturbation": "ALDOA",
+      "source_cell_count": 77,
+      "source_status": "measured",
+      "local_verified": true,
+      "local_measured_cells": 77,
+      "model_supported": true,
+      "official_split": "test",
+      "training_exclusion_verified": false,
+      "generalization_verified": false,
+      "recommended_action": "measured"
+    },
+    {
+      "cell_line": "RPE1",
+      "perturbation": "ALDOA",
+      "source_cell_count": 70,
+      "source_status": "measured",
+      "local_verified": true,
+      "local_measured_cells": 70,
+      "model_supported": true,
+      "official_split": "not_declared_held_out",
+      "training_exclusion_verified": false,
+      "generalization_verified": false,
+      "recommended_action": "measured"
+    }
+  ],
+  "metadata": {
+    "columns": [
+      "obs.cell_line",
+      "obs.gene"
+    ],
+    "n_obs": 643413,
+    "sha256": "2acd0107047319ee4d79a289aea68db2cee91425f34d5ef6a2fb14d70d51a9ec",
+    "row_digest_encoding": "source order JSON [cell_line,gene] + LF",
+    "source_file_size": 30010775846,
+    "range_requested_bytes": 13631488,
+    "expression_read": false
+  },
+  "manifest_sha256": "b06c466a6a90e1a6c2f9dc3b1a6acd37fe64ff8242b735f8e8f77060fb0bd43b"
+}

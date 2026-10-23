@@ -1,0 +1,23 @@
+{
+  "started_at": "2026-10-22T18:44:21.063891+00:00",
+  "request": {
+    "cell_line": "K562",
+    "perturbation": "ALDOA",
+    "max_cells": 16,
+    "seed": 20261023
+  },
+  "external_llm_called": false,
+  "analysis_id": "measured_02b74496239e4bba841b9efa",
+  "status": "completed",
+  "counts": {
+    "control": 868,
+    "observed": 16
+  },
+  "gene_count": 6546,
+  "checks": {
+    "genes": 6546,
+    "tasks": 186,
+    "reactions": 536
+  },
+  "completed_at": "2026-10-22T18:45:33.012099+00:00"
+}

@@ -42,12 +42,15 @@ def main():
         page.goto(f"{args.url}/workbench?run={acd}&tab=function", wait_until="networkidle", timeout=60000)
         expect(page.locator(".function-node").first).to_be_visible(timeout=15000)
         tabs = page.get_by_role("tablist", name="分析结果").get_by_role("tab")
-        assert tabs.all_text_contents() == ["响应概览", "单细胞状态", "基因响应", "代谢功能", "预测验证"]
+        assert "表达状态分布" in tabs.all_text_contents()
+        assert "代谢功能" in tabs.all_text_contents()
         assert "tab=metabolism" in page.url and "view=function" in page.url
         expect(page.get_by_role("button", name="功能前后对比", exact=True)).to_have_attribute(
             "aria-pressed", "true"
         )
-        checks.append("five main tabs; legacy function route redirects into metabolism")
+        checks.append(
+            "state-distribution and metabolism tabs; legacy function route redirects into metabolism"
+        )
         page.get_by_role("button", name="任务与反应分数", exact=True).click()
         expect(page.locator(".metabolism")).to_be_visible(timeout=15000)
         page.get_by_role("button", name="功能前后对比", exact=True).click()

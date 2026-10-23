@@ -1,0 +1,68 @@
+[
+  {
+    "path": "/methods/models",
+    "headings": [
+      "  - heading \"数据与方法\" [level=1]",
+      "  - heading \"先预测表达，再理解功能\" [level=2]",
+      "    - heading \"STATE 扰动表达预测\" [level=2]",
+      "    - heading \"scCellFie 代谢功能推断\" [level=2]",
+      "  - heading \"连接表达变化与代谢功能\" [level=2]"
+    ],
+    "errors": []
+  },
+  {
+    "path": "/methods/backgrounds",
+    "headings": [
+      "  - heading \"数据与方法\" [level=1]",
+      "    - heading \"从细胞背景，了解数据范围\" [level=2]",
+      "      - heading \"数据与分析内容\" [level=3]",
+      "        - heading \"对照来源与预测采样\" [level=3]"
+    ],
+    "errors": []
+  },
+  {
+    "path": "/methods/coverage",
+    "headings": [
+      "  - heading \"数据与方法\" [level=1]",
+      "  - heading \"模型覆盖范围\" [level=2]",
+      "  - heading \"目前覆盖哪些代谢基因？\" [level=2]",
+      "    - heading \"从基因认识功能类别\" [level=2]"
+    ],
+    "errors": []
+  },
+  {
+    "path": "/about",
+    "headings": [
+      "  - heading \"使用说明\" [level=1]",
+      "  - heading \"结果含义\" [level=2]",
+      "  - heading \"适用范围\" [level=2]"
+    ],
+    "alerts": []
+  },
+  {
+    "path": "/status",
+    "headings": [
+      "  - heading \"服务状态\" [level=1]",
+      "    - heading \"按需准备细胞背景\" [level=2]"
+    ],
+    "alerts": []
+  },
+  {
+    "path": "/settings#model-connection",
+    "headings": [
+      "  - heading \"系统设置\" [level=1]",
+      "  - heading \"外观\" [level=2]",
+      "  - heading \"页面主题\" [level=3]",
+      "  - heading \"大模型连接\" [level=2]"
+    ],
+    "alerts": []
+  },
+  {
+    "path": "/workbench",
+    "headings": [
+      "  - heading \"模型预测工作台\" [level=1]",
+      "  - heading \"按研究问题选择预测。\" [level=2]"
+    ],
+    "alerts": []
+  }
+]

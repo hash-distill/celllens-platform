@@ -1,97 +1,87 @@
 # 系统架构
 
-CellLens 分为三个层次：HTTP 接口接收请求，任务管线执行模型与科学计算，MySQL 和文件系统保存过程及产物。Vue 前端通过公开接口访问这些能力，生产构建由 FastAPI 提供；开发环境由 Vite 代理 /api。
+更新日期：2026-10-22。CellLens 将实测分析与模型预测分为两条计算链：前者在 CPU 上分析真实对照和扰动观测，后者调用 STATE 生成预测。两者共享表达解释、scCellFie 评分、结果呈现和来源追溯规则，但不混用群体、面板或结果身份。
 
-## 一次分析如何流转
+## 页面与数据流
+
+主导航为“研究分析、记录与比较、数据与方法、使用说明”。研究分析分别提供 `/measured` 实测任务和 `/workbench` 预测任务；`/records` 汇集实测历史、预测记录与比较；`/data-catalog` 和 `/methods/*` 提供范围与方法；`/about` 提供帮助。预测详情以 `/runs/:runId` 标识，实测详情以 `/measured/:analysisId` 标识。旧 `/demo?run=...` 保留跳转兼容。
 
 ```mermaid
 flowchart TD
-    UI[Vue 工作台] --> API[FastAPI 接口]
-    API --> CHECK[校验请求与注册资产]
-    CHECK --> MODE{运行模式}
-    MODE -->|online / validation| CACHE{完成结果缓存}
-    CACHE -->|命中| RESULT[结果查询与报告]
-    CACHE -->|未命中| QUEUE[进程内单消费者队列]
-    QUEUE --> LOCK[MySQL 资源锁与执行租约]
-    LOCK --> STATE[STATE 扰动表达预测]
-    STATE --> ALIGN[读取预测表达并对齐共同基因]
-    ALIGN --> ANALYSIS[基因差异、二维投影、scCellFie]
-    ANALYSIS --> PUBLISH[校验摘要并原子发布结果目录]
-    PUBLISH --> RESULT
-    MODE -->|precomputed| DEMO[校验预计算包并生成运行记录]
-    DEMO --> RESULT
-    API --> DB[(MySQL：运行元数据)]
-    LOCK --> DB
-    PUBLISH --> DB
-    DEMO --> DB
-    PUBLISH --> FILES[(文件系统：科学产物)]
-    RESULT --> FILES
+    UI[Vue 研究分析] --> API[FastAPI 请求与来源校验]
+    API --> M[实测分析管理器]
+    M --> INPUT[登记输入或按需提取真实细胞]
+    INPUT --> CPU[独立 CPU 子进程]
+    CPU --> MA[共有批次和完整共同基因分析]
+    API --> CACHE{在线预测缓存}
+    CACHE -->|未命中| QUEUE[预测单消费者队列]
+    QUEUE --> LEASE[MySQL 锁与执行租约]
+    LEASE --> STATE[STATE ST-HVG GPU 推理]
+    STATE --> PA[预测表达契约与面板分析]
+    MA --> SCORE[各自群体的表达分析与 scCellFie 评分]
+    PA --> SCORE
+    SCORE --> FILES[校验并原子发布结果文件]
+    CACHE -->|命中| RESULT[查询已有结果]
+    FILES --> RESULT
+    RESULT --> UI
+    M --> DB[(MySQL 元数据)]
+    LEASE --> DB
+    FILES --> DB
+    RESULT --> COMPARE[可选匹配观测比较包]
+    RESULT --> ASSIST[预览摘要后请求 AI 解读]
 ```
 
-1. `POST /api/v1/runs` 校验细胞系、扰动、细胞数及种子。在线和验证模式还检查模型/数据哈希、worker 与 GPU 开关。
-2. 相同请求及资产、配置、后端代码指纹命中已完成缓存时，直接返回已有运行编号。预计算模式独立处理，每次生成新记录。
-3. 新在线任务进入进程内队列。启动 worker 时重新提交可恢复任务；MySQL 执行租约避免重复领取同一个运行。
-4. 管线调用 STATE，检查输出 H5AD，再读取模型实际写入的预测表达。当前 K562 预测位于 `obsm['X_hvg']`，不能把原始 `.X` 当作预测。
-5. 对齐对照、预测和可选观测的共同基因，计算差异与投影；使用冻结 scCellFie 数据库计算代谢任务和反应分数。
-6. 生成摘要、报告与清单。在线/验证结果先写临时目录，校验后原子改名，再登记产物、完成运行并建立缓存。
+生产前端由 FastAPI 同源提供；开发环境由 Vite 代理 `/api`。服务状态、资源下载和 AI 提供商设置使用辅助入口。
 
-## 模块与代码位置
+## 两条计算链
 
-| 层次 | 位置 | 职责 |
-|---|---|---|
-| 前端 | `frontend/src/` | 页面、Pinia 状态、统一请求层、图表及本机记录 |
-| 应用入口 | `backend/app/main.py`、`container.py`、`config.py` | 配置、组件组装、worker 生命周期、health/ready |
-| HTTP 与契约 | `backend/app/api/`、`schemas.py` | catalog、运行与结果接口、严格请求与响应结构 |
-| 资产管理 | `backend/app/core/registry.py` | 注册表、工程内路径限制、文件哈希验证 |
-| 运行管理 | `backend/app/core/storage.py`、`job_queue.py`、`cache.py` | 状态机、租约、心跳、恢复、串行调度与缓存 |
-| 数据库 | `backend/app/db/` | SQLAlchemy 表定义及 Alembic 迁移 |
-| 模型适配 | `backend/app/engines/` | STATE 子进程、H5AD 契约、scCellFie 与差异评价 |
-| 科学分析 | `backend/app/services/scientific_analysis.py` | 共同基因、表达差异、投影、代谢覆盖及验证指标 |
-| 总体编排 | `backend/app/services/pipeline.py` | 阶段转换、结果发布、报告与失败记录 |
+### 实测直接分析
 
-GPU 路径通过 `state_gpu_runner.py` 适配 STATE 的 `tx infer` 入口；推理命令及输出日志随运行保存。worker 属于当前 Web 进程，尚未拆成独立服务。
+`POST /api/v1/measured/analyses` 校验背景、目标和真实细胞上限，优先复用有效输入；缺少本地子集时从固定官方源按需读取。`measured_jobs.py` 管理任务与 CPU 子进程，`measured_worker.py` 执行分析及发布。预测 worker/GPU 开关关闭时，实测分析仍可独立执行。
 
-## 数据如何保存
+分析保留对照与扰动共有批次，记录筛选前后人数，使用本次输入完整共同基因面板。请求上限不保证取得同样多的细胞，不复制观测补齐数量。输出包括表达均值差、PCA/UMAP、可用代谢评分、HTML 报告和带哈希的 manifest；代谢不可用时保留原因。历史写入 `measured_analyses`，文件写入 `data/derived/measured/<analysis_id>/`。
 
-MySQL 保存元数据，大型表达矩阵和结果表留在磁盘。
+### 在线预测
+
+`POST /api/v1/runs` 只接受新建 `online` 运行，检查参数、登记资产和预测开关。请求、资产、配置及代码指纹一致且已完成时可复用缓存；`cache_hit=true` 不代表本次重新推理。未命中任务由进程内单消费者执行，MySQL 锁和租约约束领取，心跳记录执行仍存活；它们不判断科学质量。
+
+STATE 输出按注册表达槽和有序面板读取，当前 ST-HVG 使用 `obsm['X_hvg']` 的 2,000 个预测基因，不能将原始 `.X` 当成更宽预测。表达契约、身份适配、共同面板和冻结阈值核对后，计算表达、投影及代谢结果。产物先写 attempt 临时目录，校验后发布到 `data/derived/runs/<run_id>/` 并登记缓存。
+
+有匹配观测时可准备独立比较包，不改写原预测。比较的共同子集、面板和单位应与完整实测分析区分。历史 `validation`、冻结结果及合成记录保留读取兼容，不作为新任务创建选项。
+
+## 模块与存储
+
+| 位置 | 职责 |
+|---|---|
+| `frontend/src/` | 页面、请求状态、结果概览、图表、历史和比较 |
+| `backend/app/main.py`、`container.py`、`config.py` | 服务组装、配置与生命周期 |
+| `backend/app/api/`、`schemas.py` | API 请求、来源身份与响应契约 |
+| `backend/app/core/registry.py` | 登记资产、工程内路径和哈希核验 |
+| `backend/app/core/storage.py`、`job_queue.py`、`cache.py` | 预测状态、租约、恢复与缓存 |
+| `backend/app/services/measured_*.py` | 实测输入、CPU 任务、持久历史、结果和比较 |
+| `backend/app/services/scientific_analysis.py`、`pipeline.py` | 预测科学分析、阶段编排与发布 |
+| `backend/app/services/task_trace.py` | 冻结任务—反应—基因关联与数值来源 |
+| `backend/app/engines/` | STATE 与 scCellFie 适配 |
+| `backend/app/db/` | SQLAlchemy 模型与 Alembic 迁移 |
+
+MySQL 当前包含六张业务表及迁移版本表，实际结构以模型与迁移为准：
 
 | 表 | 内容 |
 |---|---|
-| `runs` | 请求、状态、进度、时间和错误 |
-| `run_attempts` | 每次执行的 worker、租约、心跳与结果 |
-| `run_events` | 状态转换记录 |
-| `run_artifacts` | 产物路径、SHA-256、大小与 MIME |
-| `run_cache` | 缓存键与已完成运行的对应关系 |
+| `runs` | 预测及历史兼容运行的参数、状态、进度、警告 |
+| `run_attempts` | 预测执行次数、worker、租约、心跳与错误 |
+| `run_events` | 预测状态转换 |
+| `run_artifacts` | 预测产物路径、SHA-256、大小和 MIME |
+| `run_cache` | 已完成预测缓存 |
+| `measured_analyses` | 实测请求、状态、进度、摘要及 manifest 身份 |
 | `alembic_version` | 数据库迁移版本 |
 
-表结构以 `backend/app/db/models.py` 为准。每个运行可有多个 attempt，即重试执行记录。进程内单消费者负责串行执行，跨进程还通过名为 `celllens:a6000` 的 MySQL 锁互斥；该名称是历史资源标识，不表示必须使用 A6000。
+大型矩阵、图表数据与报告保存在磁盘。预测目录包含预测 H5AD、命令日志、表达/任务/反应表、投影、表达契约、关联、摘要和 manifest；具体产物以该次清单为准。实测目录保存本次分析输入或其登记引用、表格、投影、摘要、报告和 manifest。资源下载状态、比较包和历史冻结包也必须随迁移保全，详见[运行与检查](OPERATIONS.md)。
 
-在线/验证结果实际结构如下，代谢和观测相关文件按成功情况生成：
+## 结果与解释边界
 
-```text
-data/derived/runs/
-├── <run_id>.attempt-<n>.partial/   临时目录；失败时可保留 failure.json
-└── <run_id>/
-    ├── predicted.h5ad
-    ├── predicted.command.json / predicted.perturbations.tsv
-    ├── predicted.stdout.log / predicted.stderr.log
-    ├── gene_deltas.csv
-    ├── projection.json
-    ├── metabolic_coverage.csv     覆盖计算成功时
-    ├── metabolic_task_scores.csv  代谢计算成功时
-    ├── reaction_scores.csv        代谢计算成功时
-    ├── validation_metrics.json    匹配观测及代谢计算成功时
-    ├── summary.json
-    ├── report.html
-    └── manifest.json
-```
+结果概览先呈现关键基因和任务数值，专业 PCA/UMAP 检查按需展开。代谢任务按关联覆盖率、再按绝对差值排序，默认显示前 8 项，可展开本分类全部条目；该排序仅表示输入完整性，不是显著性、敏感性检验或可靠性认证。关联来自冻结知识库，不是因果归因；完整 GPR 与缺失成员保留在追溯或导出中。
 
-预计算结果来自 `data/demo/<cell_line>/<perturbation>/`，不执行推理链路，也不保证拥有所有产物。API 的读取范围见 [接口说明](API.md)。
+AI 实测解读接收概要、基因、代谢、覆盖和后续建议所需的服务端摘要；科研图和预测比较解读仍属于运行结果。密钥不写入数据库或分析产物。预览内容和来源需与本次结果一致，生成文本不改变原始科学结果。
 
-## 完成、失败与降级
-
-状态顺序为 `queued → state_running → adapting → metabolic_running → validating → completed`，异常可进入 `failed`。这里 `validating` 表示结果整理与校验阶段；在线任务也会经过它，不能据此判断做了观测验证。
-
-模型或表达契约失败会使任务失败。已捕获的代谢数据库、覆盖或表达问题会留下转录结果，并写入代谢不可用警告；未捕获异常仍会使整个任务失败。只有成功完成的在线/验证运行进入缓存。
-
-当前可查询运行 manifest 中的历史模型、数据与哈希，以及已有验证指标。尚无用户登录、权限隔离或公开运行列表；验证协议与基因—反应—任务映射仍需补齐，服务按内部科研使用范围使用。
+预测状态中的 `validating` 是结果整理与校验阶段，不代表独立实验验证。服务启动、文件哈希、任务完成与科学准确性是不同证据。当前未证明 checkpoint 对诊断目标的训练排除，也未提供多用户权限隔离；共享部署需要单独的访问控制和目标环境验收。

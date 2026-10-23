@@ -4,7 +4,7 @@ import { BarChart, ScatterChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, TitleComponent, ToolboxComponent, DataZoomComponent, MarkLineComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { onBeforeUnmount, onMounted, watch, type Ref, type WatchSource } from 'vue'
-import { isDark } from '../stores/preferences'
+import { isDark } from '../stores/appearance'
 
 echarts.use([BarChart, ScatterChart, GridComponent, TooltipComponent, TitleComponent,
   ToolboxComponent, DataZoomComponent, MarkLineComponent, CanvasRenderer])

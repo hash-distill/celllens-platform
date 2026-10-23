@@ -26,6 +26,7 @@ from backend.app.schemas import (
 from backend.app.services.cell_state import CellStateUnavailable, cell_state_document
 from backend.app.services.cell_state_figure import render_cell_state
 from backend.app.services.cell_state_preparation import prepared_figure
+from backend.app.services.export_names import figure_filename
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -94,7 +95,7 @@ def get_cell_state_figure(
             detail={"code": "CELL_STATE_DEPENDENCY", "message": "Install report dependencies"},
         ) from exc
     mime = {"svg": "image/svg+xml", "pdf": "application/pdf", "png": "image/png"}[file_format]
-    filename = f"{run_id}_cell_state_{space}_{embedding}.{file_format}"
+    filename = figure_filename(run_id, space, embedding, feature_kind, document["feature"]["id"], file_format)
     return Response(
         content,
         media_type=mime,
