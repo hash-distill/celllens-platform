@@ -6,6 +6,8 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 
+from backend.app.access import WorkspaceAccessMiddleware
+from backend.app.access import router as access_router
 from backend.app.api.catalog import router as catalog_router
 from backend.app.api.comparisons import router as comparisons_router
 from backend.app.api.coverage import router as coverage_router
@@ -13,6 +15,8 @@ from backend.app.api.data_catalog import router as data_catalog_router
 from backend.app.api.experiments import router as experiments_router
 from backend.app.api.exports import router as exports_router
 from backend.app.api.measured import router as measured_router
+from backend.app.api.operations import router as operations_router
+from backend.app.api.research import router as research_router
 from backend.app.api.resources import router as resources_router
 from backend.app.api.runs import router as runs_router
 from backend.app.assistant import AssistantService
@@ -20,9 +24,11 @@ from backend.app.assistant import router as assistant_router
 from backend.app.assistant_middleware import AssistantRequestMiddleware
 from backend.app.config import Settings, get_settings
 from backend.app.container import build_container
+from backend.app.coverage_middleware import CoverageCompressionMiddleware
 from backend.app.services.measured_jobs import MeasuredJobs
 from backend.app.services.resource_downloads import ResourceManager
 from backend.app.services.system_status import system_status
+from backend.app.services.worker_status import workers_status
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -31,8 +37,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        application.state.measured.recover()
-        if resolved.worker_enabled:
+        if resolved.worker_mode == "embedded":
+            application.state.measured.recover()
+        if resolved.worker_enabled and resolved.worker_mode == "embedded":
             await container.queue.start()
             for run_id in container.store.list_recoverable_run_ids():
                 container.store.prepare_recovery(run_id)
@@ -40,7 +47,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         await application.state.measured.close()
         await application.state.resources.close()
-        if resolved.worker_enabled:
+        if resolved.worker_enabled and resolved.worker_mode == "embedded":
             await container.queue.stop()
 
     application = FastAPI(
@@ -54,6 +61,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.resources = ResourceManager(container)
     application.state.measured = MeasuredJobs(container)
     application.add_middleware(AssistantRequestMiddleware, api_prefix=resolved.api_prefix)
+    application.add_middleware(CoverageCompressionMiddleware, api_prefix=resolved.api_prefix)
+    application.add_middleware(WorkspaceAccessMiddleware, settings=resolved)
 
     @application.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):
@@ -80,19 +89,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @application.get(f"{resolved.api_prefix}/ready", tags=["system"])
     def ready() -> JSONResponse:
-        checks = {
-            "database": False,
-            "worker": resolved.worker_enabled,
-            "gpu": resolved.gpu_available,
+        checks = {"database": False}
+        workers = {
+            "mode": resolved.worker_mode,
+            "live": [],
+            "cpu_available": False,
+            "prediction_available": False,
         }
         try:
             checks["database"] = container.store.ping()
+            workers = workers_status(container)
         except Exception:
             pass
-        ready_status = all(checks.values())
+        # Viewing completed research remains ready without any GPU/worker.
+        ready_status = checks["database"]
         return JSONResponse(
             status_code=200 if ready_status else 503,
-            content={"service": "celllens", "ready": ready_status, "checks": checks},
+            content={
+                "service": "celllens",
+                "ready": ready_status,
+                "checks": checks,
+                "capabilities": {
+                    "result_browsing": ready_status,
+                    "cpu_analysis": ready_status and workers["cpu_available"],
+                    "prediction": ready_status and workers["prediction_available"],
+                },
+                "workers": workers,
+            },
         )
 
     @application.get(f"{resolved.api_prefix}/system-status", tags=["system"])
@@ -109,6 +132,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(comparisons_router, prefix=resolved.api_prefix)
     application.include_router(exports_router, prefix=resolved.api_prefix)
     application.include_router(assistant_router, prefix=resolved.api_prefix)
+    application.include_router(access_router, prefix=resolved.api_prefix)
+    application.include_router(research_router, prefix=resolved.api_prefix)
+    application.include_router(operations_router, prefix=resolved.api_prefix)
 
     # Register after API routes; only known SPA paths receive the HTML fallback.
     dist = (resolved.project_root / "frontend" / "dist").resolve()

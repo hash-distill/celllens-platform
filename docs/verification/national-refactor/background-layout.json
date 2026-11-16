@@ -1,0 +1,58 @@
+{
+  "checks": [
+    {
+      "documentWidth": 375,
+      "paddingLeft": 16.571430206298828,
+      "paddingRight": 16.57143783569336,
+      "railGap": 12.85714340209961,
+      "sourceColumns": "238.286px",
+      "viewport": 390
+    },
+    {
+      "documentWidth": 665,
+      "paddingLeft": 20.571430206298828,
+      "paddingRight": 20.571453094482425,
+      "railGap": 12.857112884521484,
+      "sourceColumns": "520px",
+      "viewport": 680
+    },
+    {
+      "documentWidth": 666,
+      "paddingLeft": 20.571434020996097,
+      "paddingRight": 20.571449279785156,
+      "railGap": 10.85711669921875,
+      "sourceColumns": "481.143px",
+      "viewport": 681
+    },
+    {
+      "documentWidth": 885,
+      "paddingLeft": 22.169647216796875,
+      "paddingRight": 22.169647216796875,
+      "railGap": 10.857177734375,
+      "sourceColumns": "696.804px",
+      "viewport": 900
+    },
+    {
+      "documentWidth": 1425,
+      "paddingLeft": 32.57142639160156,
+      "paddingRight": 32.57139587402344,
+      "railGap": 18.053565979003903,
+      "sourceColumns": "381.866px 381.866px 381.866px",
+      "viewport": 1440
+    },
+    {
+      "documentWidth": 1905,
+      "paddingLeft": 32.571441650390625,
+      "paddingRight": 32.571380615234375,
+      "railGap": 251.42868041992188,
+      "sourceColumns": "386.286px 386.286px 386.286px",
+      "viewport": 1920
+    }
+  ],
+  "backgrounds": [
+    "K562",
+    "HepG2"
+  ],
+  "build": "passed",
+  "typecheck": "passed"
+}

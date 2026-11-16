@@ -1,0 +1,56 @@
+[
+  {
+    "path": "/auth/session",
+    "status": 200,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/ready",
+    "status": 200,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/runs",
+    "status": 200,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/measured/analyses",
+    "status": 200,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/research/results/prediction/run_34737097754841fd",
+    "status": 200,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/research/results/measured/measured_00c6134fec4544efb1ad3b6d/export",
+    "status": 200,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/research/results/measured/measured_ad6bdad81013413493d363db",
+    "status": 403,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/research/findings",
+    "status": 403,
+    "private_path": false,
+    "findings_present": false
+  },
+  {
+    "path": "/system-status",
+    "status": 403,
+    "private_path": false,
+    "findings_present": false
+  }
+]

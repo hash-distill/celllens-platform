@@ -43,7 +43,7 @@ export function rankTasks(rows: OverviewTaskRow[]): OverviewTaskRow[] {
   return [...rows].sort((first, second) => {
     const firstCoverage = coverageState(first.coverage) === 'unknown' ? -1 : first.coverage!
     const secondCoverage = coverageState(second.coverage) === 'unknown' ? -1 : second.coverage!
-    return secondCoverage - firstCoverage || compareChange(first, second)
+    return secondCoverage - firstCoverage || (first.category ?? "").localeCompare(second.category ?? "") || (first.label ?? first.id).localeCompare(second.label ?? second.id)
   })
 }
 

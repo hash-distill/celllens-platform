@@ -1,0 +1,272 @@
+{
+  "request": {
+    "cell_line": "Jurkat",
+    "perturbation": "ALDOA",
+    "mode": "online",
+    "n_cells": 64,
+    "seed": 20261107
+  },
+  "record": {
+    "run_id": "run_feb6ebf11ef747ab",
+    "status": "completed",
+    "stage_progress": 100,
+    "request": {
+      "cell_line": "Jurkat",
+      "perturbation": "ALDOA",
+      "mode": "online",
+      "n_cells": 64,
+      "seed": 20261107
+    },
+    "created_at": "2026-11-07T05:35:19.772299",
+    "updated_at": "2026-11-07T05:39:11.975363",
+    "warnings": [],
+    "error_code": null,
+    "error_message": null,
+    "result_kind": null
+  },
+  "verified_files": 23,
+  "manifest_sha256": "4dfcf455cf15b9b75d28c86e6fae3e8d2fd511febc6b29b14749a0dc88ca12fb",
+  "projection": {
+    "available": true,
+    "method": "control-reference-pca",
+    "embedding": "pca",
+    "source_kind": "prediction",
+    "counts": {
+      "control": 1024,
+      "predicted": 64
+    },
+    "displayed_counts": {
+      "control": 1024,
+      "predicted": 64
+    },
+    "total_cells": 1088,
+    "displayed_cells": 1088,
+    "gene_count": 2000,
+    "input_units": "log1p(CP10K)",
+    "coordinates_are_physical_positions": false,
+    "provenance": {
+      "manifest_sha256": "4dfcf455cf15b9b75d28c86e6fae3e8d2fd511febc6b29b14749a0dc88ca12fb",
+      "prepared_manifest_sha256": "f3ffe6041cd1c1fa0bfda200324dc4e1561d63d15ae6bb117d477a42dda3e726",
+      "projection_sha256": "f50cafb9a0130e19b1dd6b4059cbca1a497dddbab55b887e1793ea2f7049387e",
+      "source_run_id": "run_feb6ebf11ef747ab",
+      "artifact": "cell_state/expression_pca.json",
+      "research_fingerprint": "88c0ca4b8dfd9c4d54c6cf782ea7cf1799728b04ec52978f9d475e9d6005a097"
+    },
+    "limitations": [
+      "PCA fitted on control expression features; preprocessing recorded in the document.",
+      "Explained variance applies to the control reference, not the predictions.",
+      "Unpaired populations; no biological replicate inference or significance test.",
+      "Embedding space is not morphology, spatial location, trajectory, or metabolic flux.",
+      "仅展示冻结坐标；切换基因不会重新拟合坐标，也不把默认基因颜色当作当前选择的表达。",
+      "投影不代表细胞形态、物理位置、运动轨迹或统计显著性。"
+    ],
+    "result_id": "prediction:run_feb6ebf11ef747ab"
+  },
+  "research": {
+    "schema_version": "research-result-v1",
+    "result_id": "prediction:run_feb6ebf11ef747ab",
+    "record_kind": "prediction",
+    "record_id": "run_feb6ebf11ef747ab",
+    "state": "completed",
+    "source_kind": "prediction",
+    "background": {
+      "cell_line": "Jurkat"
+    },
+    "target": {
+      "perturbation": "ALDOA"
+    },
+    "groups": [
+      {
+        "id": "control",
+        "source_kind": "measured",
+        "count": null
+      },
+      {
+        "id": "predicted",
+        "source_kind": "prediction",
+        "count": 64
+      }
+    ],
+    "units": {
+      "expression": "mean(log1p(CP10K))",
+      "delta": "difference in mean(log1p(CP10K)); predicted/observed − control",
+      "function": "expression-derived scCellFie task/reaction support score"
+    },
+    "coverage": {
+      "gene_count": 2000,
+      "metabolism": {
+        "state_gene_fraction": 1.0,
+        "metabolic_gene_fraction": 0.14822771213748656,
+        "reaction_fraction": 0.2018871216460363,
+        "supported_tasks": 7,
+        "exploratory_tasks": 2,
+        "insufficient_tasks": 209
+      }
+    },
+    "availability": {
+      "expression": {
+        "available": true,
+        "reason": null
+      },
+      "function": {
+        "available": true,
+        "reason": null
+      },
+      "projection": {
+        "available": true,
+        "reason": null
+      },
+      "comparison": {
+        "available": false,
+        "reason": "缺少匹配观测或已确认的真实结果表达尺度"
+      },
+      "export": {
+        "available": true,
+        "reason": null
+      }
+    },
+    "provenance": {
+      "manifest_sha256": "88c0ca4b8dfd9c4d54c6cf782ea7cf1799728b04ec52978f9d475e9d6005a097",
+      "fingerprint_basis": "manifest-and-artifacts",
+      "source_manifest_sha256": "4dfcf455cf15b9b75d28c86e6fae3e8d2fd511febc6b29b14749a0dc88ca12fb",
+      "integrity": "registered_manifest",
+      "files_outside_source_manifest": [
+        "cell_state/prepared.json"
+      ],
+      "analysis_version": "expression-cp10k-v2",
+      "source": {
+        "request": {
+          "cell_line": "Jurkat",
+          "perturbation": "ALDOA",
+          "mode": "online",
+          "n_cells": 64,
+          "seed": 20261107
+        },
+        "attempt": 1,
+        "cache_key": "b4a3d06fe3f5c0bfa22397ca4bdba520b3f90796ad614b7483ba3313109c8e45",
+        "code_sha256": "eb75e72e1d8c372bb0ea678401931ca76982c63725a61cb1ba48509a40714162",
+        "assets": {
+          "model_id": "state-replogle-jurkat-fewshot-v1",
+          "input_embed_key": "X_hvg",
+          "expression_key": "X_hvg",
+          "checkpoint_sha256": "10cfcf01aff649e7f868ed6cf70e763cfbae91d7ba94e2887324a58fbcf5ede5",
+          "gene_list_sha256": "1846634939efbc2424c67d6b30bf80c4bd7cbfceca672ea7de29741916b6144e",
+          "config_sha256": "09d1cb84b531326ccfbefc22bcb3067fd1e6a70463ff412ddeefd73ce049419a",
+          "dataset_id": "replogle-jurkat-control-v1",
+          "model_expression_scale": "log1p_cp10k",
+          "dataset_expression_scale": "log1p_cp10k",
+          "control_sha256": "23d0323ff3807783e3e6ae2da22e187e67c6165c7d59162b501693ece82674a9",
+          "observed_sha256": null,
+          "validation_protocol_sha256": null,
+          "split_sha256": "a1d73c4e37f4ce4c3ed0414564b5d32a1dbc426b295fe39a4324e632268fb6b0"
+        },
+        "outputs": {
+          "predicted.h5ad": {
+            "sha256": "5f6f46d027b5aee9e5762e94309a03c57359ec450d8ca92cb8bfe9f0010865f2",
+            "size_bytes": 4689584
+          },
+          "gene_deltas.csv": {
+            "sha256": "8c7dbe864a0feb6cee361b33ca9ef888f19ef5ca45ce638def684acf8bd29cc2",
+            "size_bytes": 133845
+          },
+          "projection.json": {
+            "sha256": "6cde1ca8bb20ac85158149a71dd02425ea060579f06169b6ebac418e84fe011d",
+            "size_bytes": 145578
+          },
+          "expression_contract.json": {
+            "sha256": "3044cea2b2c7360565884aeb44ce4b363c4515476ff544d33ee034c52e6edfa4",
+            "size_bytes": 679
+          },
+          "gene_identity.json": {
+            "sha256": "9ea9383ff2b1d37d4f20d22ee863b20203a9cddde4b41b9e4b760069bdb79f8b",
+            "size_bytes": 827843
+          },
+          "official_completeness.json": {
+            "sha256": "dc9d45d718d4ebf345a63c518a2483c0ff34aa0acd22c074f7d808cc2845af17",
+            "size_bytes": 620805
+          },
+          "metabolic_coverage.csv": {
+            "sha256": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+            "size_bytes": 49068
+          },
+          "metabolic_task_scores.csv": {
+            "sha256": "9e379f10eb54f6cb7118848b09ed55b06b2efdfe13dd7810dbe6f675384374d4",
+            "size_bytes": 2405349
+          },
+          "reaction_scores.csv": {
+            "sha256": "db4b03e06bb432294b097191eb7b3737e16ad13051c83960573416bc1711232b",
+            "size_bytes": 2754018
+          },
+          "task_trace.json": {
+            "sha256": "50d57c3e6a3a3d34c192261839b3a6bc375a894addcaa5d32cf32339d635f4bb",
+            "size_bytes": 508211
+          },
+          "summary.json": {
+            "sha256": "d056ec8333d8d825df7177b58feef5d2a056c7dd2f8027b7f9c8e3d07db82daa",
+            "size_bytes": 16875
+          },
+          "report.html": {
+            "sha256": "1c8ee02243e5bbfd3e8b85df4f460034acbe388205b76cce8f52d98e1c7dcf5d",
+            "size_bytes": 2037
+          }
+        },
+        "warnings": []
+      },
+      "files": {
+        "summary.json": "d056ec8333d8d825df7177b58feef5d2a056c7dd2f8027b7f9c8e3d07db82daa",
+        "expression_contract.json": "3044cea2b2c7360565884aeb44ce4b363c4515476ff544d33ee034c52e6edfa4",
+        "gene_deltas.csv": "8c7dbe864a0feb6cee361b33ca9ef888f19ef5ca45ce638def684acf8bd29cc2",
+        "metabolic_task_scores.csv": "9e379f10eb54f6cb7118848b09ed55b06b2efdfe13dd7810dbe6f675384374d4",
+        "projection.json": "6cde1ca8bb20ac85158149a71dd02425ea060579f06169b6ebac418e84fe011d",
+        "task_trace.json": "50d57c3e6a3a3d34c192261839b3a6bc375a894addcaa5d32cf32339d635f4bb",
+        "metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+        "cell_state/expression_pca.json": "f50cafb9a0130e19b1dd6b4059cbca1a497dddbab55b887e1793ea2f7049387e",
+        "cell_state/prepared.json": "f3ffe6041cd1c1fa0bfda200324dc4e1561d63d15ae6bb117d477a42dda3e726"
+      },
+      "population_selection": {
+        "version": 1,
+        "status": "matched",
+        "perturbation_column": "gene",
+        "perturbation": "ALDOA",
+        "input_prediction_cells": 128,
+        "selected_prediction_cells": 64,
+        "excluded_prediction_cells": 64
+      },
+      "validation_population": null
+    },
+    "references": {
+      "detail": "/api/v1/runs/run_feb6ebf11ef747ab",
+      "summary": "/api/v1/runs/run_feb6ebf11ef747ab/summary",
+      "genes": "/api/v1/runs/run_feb6ebf11ef747ab/genes",
+      "tasks": "/api/v1/runs/run_feb6ebf11ef747ab/metabolic-tasks",
+      "projection": "/api/v1/research/results/prediction/run_feb6ebf11ef747ab/projection",
+      "download": "/api/v1/runs/run_feb6ebf11ef747ab/report",
+      "provenance": "/api/v1/runs/run_feb6ebf11ef747ab/provenance",
+      "export": "/api/v1/research/results/prediction/run_feb6ebf11ef747ab/export"
+    },
+    "limitations": [
+      "模型输出不是实测表达。",
+      "匹配观测诊断不自动构成独立留出验证；训练排除信息以原记录为准。",
+      "RNA 派生功能分数不等于实测通量、细胞器活性或形态。",
+      "群体样本量缺失时保留未知，不以请求数量或投影采样点数代替。"
+    ],
+    "warnings": []
+  },
+  "comparison_status": "available",
+  "comparison_expression": {
+    "gene_count": 2000,
+    "mae": 0.1001907290033996,
+    "mse": 0.018080108818940257,
+    "rmse": 0.13446229515719363,
+    "signed_delta_pearson": 0.43215662241248415,
+    "absolute_delta_pearson": 0.40507778239065906,
+    "signed_delta_spearman": 0.3085042506260626,
+    "direction_agreement": 0.564,
+    "no_change_mae": 0.09552368637360632,
+    "no_change_mse": 0.019315779262385896,
+    "mse_relative_to_no_change": 0.936027926874693,
+    "mse_improvement_over_no_change": 0.06397207312530695,
+    "beats_no_change_mse": true
+  },
+  "new_inference": true
+}

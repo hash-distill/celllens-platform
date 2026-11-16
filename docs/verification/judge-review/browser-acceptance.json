@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-07",
+  "base_url": "http://127.0.0.1:8028",
+  "browser": "ChatGPT in-app browser",
+  "tested_widths": [
+    390,
+    900,
+    1440,
+    1920
+  ],
+  "checks": {
+    "home_desktop_mobile": true,
+    "two_primary_tasks": true,
+    "source_switch_preserves_512_23": true,
+    "controlled_import_instructions": true,
+    "catalog_query_first": true,
+    "backgrounds_symmetric_padding_32px_at_1920": true,
+    "measured_summary_first": true,
+    "er_task_reaction_gene_navigation": true,
+    "golgi_classification_navigation": true,
+    "scene_zoom_pause_reset_and_2d": true,
+    "pca_umap_and_group_counts": true,
+    "evidence_original_vs_matched_counts": true,
+    "comparison_batch_flip_and_coverage": true,
+    "comparison_chinese_task_search": true,
+    "legacy_online_validation_link": true,
+    "mobile_no_document_horizontal_overflow": true,
+    "mobile_rail_escape_focus_return": true,
+    "light_dark_theme": true
+  },
+  "console_errors": [],
+  "limitations": [
+    "Viewport resizing is not physical mobile-device testing",
+    "No external AI model request",
+    "Report files were format checked via API, not rendered page by page"
+  ]
+}

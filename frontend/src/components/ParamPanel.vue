@@ -11,6 +11,10 @@ import type { CellLine } from '../types/run'
 import { dataCatalogApi, type CatalogPair } from '../api/dataCatalog'
 import GenePicker from './GenePicker.vue'
 import CellBackgroundPicker from './CellBackgroundPicker.vue'
+import SubmissionReview from './SubmissionReview.vue'
+const emit=defineEmits<{'review-change':[open:boolean]}>()
+const reviewing=ref(false)
+function review(open:boolean){reviewing.value=open;emit('review-change',open)}
 
 /**
  * 实验参数面板。
@@ -19,7 +23,7 @@ import CellBackgroundPicker from './CellBackgroundPicker.vue'
  */
 
 const router = useRouter()
-const props = withDefaults(defineProps<{ destination?: 'workbench' | 'detail'; horizontal?: boolean }>(), { destination: 'workbench', horizontal: false })
+const props = withDefaults(defineProps<{ destination?: 'workbench' | 'detail'; horizontal?: boolean; reviewBeforeSubmit?: boolean }>(), { destination: 'workbench', horizontal: false })
 const catalog = useCatalogStore()
 const draft = useDraftStore()
 const runs = useRunStore()
@@ -111,8 +115,10 @@ const submitAlternatives = computed(() => {
   return Array.isArray(alt) ? alt.map((x) => String(x)) : []
 })
 
-async function submit(): Promise<void> {
+async function submit(confirmed=false): Promise<void> {
   if (!canSubmit.value) return
+  if(props.reviewBeforeSubmit&&!confirmed){review(true);return}
+  review(false)
   const payload = {
     cell_line: draft.cellLine,
     perturbation: draft.perturbation.trim().toUpperCase(),
@@ -201,6 +207,13 @@ async function copySubmitDiagnostics(): Promise<void> {
         <!-- 扰动基因 -->
         <div class="field perturbation-field">
           <GenePicker v-model="draft.perturbation" :context="draft.cellLine" :items="perturbationState?.items ?? []" :genes="perturbationState?.genes" :categories="geneCategories" :loading="perturbationState?.loading ?? true" :error="perturbationState?.error?.message" :warning="perturbationState?.classification?.warning" @retry="catalog.loadPerturbations(draft.cellLine, 'online', true)">
+          </GenePicker>
+          <p v-if="perturbationError && draft.perturbation && !perturbationState?.error" class="field-error">
+            {{ perturbationError }}
+          </p>
+        </div>
+
+        <div v-if="draft.perturbation || measuredOptions.length" class="source-details">
           <div v-if="draft.perturbation" class="source-coverage" aria-live="polite">
             <p v-if="sourceLoading">正在核对当前固定源的实测覆盖…</p>
             <template v-else-if="sourceCoverage?.source_status === 'measured'"><strong>该组合在固定源中有实测数据</strong><p>源中有 {{ sourceCoverage.source_cell_count ?? '未知数量的' }} 个目标扰动细胞；{{ sourceCoverage.local_verified ? '本地已有经核验的实测数据。' : '实测分析可按需读取这一组合。' }}</p><RouterLink :to="measuredTarget" class="btn btn-primary btn-sm">直接分析实测数据</RouterLink><p>如需评估模型，可明确运行下方预测，再在结果的“实测对比”中查看可用评估。</p></template>
@@ -210,10 +223,6 @@ async function copySubmitDiagnostics(): Promise<void> {
             <RouterLink :to="catalogTarget" class="source-catalog-link">查看该组合的数据覆盖 →</RouterLink>
           </div>
           <div v-if="measuredOptions.length" class="measured-shortcuts"><span>本地已备实测对比：</span><button v-for="item in measuredOptions" :key="item.perturbation" type="button" @click="draft.perturbation=item.perturbation">{{item.perturbation}} · {{item.measured_cells}} 个实测细胞</button></div>
-          </GenePicker>
-          <p v-if="perturbationError && draft.perturbation && !perturbationState?.error" class="field-error">
-            {{ perturbationError }}
-          </p>
         </div>
 
         <p v-if="!onlineReady" class="notice notice-warn">
@@ -226,7 +235,7 @@ async function copySubmitDiagnostics(): Promise<void> {
           type="button"
           :disabled="!canSubmit"
           :title="canSubmit ? undefined : '请先完成上方必填项与可用性检查'"
-          @click="submit"
+          @click="submit()"
         >
           {{ runs.submitting ? '提交中…' : '运行模型预测' }}
         </button>
@@ -285,7 +294,7 @@ async function copySubmitDiagnostics(): Promise<void> {
     </section>
 
   </div>
-</template>
+<SubmissionReview v-if="reviewing" title="核对模型探索" :parameters="{'分析类型':'模型预测','细胞背景':draft.cellLine,'扰动目标':draft.perturbation,'预测样本数':draft.nCells,'采样种子':draft.seed}" prediction @cancel="review(false)" @confirm="submit(true)"/></template>
 
 <style scoped>
 .sampling-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px}.sampling-field{min-width:0}.sampling-field .label{margin-top:0}.sampling-field .input{width:100%}
@@ -326,4 +335,24 @@ async function copySubmitDiagnostics(): Promise<void> {
 }
 .measured-shortcuts{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:10px;color:var(--muted)}.measured-shortcuts>span,.measured-shortcuts>small{flex-basis:100%;line-height:1.8}.measured-shortcuts>button{background:var(--card);border:1px solid var(--border);color:var(--primary);padding:6px 9px;cursor:pointer;font:inherit}
 .source-coverage{margin:12px 0;padding:0;font-size:11px;line-height:1.8;color:var(--muted)}.source-coverage>strong{font-weight:500;color:var(--primary)}.source-coverage>p{margin:7px 0}.source-coverage .btn{font-size:11px}.source-catalog-link{display:inline-block;margin-top:6px;color:var(--primary)}
+
+/* Share rows so the two input columns align independently of coverage notes. */
+.horizontal .context-field,.horizontal .perturbation-field{display:contents}
+.horizontal .context-field :deep(.cell-background-picker){grid-column:1;grid-row:1;display:flex;flex-direction:column}
+.horizontal .context-field :deep(.cell-choice-group){flex:1}
+.horizontal .sampling-fields{grid-column:1;grid-row:2;margin-top:0;align-content:start}
+.horizontal .perturbation-field :deep(.gene-picker){display:contents}
+.horizontal .perturbation-field :deep(.gene-picker-controls){grid-column:2;grid-row:1;min-width:0}
+.horizontal .perturbation-field :deep(.gene-picker-details){grid-column:2;grid-row:2;min-width:0}
+.horizontal .perturbation-field :deep(.gene-picker-details>:first-child){margin-top:0}
+.horizontal .perturbation-field>.field-error{grid-column:2}
+.source-details{border-top:1px solid var(--border);padding-top:18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start}
+.horizontal .source-details{grid-column:1/-1}
+.source-details .source-coverage,.source-details .measured-shortcuts{margin:0;min-width:0}
+.source-details .measured-shortcuts{max-width:300px}
+@media(max-width:900px){
+  .horizontal>.card{grid-template-columns:1fr}
+  .horizontal .context-field :deep(.cell-background-picker),.horizontal .sampling-fields,.horizontal .perturbation-field :deep(.gene-picker-controls),.horizontal .perturbation-field :deep(.gene-picker-details),.horizontal .perturbation-field>.field-error{grid-column:1;grid-row:auto}
+  .source-details{grid-template-columns:1fr}
+}
 </style>

@@ -23,10 +23,14 @@ export interface RecordFilters {
 }
 
 export function measuredRecord(record: MeasuredAnalysis): ResearchRecord {
+  const provenance = record.summary?.provenance?.source
+  const historicSource = provenance && typeof provenance === 'object' ? provenance as Record<string, unknown> : {}
+  const source = { ...historicSource, ...record.source }
+  const imported = Boolean(record.import_id || source.import_id) || source.type === 'controlled_private_h5ad' || source.kind === 'controlled_private_h5ad'
   return {
     key: `measured:${record.id}`, id: record.id, category: 'measured',
     title: `${record.cell_line} / ${record.perturbation}`,
-    subtitle: `请求上限 ${record.max_cells} 个实测细胞`, sourceLabel: '公开实测',
+    subtitle: `请求上限 ${record.max_cells} 个实测细胞`, sourceLabel: imported ? '自有实测' : '公开实测',
     status: record.status, progress: record.progress, createdAt: record.created_at,
     target: `/measured/${encodeURIComponent(record.id)}`,
   }
@@ -37,7 +41,7 @@ export function predictedRecord(record: ExperimentRecord, mock = false): Researc
     key: `predicted:${record.id}`, id: record.id, category: 'predicted',
     title: record.title, subtitle: record.subtitle,
     sourceLabel: mock || record.run.result_kind === 'synthetic_demo' ? '合成示例' : '模型预测',
-    status: record.status, progress: record.run.stage_progress, createdAt: record.created_at,
+    status: record.status === 'failed' && record.run.error_code === 'RUN_CANCELLED' ? 'cancelled' : record.status, progress: record.run.stage_progress, createdAt: record.created_at,
     target: `/runs/${encodeURIComponent(record.id)}`,
   }
 }

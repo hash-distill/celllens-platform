@@ -4,13 +4,13 @@ import csv
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from backend.app.api.runs import _artifact_path, get_completeness, get_provenance
 from backend.app.core.errors import CellLensError
 from backend.app.core.run_manifest import file_sha256
 from backend.app.services.catalog_snapshot import model_catalog_response
-from backend.app.services.coverage_catalog import cached_completeness, coverage_catalog
+from backend.app.services.coverage_catalog import completeness_from_verified_database, coverage_catalog
 from backend.app.services.gene_education import TASK_GUIDES, categories_for, classify_gene, load_annotations
 from backend.app.services.gene_identity import GeneIdentityAdapter
 from backend.app.services.scientific_analysis import _load_frozen_database
@@ -23,15 +23,17 @@ def get_coverage(
     request: Request,
     cell_line: str | None = Query(default=None, max_length=128),
     run_id: str | None = Query(default=None, pattern=r"^run_[a-zA-Z0-9_-]{1,56}$"),
-) -> JSONResponse:
+) -> Response:
     if run_id is not None or set(request.query_params) - {"cell_line", "run_id"}:
         return _build_coverage(request, cell_line, run_id)
     container = request.app.state.container
-    if not (container.settings.sccellfie_database_root / 'manifest.json').is_file():
+    if not (container.settings.sccellfie_database_root / "manifest.json").is_file():
         return _build_coverage(request, cell_line, run_id)
     try:
         return model_catalog_response(
-            container.settings.project_root, cell_line, container.registry.models,
+            container.settings.project_root,
+            cell_line,
+            container.registry.models,
             lambda: _build_coverage(request, cell_line, run_id),
         )
     except (OSError, ValueError, TypeError, ImportError) as exc:
@@ -65,7 +67,7 @@ def _build_coverage(request: Request, cell_line: str | None, run_id: str | None)
         if row.get("enabled") and row.get("gene_list_path")
     ]
     try:
-        database, _ = _load_frozen_database(settings.sccellfie_database_root)
+        database, database_version = _load_frozen_database(settings.sccellfie_database_root)
         identity = (
             GeneIdentityAdapter.load(settings.gene_identity_root, settings.sccellfie_database_root)
             if settings.gene_identity_root.exists()
@@ -104,10 +106,8 @@ def _build_coverage(request: Request, cell_line: str | None, run_id: str | None)
                 for gene in raw
                 if gene.strip()
             ]
-            report = cached_completeness(
-                tuple(panel),
-                str(settings.sccellfie_database_root),
-                database["_celllens_provenance"]["manifest_sha256"],
+            report = completeness_from_verified_database(
+                panel, database, database_version, str(settings.sccellfie_database_root)
             )
             source = {
                 "kind": "model",

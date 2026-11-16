@@ -65,7 +65,7 @@ def _path(root: Path, name: str) -> Path:
     return path
 
 
-def _checked(root: Path, name: str, expected: str) -> Path:
+def _checked(root: Path, name: str, expected: str | None) -> Path:
     path = _path(root, name)
     if not expected or not path.is_file() or file_sha256(path) != expected:
         raise ComparisonUnavailable(f"Comparison source hash mismatch: {path.name}")
@@ -124,10 +124,11 @@ def paired_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
     ]
 
 
-def load_comparison(root: Path, run_id: str) -> dict[str, Any] | None:
+def load_comparison(root: Path, run_id: str, *, include_diagnostics: bool = True) -> dict[str, Any] | None:
     if not re.fullmatch(r"run_[A-Za-z0-9_]+", run_id):
         raise ComparisonUnavailable("Invalid run identity")
-    bundle = root / "data/derived/comparisons" / run_id
+    bundle = _path(root, f"data/derived/comparisons/{run_id}")
+    _path(root / "data/derived/comparisons", run_id)
     if not bundle.exists():
         return None
     try:
@@ -152,6 +153,10 @@ def load_comparison(root: Path, run_id: str) -> dict[str, Any] | None:
             or report["perturbation"] != request["perturbation"]
         ):
             raise ComparisonUnavailable("Comparison does not match original prediction")
+        if include_diagnostics:
+            from backend.app.services.comparison_diagnostics import enrich_comparison
+
+            return enrich_comparison(root, run_id, report, bundle, manifest)
         return report
     except (OSError, KeyError, TypeError, ValueError) as exc:
         raise ComparisonUnavailable(str(exc)) from exc

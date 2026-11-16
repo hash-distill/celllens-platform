@@ -107,7 +107,7 @@ export interface RawResponse {
 
 export interface RequestOptions {
   responseType?: 'json' | 'blob'
-  method?: 'GET' | 'POST'
+  method?: 'GET' | 'POST' | 'DELETE'
   body?: unknown
   headers?: Record<string, string>
   query?: Record<string, string | number | boolean | undefined>

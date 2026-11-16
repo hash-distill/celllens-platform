@@ -1,0 +1,95 @@
+{
+  "checked_at": "2026-11-16T08:57:44.9706655+08:00",
+  "endpoint": "/api/v1/data-catalog?limit=1",
+  "summary": {
+    "pairs": 8092,
+    "measured_pairs": 5759,
+    "model_supported_pairs": 8092,
+    "model_supported_unmeasured_pairs": 2333,
+    "unknown_pairs": 0,
+    "local_verified_pairs": 4,
+    "contexts": [
+      {
+        "cell_line": "HepG2",
+        "source_total_cells": 96616,
+        "measured_pairs": 1340,
+        "model_supported_pairs": 2023,
+        "model_supported_unmeasured_pairs": 683
+      },
+      {
+        "cell_line": "Jurkat",
+        "source_total_cells": 184470,
+        "measured_pairs": 1537,
+        "model_supported_pairs": 2023,
+        "model_supported_unmeasured_pairs": 486
+      },
+      {
+        "cell_line": "K562",
+        "source_total_cells": 188590,
+        "measured_pairs": 1383,
+        "model_supported_pairs": 2023,
+        "model_supported_unmeasured_pairs": 640
+      },
+      {
+        "cell_line": "RPE1",
+        "source_total_cells": 173737,
+        "measured_pairs": 1499,
+        "model_supported_pairs": 2023,
+        "model_supported_unmeasured_pairs": 524
+      }
+    ]
+  },
+  "source": {
+    "kind": "measured_rna",
+    "repo": "arcinstitute/State-Replogle-Filtered",
+    "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+    "file": "replogle_concat.h5ad",
+    "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5",
+    "scope": "Only this fixed filtered revision; absence is not global absence",
+    "manifest_sha256": "b06c466a6a90e1a6c2f9dc3b1a6acd37fe64ff8242b735f8e8f77060fb0bd43b",
+    "metadata_sha256": "2acd0107047319ee4d79a289aea68db2cee91425f34d5ef6a2fb14d70d51a9ec",
+    "official_splits": {
+      "HepG2": {
+        "file": "hepg2.toml",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/raw/d790193bb2c93726541a75ca3fa873a92ed44da5/hepg2.toml",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "sha256": "7f8d5df29942f7532fef09b23a0a8deec7b8339bfe7817505b977bd894813962",
+        "declared_test_entries_including_control": 946,
+        "declared_val_entries_including_control": 0,
+        "training_exclusion_verified": false,
+        "generalization_verified": false
+      },
+      "Jurkat": {
+        "file": "jurkat.toml",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/raw/d790193bb2c93726541a75ca3fa873a92ed44da5/jurkat.toml",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "sha256": "9606316c24dfd140bbfe7e252375c18283d4f4f10b5a4adcb463a87cd1472634",
+        "declared_test_entries_including_control": 1085,
+        "declared_val_entries_including_control": 0,
+        "training_exclusion_verified": false,
+        "generalization_verified": false
+      },
+      "K562": {
+        "file": "k562.toml",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/raw/d790193bb2c93726541a75ca3fa873a92ed44da5/k562.toml",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "sha256": "a794ae85cacbb8ae2ce59ad5ba0fb465f5be244950b84aea28c7fa29226597c3",
+        "declared_test_entries_including_control": 969,
+        "declared_val_entries_including_control": 0,
+        "training_exclusion_verified": false,
+        "generalization_verified": false
+      },
+      "RPE1": {
+        "file": "rpe1.toml",
+        "url": "https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/raw/d790193bb2c93726541a75ca3fa873a92ed44da5/rpe1.toml",
+        "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "sha256": "1681633c6b902933a8e83aae07d941ba2e63e5b968be0b80fea61a247308ecdc",
+        "declared_test_entries_including_control": 1061,
+        "declared_val_entries_including_control": 0,
+        "training_exclusion_verified": false,
+        "generalization_verified": false
+      }
+    }
+  },
+  "source_verified": true
+}

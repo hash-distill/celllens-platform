@@ -64,18 +64,22 @@ onBeforeUnmount(() => window.clearTimeout(closeTimer))
 
 <template>
   <div class="gene-picker">
-    <label class="label" for="perturbation-category">基因功能分类 · Gene function class</label>
-    <select id="perturbation-category" v-model="category" class="input gene-category-select" :disabled="loading" @change="changeCategory"><option value="">全部可用扰动基因</option><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name_zh }} · {{ item.name_en }}（{{ item.count }}）</option></select>
-    <label class="label" for="perturbation-input">扰动基因</label>
-    <div class="perturbation-box">
-      <input id="perturbation-input" v-model="query" class="input" type="text" role="combobox" :aria-expanded="dropdownOpen" aria-controls="perturbation-listbox" :aria-activedescendant="dropdownOpen && highlightIndex>=0 ? `perturbation-option-${highlightIndex}` : undefined" aria-autocomplete="list" placeholder="搜索扰动基因…" autocomplete="off" :disabled="loading" @focus="openDropdown" @click="openDropdown" @input="openDropdown" @blur="closeSoon" @keydown="keydown" />
-      <div v-if="dropdownOpen" id="perturbation-listbox" class="dropdown" role="listbox" aria-label="可选扰动基因"><p v-if="loading" class="dropdown-note">正在加载扰动列表…</p><p v-else-if="!filteredItems.length" class="dropdown-note">无匹配的可用扰动</p><template v-else><button v-for="(symbol,index) in filteredItems" :id="`perturbation-option-${index}`" :key="symbol" type="button" role="option" :aria-label="symbol" :aria-selected="modelValue===symbol" class="dropdown-item" :class="{highlighted:index===highlightIndex}" @mousedown.prevent @click="pick(symbol)">{{ symbol }}<small aria-hidden="true">{{ categoryNames(symbol) }}</small></button></template></div>
+    <div class="gene-picker-controls">
+      <label class="label" for="perturbation-category">基因功能分类 · Gene function class</label>
+      <select id="perturbation-category" v-model="category" class="input gene-category-select" :disabled="loading" @change="changeCategory"><option value="">全部可用扰动基因</option><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name_zh }} · {{ item.name_en }}（{{ item.count }}）</option></select>
+      <label class="label" for="perturbation-input">扰动基因</label>
+      <div class="perturbation-box">
+        <input id="perturbation-input" v-model="query" class="input" type="text" role="combobox" :aria-expanded="dropdownOpen" aria-controls="perturbation-listbox" :aria-activedescendant="dropdownOpen && highlightIndex>=0 ? `perturbation-option-${highlightIndex}` : undefined" aria-autocomplete="list" placeholder="搜索扰动基因…" autocomplete="off" :disabled="loading" @focus="openDropdown" @click="openDropdown" @input="openDropdown" @blur="closeSoon" @keydown="keydown" />
+        <div v-if="dropdownOpen" id="perturbation-listbox" class="dropdown" role="listbox" aria-label="可选扰动基因"><p v-if="loading" class="dropdown-note">正在加载扰动列表…</p><p v-else-if="!filteredItems.length" class="dropdown-note">无匹配的可用扰动</p><template v-else><button v-for="(symbol,index) in filteredItems" :id="`perturbation-option-${index}`" :key="symbol" type="button" role="option" :aria-label="symbol" :aria-selected="modelValue===symbol" class="dropdown-item" :class="{highlighted:index===highlightIndex}" @mousedown.prevent @click="pick(symbol)">{{ symbol }}<small aria-hidden="true">{{ categoryNames(symbol) }}</small></button></template></div>
+      </div>
     </div>
-    <p v-if="selectedAnnotation" class="selected-gene-annotation"><strong>已选 {{ selectedAnnotation.symbol }}</strong><span v-if="selectedAnnotation.name_zh" lang="zh-CN">{{ selectedAnnotation.name_zh }}</span><span lang="en">{{ selectedAnnotation.name_en }}</span><span>{{ categoryNames(selectedAnnotation.symbol) }}</span></p>
-    <slot />
-    <GeneCategoryGuide :categories="categories" :selected="category" />
-    <p v-if="warning" class="field-error">{{ warning }}</p>
-    <p v-if="error" class="field-error">扰动列表加载失败：{{ error }} <button type="button" class="btn btn-ghost btn-sm" @click="emit('retry')">重试</button></p>
+    <div class="gene-picker-details">
+      <p v-if="selectedAnnotation" class="selected-gene-annotation"><strong>已选 {{ selectedAnnotation.symbol }}</strong><span v-if="selectedAnnotation.name_zh" lang="zh-CN">{{ selectedAnnotation.name_zh }}</span><span lang="en">{{ selectedAnnotation.name_en }}</span><span>{{ categoryNames(selectedAnnotation.symbol) }}</span></p>
+      <slot />
+      <GeneCategoryGuide :categories="categories" :selected="category" />
+      <p v-if="warning" class="field-error">{{ warning }}</p>
+      <p v-if="error" class="field-error">扰动列表加载失败：{{ error }} <button type="button" class="btn btn-ghost btn-sm" @click="emit('retry')">重试</button></p>
+    </div>
   </div>
 </template>
 

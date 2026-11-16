@@ -1,0 +1,1842 @@
+{
+  "started_at": "2026-11-07T10:43:41.370192+00:00",
+  "base_url": "http://127.0.0.1:8028",
+  "source_root": "D:\\全球校园人工智能精英大赛\\celllens-national",
+  "scope": "Serial real local API engineering acceptance; not biological validation or performance benchmark",
+  "initial_process_ids": {
+    "api": 31884,
+    "cpu": 35336,
+    "gpu": 39548
+  },
+  "readiness": {
+    "service": "celllens",
+    "ready": true,
+    "checks": {
+      "database": true
+    },
+    "capabilities": {
+      "result_browsing": true,
+      "cpu_analysis": true,
+      "prediction": true
+    },
+    "workers": {
+      "mode": "external",
+      "live": [
+        {
+          "kind": "gpu",
+          "heartbeat_at": "2026-11-07T10:43:38.460703",
+          "capabilities": {
+            "cpu_analysis": false,
+            "missing_dependencies": [],
+            "prediction": true,
+            "cuda_detected": true,
+            "state_executable": true
+          }
+        },
+        {
+          "kind": "cpu",
+          "heartbeat_at": "2026-11-07T10:43:41.356520",
+          "capabilities": {
+            "cpu_analysis": true,
+            "missing_dependencies": [],
+            "prediction": false
+          }
+        }
+      ],
+      "cpu_available": true,
+      "prediction_available": true
+    }
+  },
+  "contexts": [
+    {
+      "cell_line": "K562",
+      "online_ready": true,
+      "validation_ready": false,
+      "precomputed_ready": false,
+      "model_id": "state-replogle-k562-fewshot-v1",
+      "disabled_reason": null,
+      "readiness_reasons": []
+    },
+    {
+      "cell_line": "RPE1",
+      "online_ready": true,
+      "validation_ready": false,
+      "precomputed_ready": false,
+      "model_id": "state-replogle-rpe1-fewshot-v1",
+      "disabled_reason": null,
+      "readiness_reasons": []
+    },
+    {
+      "cell_line": "Jurkat",
+      "online_ready": true,
+      "validation_ready": false,
+      "precomputed_ready": false,
+      "model_id": "state-replogle-jurkat-fewshot-v1",
+      "disabled_reason": null,
+      "readiness_reasons": []
+    },
+    {
+      "cell_line": "HepG2",
+      "online_ready": true,
+      "validation_ready": false,
+      "precomputed_ready": false,
+      "model_id": "state-replogle-hepg2-fewshot-v1",
+      "disabled_reason": null,
+      "readiness_reasons": []
+    }
+  ],
+  "existing_import": {
+    "import_id": "import_75219a9293f845edaadfce8c",
+    "manifest_sha256": "0dea85baf803add9dc6abce03a24b0e2613d7cd822025e40183a46bef4a1b330",
+    "source_sha256": "7e6b34cf4f58ee69126b95ecf2e479caca40dc7b0388860962b4f2a4c2598a94",
+    "counts": {
+      "control": 16,
+      "observed": 16
+    }
+  },
+  "preserved_files_before": {
+    "data/derived/runs/run_feb6ebf11ef747ab/expression_contract.json": "3044cea2b2c7360565884aeb44ce4b363c4515476ff544d33ee034c52e6edfa4",
+    "data/derived/runs/run_feb6ebf11ef747ab/gene_deltas.csv": "8c7dbe864a0feb6cee361b33ca9ef888f19ef5ca45ce638def684acf8bd29cc2",
+    "data/derived/runs/run_feb6ebf11ef747ab/gene_identity.json": "9ea9383ff2b1d37d4f20d22ee863b20203a9cddde4b41b9e4b760069bdb79f8b",
+    "data/derived/runs/run_feb6ebf11ef747ab/manifest.json": "4dfcf455cf15b9b75d28c86e6fae3e8d2fd511febc6b29b14749a0dc88ca12fb",
+    "data/derived/runs/run_feb6ebf11ef747ab/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/runs/run_feb6ebf11ef747ab/metabolic_task_scores.csv": "9e379f10eb54f6cb7118848b09ed55b06b2efdfe13dd7810dbe6f675384374d4",
+    "data/derived/runs/run_feb6ebf11ef747ab/official_completeness.json": "dc9d45d718d4ebf345a63c518a2483c0ff34aa0acd22c074f7d808cc2845af17",
+    "data/derived/runs/run_feb6ebf11ef747ab/predicted.command.json": "8d092ba9aedbcf2b1fb1f179d9961ffa6d5275e589192024fddc83d86ae5f63c",
+    "data/derived/runs/run_feb6ebf11ef747ab/projection.json": "6cde1ca8bb20ac85158149a71dd02425ea060579f06169b6ebac418e84fe011d",
+    "data/derived/runs/run_feb6ebf11ef747ab/reaction_scores.csv": "db4b03e06bb432294b097191eb7b3737e16ad13051c83960573416bc1711232b",
+    "data/derived/runs/run_feb6ebf11ef747ab/report.html": "1c8ee02243e5bbfd3e8b85df4f460034acbe388205b76cce8f52d98e1c7dcf5d",
+    "data/derived/runs/run_feb6ebf11ef747ab/summary.json": "d056ec8333d8d825df7177b58feef5d2a056c7dd2f8027b7f9c8e3d07db82daa",
+    "data/derived/runs/run_feb6ebf11ef747ab/task_trace.json": "50d57c3e6a3a3d34c192261839b3a6bc375a894addcaa5d32cf32339d635f4bb",
+    "data/derived/runs/run_feb6ebf11ef747ab/cell_state/expression_pca.json": "f50cafb9a0130e19b1dd6b4059cbca1a497dddbab55b887e1793ea2f7049387e",
+    "data/derived/runs/run_feb6ebf11ef747ab/cell_state/expression_umap.json": "371d192060545fe97c87344f309325220e62964ed65c9594722d941be4522eaf",
+    "data/derived/runs/run_feb6ebf11ef747ab/cell_state/metabolic_pca.json": "045a79db58daeb633f5cb1ec7510707c208c47179979dfb726c599c7c1f290eb",
+    "data/derived/runs/run_feb6ebf11ef747ab/cell_state/metabolic_umap.json": "a6e6e8544cf9a8f8868090dca2e21528cc343d1db76616b4bef101c8533bc256",
+    "data/derived/runs/run_feb6ebf11ef747ab/cell_state/plot_data.npz": "583a27b8af7932e5c84c2066ac541e183dacc6c4f1e0b69ebd875808d5e1cdb9",
+    "data/derived/runs/run_feb6ebf11ef747ab/cell_state/prepared.json": "f3ffe6041cd1c1fa0bfda200324dc4e1561d63d15ae6bb117d477a42dda3e726",
+    "data/derived/runs/run_34737097754841fd/expression_contract.json": "3b5f0bc31a52b3d5ea021ffd7a7e9389e631d6259670c45035a73d101b66b37c",
+    "data/derived/runs/run_34737097754841fd/gene_deltas.csv": "526b092e1dabb76b90821270b59e4570ec0b56cc8a64415a1fffbed23292d05b",
+    "data/derived/runs/run_34737097754841fd/gene_identity.json": "5443d1452ac29987d2f5b5562d5ded4d0b20c67fbbb3dd915a3832a90d95e74d",
+    "data/derived/runs/run_34737097754841fd/manifest.json": "a0f0621cfe8005af1b8ef7025c5fc20d591b40bc064f7b272f7b692d60343196",
+    "data/derived/runs/run_34737097754841fd/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/runs/run_34737097754841fd/metabolic_task_scores.csv": "98c78239405f12e0d3cfa0e872f649699a799058a71eafe56e4ffcfb669dbf8f",
+    "data/derived/runs/run_34737097754841fd/official_completeness.json": "2283ae32d448d4c27b79381d94ab663b6e01aca7d508b7dd7f4cdc6c46c981ab",
+    "data/derived/runs/run_34737097754841fd/projection.json": "79e71a818cc84145cae2658ee081f33a0d84011a16b7ebc8abbaacfd4ed93562",
+    "data/derived/runs/run_34737097754841fd/reaction_scores.csv": "79ae1b7d2b028019967fcf6bd5bfdcbecf52ba77dac45285f752547f8cfe14e7",
+    "data/derived/runs/run_34737097754841fd/report.html": "0f3eecfecd8725254edfc2369c63d6b86800e530c55d90c9012654bcbc950941",
+    "data/derived/runs/run_34737097754841fd/summary.json": "eba8ddcaec105c015ef26f95d0b2b3da6057ae7f29f5388cf1ec04d7bdb8ee59",
+    "data/derived/runs/run_34737097754841fd/task_trace.json": "f7f201d7ee2e7b23baaadeb0bba2af3a561c0f146cfe61e3120e9ef787db2f21",
+    "data/derived/runs/run_34737097754841fd/cell_state/expression_pca.json": "a43c34d9096382fc2d02d0c4e5c68d2389ee51904eb948ba4c3c78a442b25e9a",
+    "data/derived/runs/run_34737097754841fd/cell_state/expression_umap.json": "4d806c4700b690606775d01969ff2db3d6082d30da226a9436a80d15c466cd15",
+    "data/derived/runs/run_34737097754841fd/cell_state/metabolic_pca.json": "7aa54e609c43f6222ae3eeda6667318d1cf4ef1b90abb8dfc72eae9d4c42485e",
+    "data/derived/runs/run_34737097754841fd/cell_state/metabolic_umap.json": "79bb5e89663958502e528cbf189090f0efa07bf66ea6dbb8d0dcdabca3aa3cde",
+    "data/derived/runs/run_34737097754841fd/cell_state/plot_data.npz": "28e1ac9f853cc2bece00a4f260af8905cb76b69cd84d797b8ad3de761493052e",
+    "data/derived/runs/run_34737097754841fd/cell_state/prepared.json": "c69d8f72c754ba7fdd7bfeb96e583a074ced55f307af6972b5c2c04bdc6561b3",
+    "data/derived/runs/run_aef55809479e4c21/expression_contract.json": "ebe09e2eee754369e76bae92dd9c0920dddca82b86a9bea5cedc8a8b083ef5af",
+    "data/derived/runs/run_aef55809479e4c21/gene_deltas.csv": "ac2cd19fc502ef3618511bc8e0b3c2fadf5160367ec132ce096b8d19061b0815",
+    "data/derived/runs/run_aef55809479e4c21/gene_identity.json": "2f46545d1bf551c9abbf2fdd833da07f0f69506976ea823be0a9fc1c0a706bb8",
+    "data/derived/runs/run_aef55809479e4c21/manifest.json": "3919107ae780c35fbe838dda020d52c39415979f71b017f714bd2e28456cbc61",
+    "data/derived/runs/run_aef55809479e4c21/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/runs/run_aef55809479e4c21/metabolic_task_scores.csv": "10e3eab7e3b43de8220d9b5ae64959902c92b0846fca66ed446e82e746e67d4a",
+    "data/derived/runs/run_aef55809479e4c21/official_completeness.json": "14fe76a5e391c1a74919e44fe297cde9b7ac1a6fbe704bc3f6d40aef50ab4976",
+    "data/derived/runs/run_aef55809479e4c21/projection.json": "413dbdd3a7656daceedc4416522a6f2cd5d96bb80887300263cf1353f9d48865",
+    "data/derived/runs/run_aef55809479e4c21/reaction_scores.csv": "0bf6c0929cd78ff4c935d54bc86fdb59a8269647420397ac8cde84d7c939429c",
+    "data/derived/runs/run_aef55809479e4c21/report.html": "d4f056d0461460e39eb4b1e44f27ededacdd51419e88edf56c7b8fcdfa1cdc5f",
+    "data/derived/runs/run_aef55809479e4c21/summary.json": "9d22d9a8dc52d39305724e70aba767fd08b981684766557b14f4812398d298f2",
+    "data/derived/runs/run_aef55809479e4c21/task_trace.json": "648372c0dd88b0ca8619ce6caaa8c6cc909161f84296e89545bd95a1493c1d96",
+    "data/derived/runs/run_aef55809479e4c21/cell_state/expression_pca.json": "4420e2b053c2e68b3d598593d7e1c40daf6b4fa993b952847e5a90bd8b35293b",
+    "data/derived/runs/run_aef55809479e4c21/cell_state/expression_umap.json": "65cf20cad1efb1dbf7cae3438b3bbc68721d7a6cc92bcf5425592a44fadde795",
+    "data/derived/runs/run_aef55809479e4c21/cell_state/metabolic_pca.json": "60e6040202f34124868613ba61a80baf457c0951832b6e28f5682795eb7b9961",
+    "data/derived/runs/run_aef55809479e4c21/cell_state/metabolic_umap.json": "c45506bce9512522157892d2e472b270b7aa99f8a567b4aa86f5a3e194cda3a3",
+    "data/derived/runs/run_aef55809479e4c21/cell_state/plot_data.npz": "ae3fb25d5c2b18684abab62f63ac4f2dc414b59a0e7dd3d30677e1b00c34b08f",
+    "data/derived/runs/run_aef55809479e4c21/cell_state/prepared.json": "51b157462078292699e282e91bbf0505270c4420efa4a45202acb6be49ad54bd",
+    "data/derived/runs/run_a69d03a3be9e492b/expression_contract.json": "b0ee2eb56beb1fa2b0009c4520bd13f2dc62b0503eef8f9ee5afffc8e526b480",
+    "data/derived/runs/run_a69d03a3be9e492b/gene_deltas.csv": "ca84b709231fb0e43600d1b058aa14e9e2a6d086c48a539039ae22ac7b7d1038",
+    "data/derived/runs/run_a69d03a3be9e492b/gene_identity.json": "10c24e592f3b7288b87437ef468310f5fe73b1d882827c628a9e1e78ad0a2689",
+    "data/derived/runs/run_a69d03a3be9e492b/manifest.json": "a6b26f91b07505e139943802d4a1532f324bb63d9cf6fd5b93f93187fb05a46b",
+    "data/derived/runs/run_a69d03a3be9e492b/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/runs/run_a69d03a3be9e492b/metabolic_task_scores.csv": "8d39991b99e8a5f3b95a462ad79c7cf2ed1438489ba0ecda95427d4ba14e4770",
+    "data/derived/runs/run_a69d03a3be9e492b/official_completeness.json": "d660f3df8d11c843951327ccde3bb12eb29af3a895d09d467a4e1da0adecef09",
+    "data/derived/runs/run_a69d03a3be9e492b/projection.json": "2b9e0471c263ea4fbfbc163ded68ced46a1751f1d2c56869ec43f259a2a1929e",
+    "data/derived/runs/run_a69d03a3be9e492b/reaction_scores.csv": "796a32b50d8b140548546079c83426f7d0268a6d13d07b50b051fadec3e71400",
+    "data/derived/runs/run_a69d03a3be9e492b/report.html": "3683278aa761498095ff7bfc9ce9c9fa03bcca3bcb126787c65514d205e51370",
+    "data/derived/runs/run_a69d03a3be9e492b/summary.json": "f5f3a2b26497aae74a86f863ac3ecb449736667b43af890987fce1cda87f4427",
+    "data/derived/runs/run_a69d03a3be9e492b/task_trace.json": "047b720e21b154dd8bb9de7e43df5620981cbe7ebb879486042cb654ef2af04b",
+    "data/derived/runs/run_a69d03a3be9e492b/cell_state/expression_pca.json": "b07a2900fb441838346e4d8315542444e1948455a5607ecbf387cc0fd0fecd4e",
+    "data/derived/runs/run_a69d03a3be9e492b/cell_state/expression_umap.json": "bdf67308f60e49dc871a4291a517c579d3747b73d7b3b2fc18be7b1af1b55382",
+    "data/derived/runs/run_a69d03a3be9e492b/cell_state/metabolic_pca.json": "5ec58063a4a3acd5d81dcb6f3038c8069bdba6375d697d41fdc1098ce322d843",
+    "data/derived/runs/run_a69d03a3be9e492b/cell_state/metabolic_umap.json": "30cd2124eedd3d3418afb2731cd130ed73151e52e75e6786faac60b49ba7e406",
+    "data/derived/runs/run_a69d03a3be9e492b/cell_state/plot_data.npz": "1e44bafb92a676a1d926b9af78b8eaf60a30963c3a16474fba9a15eabe494c31",
+    "data/derived/runs/run_a69d03a3be9e492b/cell_state/prepared.json": "21b775730074b9f9d00973d22118e024f1b60b502920816c743b66213ee4bfb1",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/genes.csv": "8f13a80a6c7204a705f9fe335136777ec26d54902d6adb3fbeb75f230236c49f",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/gene_identity.json": "9af7a425beedfad853ed22069e61fb90509700c510d772132750fc400c0cb85a",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/manifest.json": "661c973e1748ad88b5a0b22a632c4fa3a5ab517ea57a1e260f90260efd0a1421",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/metabolic_coverage.csv": "0bbefe5daa3054ffc2ff71591baa38b75d1c40681e59d6177d7a49b222a8fb02",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/metabolic_task_scores.csv": "734760263a747975c5204767dea74be32ada63ad836809aa68890597f7dbe424",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/official_completeness.json": "31ce9ae3d8badf1ac23b45735aa77f2931cd5c90cdbd0ec408980b1417ac0e36",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/projection-pca.json": "73e43a85913a492ad1a9fe83fc36ede3b4ff4041dcbd730711256cec3f216bba",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/projection-umap.json": "07d6bb8a987a0df4e043f9d00fcd66bbdca9c5a88bf917332c0568cd3db321e9",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/reactions.csv": "93fc3c37b14a69ed33ae5647a310bf832ab032ef258f5be0a4b21ebd3ea6ca3d",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/report.html": "496c7920c6dd7ae60835e66807c5312f44a27d8082b346e35b3470dc72a33cce",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/request.json": "02e835f7d6ff2868d6df5664f91d1a9053e70b40204930a6bbf3ac0ba5502563",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/summary.json": "5f8d9ab96d4534e79d619018ebdcca3c4ac99a115028f93ef11ab2917eb64605",
+    "data/derived/measured/measured_00c6134fec4544efb1ad3b6d/tasks.csv": "6017cf937c369c0a6838693af5f5c2368493920cb9dfb08f71619bd629e1d381",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/genes.csv": "de7dd64e4b7e25f557c94d3678cbe7f05fb377a8084f70a3a2883ad8858da3d9",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/gene_identity.json": "9af7a425beedfad853ed22069e61fb90509700c510d772132750fc400c0cb85a",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/manifest.json": "cdd7488f8bddc13692fc069ee3c37a3c6de5294487b80fee2bfaa2499682cc3f",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/metabolic_coverage.csv": "0bbefe5daa3054ffc2ff71591baa38b75d1c40681e59d6177d7a49b222a8fb02",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/metabolic_task_scores.csv": "cc046b6da22913828e8d8128b8b12b9524d8bb0fdf19bfd67c45c69191b572be",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/official_completeness.json": "31ce9ae3d8badf1ac23b45735aa77f2931cd5c90cdbd0ec408980b1417ac0e36",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/projection-pca.json": "69c363b51b6698776d65ffc188851eb818d9d888f5e170cb9fe50174e7e5bb1c",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/projection-umap.json": "87fd88dab711237d2815dee10af2caf7def6d956c80ab3918689599d051563da",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/reactions.csv": "1c5ab4ed204e45d99284d6e2b76d50757a3322525deebc1e0312a08def362230",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/report.html": "464cf3466db92fbb2c562a6ba119dcad2387e0c013c0ef1f2c12e67f9bc4def5",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/request.json": "5113ae0e4aca8f5a0b5645ded1c4bf44e7d1abf4a41b7af7c69188d1fbf59236",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/summary.json": "ad01a01412eb68013914572518cb21244b0193e1df7b13faec1f9fb8582f9f6c",
+    "data/derived/measured/measured_ad6bdad81013413493d363db/tasks.csv": "6de61969fca66184084d810563b7351e20a6cc8bb426eb60a2b61c59f9dfb7ba",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/comparison.json": "2f7e529e1a23ac17bc86f3989b1cd045026bc068d06aac3fa1f095d3f7b606dc",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/differential_expression.csv": "da0a53c9ac305a3e3a70cef9a1bb2213a058c92af5784e107e3f59a60accd26d",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/expression_contract.json": "9d68676dc1a3a7dbc968021777fa0a2ef62be622d79345614d7dc2345caf4045",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/gene_deltas.csv": "457ec0d982bfcfd074a0dfbb12047f1136ba83d971cf3d015a9f41b982e23394",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/gene_identity.json": "1cd4826d42c549046168d85088317e6e6196424a153164d6bc0ecf3e28a9d511",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/manifest.json": "b62a066680960a41fc1bb718e4cc1238b3894a4bae07aa26bd24bf8a427fd3a5",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/metabolic_task_scores.csv": "ea6abf0ddf2f6eb13627b21fde3e1e862a775aa9c912664cc970778e415d48be",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/official_completeness.json": "c88bb666dcb234e28d19441f179f6b0b4830dc5dc18db7ccd72e28de1813d147",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/projection.json": "466113eab86347a3a42efa303829ba3c577b4075a096594d0a9870df85f4260f",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/reaction_scores.csv": "57cdc6b6e07d194934a658c1a36a1c563e707f68df33d7a02722fb490f10dcb6",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/task_trace.json": "74e0ee292f2e54394068054a64d2a4a2b02d0ff2fc8de8a0a763322b3e9c6926",
+    "data/derived/comparisons/run_feb6ebf11ef747ab/validation_metrics.json": "e1ba1615b2a37a8f956f9ae261d6c1fc4bff364ef8d0eb5c9e1ef1c23ab64b9b",
+    "data/derived/comparisons/run_34737097754841fd/comparison.json": "7482d0ba4748007125adf23eabbb7ed9b575245b08ed2ccf8d673c05359a2f7f",
+    "data/derived/comparisons/run_34737097754841fd/differential_expression.csv": "3b00c4228647422227fe70aa3ed92a3f0c8edf455e871bc313ee890c0fb1da87",
+    "data/derived/comparisons/run_34737097754841fd/expression_contract.json": "ad057c88d23d67e350d77e3aefbce6ca81ed039019ebf845e572427d9188133a",
+    "data/derived/comparisons/run_34737097754841fd/gene_deltas.csv": "177213070c07f0486a4d2950cec6379df8798f0b6aed8aca3ad407b8cda1ee65",
+    "data/derived/comparisons/run_34737097754841fd/gene_identity.json": "7d939bc059bab807d8a7ac199bdc30d62c32ec2c19ccb3c3e6fc53e66dd123e7",
+    "data/derived/comparisons/run_34737097754841fd/manifest.json": "4cb90d466ebdec1a12a99c5d21b0558a0b0df3fab53856ab21994cc021209038",
+    "data/derived/comparisons/run_34737097754841fd/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/comparisons/run_34737097754841fd/metabolic_task_scores.csv": "701715cbaa7ac61977f6a70291a9a923860c7ea4b17816022d9e313cead4a3a8",
+    "data/derived/comparisons/run_34737097754841fd/official_completeness.json": "8ace471d42604bf7ddd5cb6b61e18be6bfe09a6d9673f627e145a07acd797e2c",
+    "data/derived/comparisons/run_34737097754841fd/projection.json": "598be9a70344944d822b6b40cc5abb4cdb2ee3e740da93a2897a5407483f88da",
+    "data/derived/comparisons/run_34737097754841fd/reaction_scores.csv": "e749d895c2136c44d089a8b2f0b75429df2db95ff96f2118c2bd7a8558ee0142",
+    "data/derived/comparisons/run_34737097754841fd/task_trace.json": "87409c19f993a7f59fcc1f91ae4dbdfa03b618573cecf6a4c747ca81720b160c",
+    "data/derived/comparisons/run_34737097754841fd/validation_metrics.json": "bb0ad84923f154959e0262ccd596e9d0b2f03d0d003809bbff75d59b607de227",
+    "data/derived/comparisons/run_aef55809479e4c21/comparison.json": "9b379b96c9887a695506d0e79977d93186c1d0687ce94ce2ee4ba8dcfcae1f6e",
+    "data/derived/comparisons/run_aef55809479e4c21/differential_expression.csv": "d96debd443aed5ca9b83195fcca03b8604f616ee15b59829771d47df3730fac7",
+    "data/derived/comparisons/run_aef55809479e4c21/expression_contract.json": "a78983fa0244d0a70340dcfc7d1a71404c66e1a8afac037f40928ff3a4494f3e",
+    "data/derived/comparisons/run_aef55809479e4c21/gene_deltas.csv": "485ecc403bfd1cb76c189c88291728d921f2da14df27db9261252daec4870c1c",
+    "data/derived/comparisons/run_aef55809479e4c21/gene_identity.json": "1266446ec26eed83122feab1b1b5a9d9da93a9b1450af27f7b0d8742cd0edc43",
+    "data/derived/comparisons/run_aef55809479e4c21/manifest.json": "170248112c7275adcc998ad6c797561bc62ff60641a8b94c6bdb4be9af23e712",
+    "data/derived/comparisons/run_aef55809479e4c21/metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "data/derived/comparisons/run_aef55809479e4c21/metabolic_task_scores.csv": "a87d210e1590f4f8c9f7c236a31cbee62ca209243698076d96590b37651f1f48",
+    "data/derived/comparisons/run_aef55809479e4c21/official_completeness.json": "fecc72613ad7f4f07ad0bcd32f1634b3193ca91b2ae833cf4d85d782b01d2327",
+    "data/derived/comparisons/run_aef55809479e4c21/projection.json": "f69a59094e99a53339e752ca36142365b8b012df2095a641874014a22ef862ac",
+    "data/derived/comparisons/run_aef55809479e4c21/reaction_scores.csv": "5dbad740fb98dd4ea9e141afedbfdabe0ebc875eb5d6d281e78d65746f6832bd",
+    "data/derived/comparisons/run_aef55809479e4c21/task_trace.json": "770ea9ad7c0d0b71b1c378d19569bb506edec620f768d59db827c99eedadce62",
+    "data/derived/comparisons/run_aef55809479e4c21/validation_metrics.json": "9e013a44598f671b907c84f29a03c02135bd82e25256f240d05f1412c8ca95cd"
+  },
+  "jobs": [
+    {
+      "kind": "prediction",
+      "source": "online",
+      "request": {
+        "cell_line": "Jurkat",
+        "perturbation": "ALDOA",
+        "mode": "online",
+        "n_cells": 64,
+        "seed": 20261108
+      },
+      "submitted_at": "2026-11-07T10:43:42.303629+00:00",
+      "create_http_status": 202,
+      "create_response": {
+        "run_id": "run_7413f05770d14a22",
+        "status": "queued",
+        "cache_hit": false
+      },
+      "id": "run_7413f05770d14a22",
+      "observations": [
+        {
+          "at": "2026-11-07T10:44:37.135563+00:00",
+          "status": "state_running",
+          "progress": 15,
+          "updated_at": "2026-11-07T10:43:47.628000"
+        },
+        {
+          "at": "2026-11-07T10:45:24.856358+00:00",
+          "status": "validating",
+          "progress": 85,
+          "updated_at": "2026-11-07T10:45:20.299991"
+        },
+        {
+          "at": "2026-11-07T10:47:32.334128+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:47:40.163624+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:47:46.562505+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:48:18.709249+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:48:51.277741+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:49:11.448822+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:49:17.499080+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:49:56.342391+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:50:16.947679+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:50:31.797166+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        },
+        {
+          "at": "2026-11-07T10:51:58.527594+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:46:03.174068"
+        }
+      ],
+      "latest_record": {
+        "run_id": "run_7413f05770d14a22",
+        "status": "completed",
+        "stage_progress": 100,
+        "request": {
+          "cell_line": "Jurkat",
+          "perturbation": "ALDOA",
+          "mode": "online",
+          "n_cells": 64,
+          "seed": 20261108
+        },
+        "created_at": "2026-11-07T10:43:42.288148",
+        "updated_at": "2026-11-07T10:46:03.174068",
+        "warnings": [],
+        "error_code": null,
+        "error_message": null,
+        "result_kind": null
+      },
+      "comparison_status": "available",
+      "frozen_files": {
+        "directory": "data\\derived\\runs\\run_7413f05770d14a22",
+        "manifest_sha256": "e7c0b1152ca6c2fae8b60ec9b20c625e816a2238dcdb340a19aa7bae9be0fcac",
+        "count": 12,
+        "sha256": {
+          "predicted.h5ad": "0c8450d2d49940b2392b39819d5abc3a90d7073255712a5da8507257aec73ddd",
+          "gene_deltas.csv": "b47e974e0d30ff9fde4eb7acbddc302ff7dea149688b15ae327edaf57ca3916a",
+          "projection.json": "299bcad96746ce1c61bfbb45a0204987211a4e45737d22c9b07c8a4a1501f5e9",
+          "expression_contract.json": "0d7369273a82106e5e9483c1b3baf35a9d01707d7dc60380775b125c61192af8",
+          "gene_identity.json": "b6ab256004c0a5423cf5e912475658c8f6fb00fbf0653912cffe5664ca0eb215",
+          "official_completeness.json": "ff325c97ee6877a57938298eb953cd5e07906861cf7237b989631ac8dec89ae0",
+          "metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+          "metabolic_task_scores.csv": "dfa2eb20a9bd45e41d736764808709b18b5fa73f903f3bb8bfb5511e8edb7593",
+          "reaction_scores.csv": "b7fbae68ff4da62f75ef8312748d1f0da81a0d74082726b8a3fd4d925cd1f73d",
+          "task_trace.json": "7f7fa03b5dfdcbce52ee486b17bf950794448cd9062930127431c6f001c1211d",
+          "summary.json": "9b702eb09cbf3cb545f7b474e8ce20781f5a26bfa287d833a3b2d072c6885d4b",
+          "report.html": "077725cc1db323d12eecdc5c46df632b600355334b42df8509afd460752ee41a"
+        },
+        "all_match_manifest": true,
+        "unchanged_after_exports": true
+      },
+      "unified": {
+        "record_id": "run_7413f05770d14a22",
+        "record_kind": "prediction",
+        "state": "completed",
+        "source_kind": "prediction",
+        "groups": [
+          {
+            "id": "control",
+            "source_kind": "measured",
+            "count": 1024
+          },
+          {
+            "id": "predicted",
+            "source_kind": "prediction",
+            "count": 64
+          }
+        ],
+        "units": {
+          "expression": "mean(log1p(CP10K))",
+          "delta": "difference in mean(log1p(CP10K)); predicted/observed − control",
+          "function": "expression-derived scCellFie task/reaction support score"
+        },
+        "coverage": {
+          "gene_count": 2000,
+          "metabolism": {
+            "state_gene_fraction": 1.0,
+            "metabolic_gene_fraction": 0.14822771213748656,
+            "reaction_fraction": 0.2018871216460363,
+            "supported_tasks": 7,
+            "exploratory_tasks": 2,
+            "insufficient_tasks": 209
+          }
+        },
+        "availability": {
+          "expression": {
+            "available": true,
+            "reason": null
+          },
+          "function": {
+            "available": true,
+            "reason": null
+          },
+          "projection": {
+            "available": true,
+            "reason": null
+          },
+          "comparison": {
+            "available": true,
+            "reason": null
+          },
+          "export": {
+            "available": true,
+            "reason": null
+          }
+        },
+        "manifest_sha256": "bf406274e00b3e3fe0a4b21ea93c3492a5d59a3424446c6dcb0ae503de7b382d"
+      },
+      "projections": {
+        "pca": {
+          "counts": {
+            "control": 1024,
+            "predicted": 64
+          },
+          "displayed_counts": {
+            "control": 1024,
+            "predicted": 64
+          },
+          "total_cells": 1088,
+          "displayed_cells": 1088,
+          "parameters": null,
+          "provenance": {
+            "manifest_sha256": "e7c0b1152ca6c2fae8b60ec9b20c625e816a2238dcdb340a19aa7bae9be0fcac",
+            "prepared_manifest_sha256": "ea39a5bf34d823c09b6f6ebc78fc12aab1cd784c00e89e304f2784ef9c6db59f",
+            "projection_sha256": "f8e74756d5f884c849e23bda8c8b2273f20024df56cdb2e99c3f7e0278ea17e7",
+            "source_run_id": "run_7413f05770d14a22",
+            "artifact": "cell_state/expression_pca.json",
+            "research_fingerprint": "bf406274e00b3e3fe0a4b21ea93c3492a5d59a3424446c6dcb0ae503de7b382d"
+          },
+          "http_status": 200
+        },
+        "umap": {
+          "counts": {
+            "control": 1024,
+            "predicted": 64
+          },
+          "displayed_counts": {
+            "control": 1024,
+            "predicted": 64
+          },
+          "total_cells": 1088,
+          "displayed_cells": 1088,
+          "parameters": {
+            "n_components": 2,
+            "n_neighbors": 30,
+            "min_dist": 0.3,
+            "metric": "euclidean",
+            "random_state": 42,
+            "n_jobs": 1,
+            "init": "spectral",
+            "fit_sources": [
+              "control",
+              "predicted"
+            ],
+            "preprocessing": {
+              "method": "PCA",
+              "n_components": 50,
+              "svd_solver": "randomized",
+              "random_state": 42,
+              "expression_units": "log1p(CP10K)",
+              "gene_wise_scaling": false
+            },
+            "package_versions": {
+              "umap-learn": "0.5.12",
+              "scikit-learn": "1.9.1"
+            }
+          },
+          "provenance": {
+            "manifest_sha256": "e7c0b1152ca6c2fae8b60ec9b20c625e816a2238dcdb340a19aa7bae9be0fcac",
+            "prepared_manifest_sha256": "ea39a5bf34d823c09b6f6ebc78fc12aab1cd784c00e89e304f2784ef9c6db59f",
+            "projection_sha256": "d720d5c84ef2c73619d114fc2f75d0cb0b111dfaf6aabca927b389b5d13f61d3",
+            "source_run_id": "run_7413f05770d14a22",
+            "artifact": "cell_state/expression_umap.json",
+            "research_fingerprint": "bf406274e00b3e3fe0a4b21ea93c3492a5d59a3424446c6dcb0ae503de7b382d"
+          },
+          "http_status": 200
+        }
+      },
+      "populations": {
+        "original": [
+          {
+            "id": "control",
+            "source_kind": "measured",
+            "count": 1024
+          },
+          {
+            "id": "predicted",
+            "source_kind": "prediction",
+            "count": 64
+          }
+        ],
+        "matched_comparison": [
+          {
+            "id": "control",
+            "source_kind": "measured",
+            "count": 613
+          },
+          {
+            "id": "predicted",
+            "source_kind": "prediction",
+            "count": 55
+          },
+          {
+            "id": "observed",
+            "source_kind": "measured",
+            "count": 50
+          }
+        ],
+        "comparison_sha256": "c1bea064458067dee65017ae1e68a54e7dbe6ab39a36e4bcac65ac9d9cee3e1e",
+        "comparison_manifest_sha256": "447e8daed8a915ec76a7d7a8d069140a755aacb832f716303ce04587c6600f03"
+      },
+      "comparison_files": {
+        "manifest_sha256": "447e8daed8a915ec76a7d7a8d069140a755aacb832f716303ce04587c6600f03",
+        "output_count": 12,
+        "all_outputs_inputs_match": true
+      },
+      "task_trace": {
+        "task_id": "Fructose degradation (to glucose-3-phosphate)",
+        "http_status": 200,
+        "reaction_count": 1,
+        "untruncated": true
+      },
+      "inference_evidence": {
+        "stdout_log": "data\\derived\\runs\\run_7413f05770d14a22\\predicted.stdout.log",
+        "lines": [
+          "Model device: cuda:0",
+          "Model output space: gene",
+          "Controls simulated:  64",
+          "Treated simulated:   64"
+        ],
+        "model_id": "state-replogle-jurkat-fewshot-v1",
+        "gpu_uuid": "GPU-846c0bb6-1079-3bb7-5d74-dd58d39b54ca"
+      },
+      "basic_verified_at": "2026-11-07T10:51:59.981246+00:00",
+      "diagnostics": {
+        "http_status": 200,
+        "prepared_at": "2026-11-07T10:51:52.308594+00:00",
+        "provenance": {
+          "version": "comparison-diagnostics-v2",
+          "implementation_sha256": "c80ccf20a7f5bf21d46040024c813ad33446d9b5f38f563be93730e6fdd56197",
+          "diagnostics_sha256": "63915c44d6d82d313ab44ef3c6f6d6050e2bd33e3a39f70f44cc2edd387e303d",
+          "diagnostics_manifest_sha256": "1c240fc5282768ea0fada022e15a386b0c69f8775a24199ec2edbe1012d75cfc"
+        },
+        "batch_sensitivity": {
+          "pooled_cells": {
+            "signed_delta_pearson": 0.41946830443973493,
+            "mse": 0.015183944255113602,
+            "no_change_mse": 0.015917904675006866,
+            "mse_relative_to_no_change": 0.953890889857779,
+            "direction_agreement": 0.5805
+          },
+          "equal_batch_weight": {
+            "signed_delta_pearson": 0.36209445329082734,
+            "mse": 0.01720312051475048,
+            "no_change_mse": 0.01615302264690399,
+            "mse_relative_to_no_change": 1.0650093725986176,
+            "direction_agreement": 0.5495
+          },
+          "baseline_conclusion_consistent": false,
+          "baseline_comparison_reason": null,
+          "batch_key": "gem_group",
+          "common_batches": [
+            "10",
+            "11",
+            "15",
+            "18",
+            "19",
+            "2",
+            "21",
+            "22",
+            "23",
+            "25",
+            "27",
+            "28",
+            "29",
+            "30",
+            "31",
+            "33",
+            "34",
+            "38",
+            "39",
+            "4",
+            "40",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "5",
+            "53",
+            "54",
+            "55"
+          ],
+          "batch_counts": {
+            "control": {
+              "10": 20,
+              "11": 21,
+              "15": 25,
+              "18": 16,
+              "19": 23,
+              "2": 33,
+              "21": 21,
+              "22": 19,
+              "23": 23,
+              "25": 15,
+              "27": 18,
+              "28": 19,
+              "29": 18,
+              "30": 19,
+              "31": 21,
+              "33": 24,
+              "34": 16,
+              "38": 21,
+              "39": 18,
+              "4": 16,
+              "40": 23,
+              "42": 23,
+              "43": 18,
+              "44": 20,
+              "45": 19,
+              "46": 21,
+              "5": 29,
+              "53": 22,
+              "54": 16,
+              "55": 16
+            },
+            "predicted": {
+              "10": 1,
+              "11": 1,
+              "15": 2,
+              "18": 3,
+              "19": 2,
+              "2": 3,
+              "21": 1,
+              "22": 2,
+              "23": 2,
+              "25": 2,
+              "27": 4,
+              "28": 1,
+              "29": 2,
+              "30": 3,
+              "31": 1,
+              "33": 1,
+              "34": 2,
+              "38": 2,
+              "39": 2,
+              "4": 1,
+              "40": 1,
+              "42": 2,
+              "43": 2,
+              "44": 2,
+              "45": 1,
+              "46": 1,
+              "5": 4,
+              "53": 2,
+              "54": 1,
+              "55": 1
+            },
+            "observed": {
+              "10": 1,
+              "11": 1,
+              "15": 1,
+              "18": 2,
+              "19": 2,
+              "2": 3,
+              "21": 3,
+              "22": 1,
+              "23": 1,
+              "25": 1,
+              "27": 1,
+              "28": 2,
+              "29": 1,
+              "30": 2,
+              "31": 1,
+              "33": 1,
+              "34": 2,
+              "38": 3,
+              "39": 1,
+              "4": 3,
+              "40": 1,
+              "42": 2,
+              "43": 3,
+              "44": 2,
+              "45": 2,
+              "46": 1,
+              "5": 1,
+              "53": 1,
+              "54": 2,
+              "55": 2
+            }
+          },
+          "total_variation_control_observed": 0.21712887438825446,
+          "formula": "每组先求各批次均值，再对共同批次等权平均；变化减同口径对照，MSE 对相同基因轴平均。",
+          "gene_axis_sha256": "897cbe5000a632080a0c66910c899e94a66e1f177035839b3900d8b14b7cb391",
+          "gene_count": 2000,
+          "finite_values_verified": true,
+          "unique_cell_ids_within_source_verified": true,
+          "cell_id_scope": "IDs scoped by source; predictions are simulated, not biological replicates",
+          "limitations": [
+            "共同 gem_group 为记录的批次，不自动代表独立生物学重复。",
+            "批次等权是敏感性诊断；少细胞批次均值可能不稳定，不替代冻结的原汇总估计。",
+            "细胞级探索性诊断，非生物学重复检验；增加生成记录不会增加实测独立证据。",
+            "未确认训练排除，非独立留出验证；scCellFie 一致性不等于实测代谢通量验证。"
+          ],
+          "status": "available",
+          "diagnostics_sha256": "63915c44d6d82d313ab44ef3c6f6d6050e2bd33e3a39f70f44cc2edd387e303d"
+        },
+        "reference_selection_sha256": "b7ec72db7f60263b67b792e7f8fc65cfb3fd6299516b4009e7a96c96cb74c253",
+        "task_coverage": {
+          "finite_paired_task_count": 141,
+          "knowledge_base_task_count": 218,
+          "unscored_task_count": 77,
+          "by_evidence_level": {
+            "supported": 7,
+            "exploratory": 2,
+            "insufficient": 132,
+            "unknown": 0
+          },
+          "distinct_mean_triplets_8dp": 113
+        },
+        "original_comparison_hashes_unchanged": true
+      },
+      "assistant_context": {
+        "http_status": 200,
+        "context_sha256": "3f9fe19d4d02634e99934c9b381e658241288c7cf7033a0a0ec8691d8473b20c",
+        "bytes": 23057,
+        "diagnostics_hash_matches": true,
+        "reference_selection_sha256": "b7ec72db7f60263b67b792e7f8fc65cfb3fd6299516b4009e7a96c96cb74c253",
+        "baseline_conclusion_consistent": false,
+        "external_provider_called": false
+      },
+      "prepared_files": {
+        "manifest_sha256": "ea39a5bf34d823c09b6f6ebc78fc12aab1cd784c00e89e304f2784ef9c6db59f",
+        "output_count": 9,
+        "all_match": true
+      },
+      "exports": {
+        "unified_json": {
+          "url": "/research/results/prediction/run_7413f05770d14a22/export",
+          "http_status": 200,
+          "bytes": 1495866,
+          "sha256": "42273e4029b4ab171d48708383ecb73ce18ee570546fc2b5c4ad77218def8181",
+          "content_type": "application/json",
+          "filename": "attachment; filename=\"research-run_7413f05770d14a22.json\"",
+          "manifest_header": "bf406274e00b3e3fe0a4b21ea93c3492a5d59a3424446c6dcb0ae503de7b382d",
+          "groups": [
+            {
+              "id": "control",
+              "source_kind": "measured",
+              "count": 1024
+            },
+            {
+              "id": "predicted",
+              "source_kind": "prediction",
+              "count": 64
+            }
+          ],
+          "table_rows": {
+            "gene_deltas.csv": 2000,
+            "metabolic_coverage.csv": 218
+          },
+          "findings_count": 0,
+          "comparison_table_rows": {
+            "genes": 2000,
+            "tasks": 141
+          }
+        },
+        "original_genes_csv": {
+          "url": "/runs/run_7413f05770d14a22/export/table?table=genes&population=original",
+          "http_status": 200,
+          "bytes": 1328361,
+          "sha256": "0802c815c77d928efc6d11f512b25df46f8d4a360b99fa2a559b47bb894369d2",
+          "content_type": "text/csv;charset=utf-8",
+          "filename": "attachment; filename=\"run_7413f05770d14a22_original_genes_mean_per_source.csv\"",
+          "manifest_header": null,
+          "rows": 2000,
+          "counts": {
+            "control": 1024,
+            "predicted": 64
+          },
+          "metadata_url": "/api/v1/research/results/prediction/run_7413f05770d14a22/export",
+          "selection_id": "original:e7c0b1152ca6c2fa",
+          "comparison_sha256": ""
+        },
+        "original_tasks_csv": {
+          "url": "/runs/run_7413f05770d14a22/export/table?table=tasks&population=original",
+          "http_status": 200,
+          "bytes": 104262,
+          "sha256": "3259b3a10baabdc9313a2ecc47abd12717d8d7d802f015c13f67e67439568d6f",
+          "content_type": "text/csv;charset=utf-8",
+          "filename": "attachment; filename=\"run_7413f05770d14a22_original_tasks_mean_per_source.csv\"",
+          "manifest_header": null,
+          "rows": 141,
+          "counts": {
+            "control": 1024,
+            "predicted": 64
+          },
+          "metadata_url": "/api/v1/research/results/prediction/run_7413f05770d14a22/export",
+          "selection_id": "original:e7c0b1152ca6c2fa",
+          "comparison_sha256": ""
+        },
+        "comparison_genes_csv": {
+          "url": "/runs/run_7413f05770d14a22/export/table?table=genes&population=comparison",
+          "http_status": 200,
+          "bytes": 5771083,
+          "sha256": "047a463ec6210557ce193b72463cda6477a76fb2517f6766ce3204f958638a15",
+          "content_type": "text/csv;charset=utf-8",
+          "filename": "attachment; filename=\"run_7413f05770d14a22_comparison_genes_mean_per_source.csv\"",
+          "manifest_header": null,
+          "rows": 2000,
+          "counts": {
+            "control": 613,
+            "predicted": 55,
+            "observed": 50
+          },
+          "metadata_url": "/api/v1/runs/run_7413f05770d14a22/comparison/download?table=json",
+          "selection_id": "comparison:c1bea064458067de",
+          "comparison_sha256": "c1bea064458067dee65017ae1e68a54e7dbe6ab39a36e4bcac65ac9d9cee3e1e"
+        },
+        "comparison_tasks_csv": {
+          "url": "/runs/run_7413f05770d14a22/export/table?table=tasks&population=comparison",
+          "http_status": 200,
+          "bytes": 463428,
+          "sha256": "6ae9dd1e77a9d3d77df1b714d2906ad2266fcdf1b860b7ae4a75946ccf2a5889",
+          "content_type": "text/csv;charset=utf-8",
+          "filename": "attachment; filename=\"run_7413f05770d14a22_comparison_tasks_mean_per_source.csv\"",
+          "manifest_header": null,
+          "rows": 141,
+          "counts": {
+            "control": 613,
+            "predicted": 55,
+            "observed": 50
+          },
+          "metadata_url": "/api/v1/runs/run_7413f05770d14a22/comparison/download?table=json",
+          "selection_id": "comparison:c1bea064458067de",
+          "comparison_sha256": "c1bea064458067dee65017ae1e68a54e7dbe6ab39a36e4bcac65ac9d9cee3e1e"
+        },
+        "report_pdf": {
+          "url": "/runs/run_7413f05770d14a22/report",
+          "http_status": 200,
+          "bytes": 297260,
+          "sha256": "9e3606126d89c7870889757dfa014e38538d708edffe3cdce5e03650ffb2466a",
+          "content_type": "application/pdf",
+          "filename": "attachment; filename=\"celllens-run_7413f05770d14a22.pdf\"",
+          "manifest_header": null
+        },
+        "bundle": {
+          "url": "/runs/run_7413f05770d14a22/export?package=analysis",
+          "http_status": 200,
+          "bytes": 4597830,
+          "sha256": "3fe20e9d687f2abcdc14605c549c053f269bbdaeeec59f313e509f13b1f53cfb",
+          "content_type": "application/zip",
+          "filename": "attachment; filename=\"CellLens_run_7413f05770d14a22_analysis.zip\"",
+          "manifest_header": null,
+          "entries": [
+            "README.md",
+            "comparison/comparison.json",
+            "comparison/differential_expression.csv",
+            "comparison/expression_contract.json",
+            "comparison/gene_deltas.csv",
+            "comparison/gene_identity.json",
+            "comparison/genes.csv",
+            "comparison/metabolic_coverage.csv",
+            "comparison/metabolic_task_scores.csv",
+            "comparison/official_completeness.json",
+            "comparison/projection.json",
+            "comparison/reaction_scores.csv",
+            "comparison/source_manifest.json",
+            "comparison/table_metadata.json",
+            "comparison/task_trace.json",
+            "comparison/tasks.csv",
+            "comparison/validation_metrics.json",
+            "manifest.json",
+            "original/expression_contract.json",
+            "original/figures/expression_pca.json",
+            "original/figures/expression_pca.svg",
+            "original/figures/expression_umap.json",
+            "original/figures/expression_umap.svg",
+            "original/figures/metabolic_pca.json",
+            "original/figures/metabolic_pca.svg",
+            "original/figures/metabolic_umap.json",
+            "original/figures/metabolic_umap.svg",
+            "original/gene_deltas.csv",
+            "original/gene_identity.json",
+            "original/metabolic_coverage.csv",
+            "original/metabolic_task_scores.csv",
+            "original/official_completeness.json",
+            "original/projection.json",
+            "original/reaction_scores.csv",
+            "original/summary.json",
+            "original/table_metadata.json",
+            "original/task_trace.json",
+            "report.pdf"
+          ],
+          "frozen_entries_hash_matched": 10
+        },
+        "population_labels_verified": true
+      },
+      "exports_verified_at": "2026-11-07T10:52:19.681099+00:00"
+    },
+    {
+      "kind": "measured",
+      "source": "controlled_import",
+      "request": {
+        "import_id": "import_75219a9293f845edaadfce8c"
+      },
+      "submitted_at": "2026-11-07T10:47:49.684165+00:00",
+      "create_http_status": 202,
+      "create_response": {
+        "id": "measured_beecf1c152044ecaa59df964",
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "max_cells": 16,
+        "seed": 42,
+        "status": "queued",
+        "progress": 0,
+        "message": "实测分析已排队",
+        "error_message": null,
+        "created_at": "2026-11-07T10:47:49.671478+00:00",
+        "updated_at": "2026-11-07T10:47:49.671478+00:00",
+        "source_kind": "measured",
+        "import_id": "import_75219a9293f845edaadfce8c",
+        "source": {
+          "kind": "controlled_private_h5ad",
+          "import_id": "import_75219a9293f845edaadfce8c",
+          "source_sha256": "7e6b34cf4f58ee69126b95ecf2e479caca40dc7b0388860962b4f2a4c2598a94",
+          "type": "controlled_private_h5ad"
+        },
+        "summary": null,
+        "attempt_no": 0,
+        "cancel_requested": false
+      },
+      "id": "measured_beecf1c152044ecaa59df964",
+      "observations": [
+        {
+          "at": "2026-11-07T10:48:18.991788+00:00",
+          "status": "analysing",
+          "progress": 50,
+          "updated_at": "2026-11-07T10:48:00.010248"
+        },
+        {
+          "at": "2026-11-07T10:48:51.501769+00:00",
+          "status": "analysing",
+          "progress": 65,
+          "updated_at": "2026-11-07T10:48:25.445994"
+        },
+        {
+          "at": "2026-11-07T10:49:11.851586+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        },
+        {
+          "at": "2026-11-07T10:49:17.837662+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        },
+        {
+          "at": "2026-11-07T10:49:23.065914+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        },
+        {
+          "at": "2026-11-07T10:49:56.638645+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        },
+        {
+          "at": "2026-11-07T10:50:17.250210+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        },
+        {
+          "at": "2026-11-07T10:50:32.092847+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        },
+        {
+          "at": "2026-11-07T10:52:00.123238+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:48:53.922631"
+        }
+      ],
+      "latest_record": {
+        "id": "measured_beecf1c152044ecaa59df964",
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "max_cells": 16,
+        "seed": 42,
+        "status": "completed",
+        "progress": 100,
+        "message": "实测数据分析完成",
+        "error_message": null,
+        "created_at": "2026-11-07T10:47:49.671478",
+        "updated_at": "2026-11-07T10:48:53.922631",
+        "source_kind": "measured",
+        "import_id": "import_75219a9293f845edaadfce8c",
+        "source": {
+          "kind": "controlled_private_h5ad",
+          "import_id": "import_75219a9293f845edaadfce8c",
+          "source_sha256": "7e6b34cf4f58ee69126b95ecf2e479caca40dc7b0388860962b4f2a4c2598a94",
+          "type": "controlled_private_h5ad"
+        },
+        "attempt_no": 1,
+        "cancel_requested": false,
+        "attempts": [
+          {
+            "attempt_no": 1,
+            "status": "completed",
+            "started_at": "2026-11-07T10:47:50.266437",
+            "finished_at": "2026-11-07T10:48:53.922631",
+            "error_message": null
+          }
+        ]
+      },
+      "frozen_files": {
+        "directory": "data\\derived\\measured\\measured_beecf1c152044ecaa59df964",
+        "manifest_sha256": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054",
+        "count": 11,
+        "sha256": {
+          "genes.csv": "de7dd64e4b7e25f557c94d3678cbe7f05fb377a8084f70a3a2883ad8858da3d9",
+          "gene_identity.json": "9af7a425beedfad853ed22069e61fb90509700c510d772132750fc400c0cb85a",
+          "metabolic_coverage.csv": "0bbefe5daa3054ffc2ff71591baa38b75d1c40681e59d6177d7a49b222a8fb02",
+          "metabolic_task_scores.csv": "cc046b6da22913828e8d8128b8b12b9524d8bb0fdf19bfd67c45c69191b572be",
+          "official_completeness.json": "31ce9ae3d8badf1ac23b45735aa77f2931cd5c90cdbd0ec408980b1417ac0e36",
+          "projection-pca.json": "69c363b51b6698776d65ffc188851eb818d9d888f5e170cb9fe50174e7e5bb1c",
+          "projection-umap.json": "87fd88dab711237d2815dee10af2caf7def6d956c80ab3918689599d051563da",
+          "reactions.csv": "1c5ab4ed204e45d99284d6e2b76d50757a3322525deebc1e0312a08def362230",
+          "report.html": "7e6f1d422e74e7a5621ea06c9bfd67525acb1f6410cb5a20fd107ffe896c9a21",
+          "summary.json": "28c243ae88c03920c22510c553a03940eaaafe521fa097e4332038447de1db10",
+          "tasks.csv": "6de61969fca66184084d810563b7351e20a6cc8bb426eb60a2b61c59f9dfb7ba"
+        },
+        "all_match_manifest": true,
+        "unchanged_after_exports": true
+      },
+      "unified": {
+        "record_id": "measured_beecf1c152044ecaa59df964",
+        "record_kind": "measured",
+        "state": "completed",
+        "source_kind": "measured",
+        "groups": [
+          {
+            "id": "control",
+            "source_kind": "measured",
+            "count": 16
+          },
+          {
+            "id": "observed",
+            "source_kind": "measured",
+            "count": 16
+          }
+        ],
+        "units": {
+          "expression": "mean(log1p(CP10K))",
+          "delta": "difference in mean(log1p(CP10K)); observed − control",
+          "function": "expression-derived scCellFie task/reaction support score"
+        },
+        "coverage": {
+          "gene_count": 6546,
+          "metabolism": {
+            "available_metabolic_genes": 526,
+            "database_metabolic_genes": 931,
+            "full_gene_panel": 6546
+          }
+        },
+        "availability": {
+          "expression": {
+            "available": true,
+            "reason": null
+          },
+          "function": {
+            "available": true,
+            "reason": null
+          },
+          "projection": {
+            "available": true,
+            "reason": null
+          },
+          "comparison": {
+            "available": false,
+            "reason": "此结果仅包含实测群体描述性比较，未运行预测"
+          },
+          "export": {
+            "available": true,
+            "reason": null
+          }
+        },
+        "manifest_sha256": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054"
+      },
+      "projections": {
+        "pca": {
+          "counts": {
+            "control": 16,
+            "observed": 16
+          },
+          "displayed_counts": {
+            "control": 16,
+            "observed": 16
+          },
+          "total_cells": 32,
+          "displayed_cells": 32,
+          "parameters": null,
+          "provenance": {
+            "manifest_sha256": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054",
+            "projection_sha256": "69c363b51b6698776d65ffc188851eb818d9d888f5e170cb9fe50174e7e5bb1c",
+            "artifact": "projection-pca.json",
+            "research_fingerprint": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054"
+          },
+          "http_status": 200
+        },
+        "umap": {
+          "counts": {
+            "control": 16,
+            "observed": 16
+          },
+          "displayed_counts": {
+            "control": 16,
+            "observed": 16
+          },
+          "total_cells": 32,
+          "displayed_cells": 32,
+          "parameters": {
+            "n_components": 2,
+            "n_neighbors": 30,
+            "min_dist": 0.3,
+            "metric": "euclidean",
+            "random_state": 42,
+            "n_jobs": 1,
+            "init": "spectral",
+            "fit_sources": [
+              "control",
+              "observed"
+            ],
+            "preprocessing": {
+              "method": "PCA",
+              "n_components": 31,
+              "svd_solver": "randomized",
+              "random_state": 42,
+              "expression_units": "log1p(CP10K)",
+              "gene_wise_scaling": false
+            },
+            "package_versions": {
+              "umap-learn": "0.5.12",
+              "scikit-learn": "1.9.1"
+            }
+          },
+          "provenance": {
+            "manifest_sha256": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054",
+            "projection_sha256": "87fd88dab711237d2815dee10af2caf7def6d956c80ab3918689599d051563da",
+            "artifact": "projection-umap.json",
+            "research_fingerprint": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054"
+          },
+          "http_status": 200
+        }
+      },
+      "task_evidence": {
+        "analysis_id": "measured_beecf1c152044ecaa59df964",
+        "analysis_manifest_sha256": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054",
+        "database_version": "scCellFie-0.6.2-human-Recon2",
+        "database_provenance": {
+          "manifest_sha256": "8abad7a25ffe134b99c4f6c79cb4c0c2ab02de727eca83bb59fca41e11a60c61",
+          "files": {
+            "Rxn-Info-Recon2-2.json": "3930736d67ff6beda56d5173c3e4b7ebeb768eb92c4aa7e872d1823d5cf136c1",
+            "Task-Info.csv": "1d5b148f8a1b440d6d7556bed346ea6e818e78b00a495c0d304996cb5a4222d3",
+            "Task_by_Rxn.csv": "5abd0aff87d02b29a0725c8f828deb62d2a03f536fc92c083c6c26d46c4a3447",
+            "Task_by_Gene.csv": "e19001535af75e99ed2e55965d5d5845bae0e6638188142a44dc99045d467c94",
+            "Rxn_by_Gene.csv": "5d800dc02c0741b15c7a4ffaa7ee82c722dfc1ebbace118641748f6c6fb0d7fc",
+            "Thresholds.csv": "10cf06e90df4f267426d34c7725a44dfe576e6cf9e739467a51b71500626eda0"
+          },
+          "source": "https://github.com/earmingol/scCellFie/tree/main/task_data/homo_sapiens",
+          "organism": "human"
+        },
+        "task": {
+          "id": "Synthesis of alanine from glutamine",
+          "category": "AMINO ACIDS METABOLISM",
+          "subcategory": "ALANINE METABOLISM",
+          "control": 1.008806002037247,
+          "observed": 0.6829895565492472,
+          "observed_delta": -0.3258164454879997,
+          "recorded_gene_fraction": 1.0
+        },
+        "coverage": {
+          "present": 1,
+          "total": 1,
+          "missing": []
+        },
+        "units": {
+          "expression": "mean(log1p(CP10K))",
+          "function": "expression-derived scCellFie task/reaction support score"
+        },
+        "relationship_kind": "knowledge_association",
+        "http_status": 200,
+        "reaction_count": 1,
+        "missing_preserved_as_null": true
+      },
+      "task_evidence_missing_case": {
+        "task_id": "Synthesis of estradiol-17beta (E2) from androstenedione",
+        "coverage": {
+          "present": 2,
+          "total": 37,
+          "missing": [
+            "AKR1C3",
+            "CYP19A1",
+            "CYP1A1",
+            "CYP1A2",
+            "CYP1B1",
+            "CYP2A13",
+            "CYP2A6",
+            "CYP2A7",
+            "CYP2B6",
+            "CYP2C18",
+            "CYP2C19",
+            "CYP2C8",
+            "CYP2C9",
+            "CYP2D6",
+            "CYP2E1",
+            "CYP2F1",
+            "CYP2J2",
+            "CYP2S1",
+            "CYP2U1",
+            "CYP3A4",
+            "CYP3A43",
+            "CYP3A5",
+            "CYP3A7",
+            "CYP4B1",
+            "CYP4F11",
+            "CYP4F12",
+            "CYP4F8",
+            "CYP4X1",
+            "CYP4Z1",
+            "HSD17B1",
+            "HSD17B2",
+            "HSD17B3",
+            "HSD17B6",
+            "HSD17B7",
+            "HSD17B8"
+          ]
+        },
+        "http_status": 200,
+        "missing_preserved_as_null": true,
+        "present_zero_gene_ids": []
+      },
+      "basic_verified_at": "2026-11-07T10:52:01.463632+00:00",
+      "input_files": {
+        "checked": 13,
+        "all_match": true
+      },
+      "exports": {
+        "unified_json": {
+          "url": "/research/results/measured/measured_beecf1c152044ecaa59df964/export",
+          "http_status": 200,
+          "bytes": 1435970,
+          "sha256": "43a1eec7ce8c1d9d05ad92164759bde31083ba59944b02e625b94bfcd9bfccb1",
+          "content_type": "application/json",
+          "filename": "attachment; filename=\"research-measured_beecf1c152044ecaa59df964.json\"",
+          "manifest_header": "61f6b59d423e7eb9b810043fa0b4f588ee3cc4aa5897b40df772f9354a88a054",
+          "groups": [
+            {
+              "id": "control",
+              "source_kind": "measured",
+              "count": 16
+            },
+            {
+              "id": "observed",
+              "source_kind": "measured",
+              "count": 16
+            }
+          ],
+          "table_rows": {
+            "genes.csv": 6546,
+            "tasks.csv": 185,
+            "reactions.csv": 536
+          },
+          "findings_count": 0
+        },
+        "report_html": {
+          "url": "/measured/analyses/measured_beecf1c152044ecaa59df964/download?kind=report",
+          "http_status": 200,
+          "bytes": 6804,
+          "sha256": "7e6f1d422e74e7a5621ea06c9bfd67525acb1f6410cb5a20fd107ffe896c9a21",
+          "content_type": "text/html; charset=utf-8",
+          "filename": "attachment; filename=\"measured_beecf1c152044ecaa59df964_report.html\"",
+          "manifest_header": null
+        },
+        "genes_csv": {
+          "url": "/measured/analyses/measured_beecf1c152044ecaa59df964/download?kind=genes",
+          "http_status": 200,
+          "bytes": 936887,
+          "sha256": "9d2f493e285b4d3f936961472939e88146b57086032ce0422782673d204a79ff",
+          "content_type": "text/csv; charset=utf-8",
+          "filename": "attachment; filename=\"measured_beecf1c152044ecaa59df964_genes.csv\"",
+          "manifest_header": null,
+          "rows": 6546
+        },
+        "tasks_csv": {
+          "url": "/measured/analyses/measured_beecf1c152044ecaa59df964/download?kind=tasks",
+          "http_status": 200,
+          "bytes": 59043,
+          "sha256": "4a031593c280d15b2a80cc0a1faa5a0e4981cb504912869661119171f26258a1",
+          "content_type": "text/csv; charset=utf-8",
+          "filename": "attachment; filename=\"measured_beecf1c152044ecaa59df964_tasks.csv\"",
+          "manifest_header": null,
+          "rows": 185
+        },
+        "bundle": {
+          "url": "/measured/analyses/measured_beecf1c152044ecaa59df964/download?kind=bundle",
+          "http_status": 200,
+          "bytes": 543709,
+          "sha256": "548be8d740a6f6e69c6e06b1a7b208cc04c0b508b195f0c9664522ff596d6ab9",
+          "content_type": "application/zip",
+          "filename": "attachment; filename=\"measured_beecf1c152044ecaa59df964.zip\"",
+          "manifest_header": null,
+          "entries": [
+            "genes.csv",
+            "gene_identity.json",
+            "metabolic_coverage.csv",
+            "metabolic_task_scores.csv",
+            "official_completeness.json",
+            "projection-pca.json",
+            "projection-umap.json",
+            "reactions.csv",
+            "report.html",
+            "summary.json",
+            "tasks.csv",
+            "manifest.json"
+          ],
+          "frozen_entries_hash_matched": 11
+        },
+        "population_labels_verified": true
+      },
+      "exports_verified_at": "2026-11-07T10:52:21.149096+00:00"
+    },
+    {
+      "kind": "measured",
+      "source": "public_measured",
+      "request": {
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "max_cells": 16,
+        "seed": 20261108
+      },
+      "submitted_at": "2026-11-07T10:49:17.941150+00:00",
+      "create_http_status": 202,
+      "create_response": {
+        "id": "measured_9253d6f68c2e484bb6332bc4",
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "max_cells": 16,
+        "seed": 20261108,
+        "status": "queued",
+        "progress": 0,
+        "message": "实测分析已排队",
+        "error_message": null,
+        "created_at": "2026-11-07T10:49:17.932227+00:00",
+        "updated_at": "2026-11-07T10:49:17.932227+00:00",
+        "source_kind": "measured",
+        "import_id": null,
+        "source": {
+          "kind": "measured_rna",
+          "repo": "arcinstitute/State-Replogle-Filtered",
+          "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+          "type": "measured_rna"
+        },
+        "summary": null,
+        "attempt_no": 0,
+        "cancel_requested": false
+      },
+      "id": "measured_9253d6f68c2e484bb6332bc4",
+      "observations": [
+        {
+          "at": "2026-11-07T10:49:56.658034+00:00",
+          "status": "analysing",
+          "progress": 65,
+          "updated_at": "2026-11-07T10:49:52.337609"
+        },
+        {
+          "at": "2026-11-07T10:50:17.274382+00:00",
+          "status": "analysing",
+          "progress": 65,
+          "updated_at": "2026-11-07T10:49:52.337609"
+        },
+        {
+          "at": "2026-11-07T10:50:32.233433+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:50:19.640980"
+        },
+        {
+          "at": "2026-11-07T10:52:01.592118+00:00",
+          "status": "completed",
+          "progress": 100,
+          "updated_at": "2026-11-07T10:50:19.640980"
+        }
+      ],
+      "latest_record": {
+        "id": "measured_9253d6f68c2e484bb6332bc4",
+        "cell_line": "K562",
+        "perturbation": "ALDOA",
+        "max_cells": 16,
+        "seed": 20261108,
+        "status": "completed",
+        "progress": 100,
+        "message": "实测数据分析完成",
+        "error_message": null,
+        "created_at": "2026-11-07T10:49:17.932227",
+        "updated_at": "2026-11-07T10:50:19.640980",
+        "source_kind": "measured",
+        "import_id": null,
+        "source": {
+          "kind": "measured_rna",
+          "repo": "arcinstitute/State-Replogle-Filtered",
+          "revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+          "type": "measured_rna"
+        },
+        "attempt_no": 1,
+        "cancel_requested": false,
+        "attempts": [
+          {
+            "attempt_no": 1,
+            "status": "completed",
+            "started_at": "2026-11-07T10:49:18.158161",
+            "finished_at": "2026-11-07T10:50:19.640980",
+            "error_message": null
+          }
+        ]
+      },
+      "frozen_files": {
+        "directory": "data\\derived\\measured\\measured_9253d6f68c2e484bb6332bc4",
+        "manifest_sha256": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932",
+        "count": 12,
+        "sha256": {
+          "genes.csv": "2b3a22f7e675e34b98a067326d39927f1cf2c362545f755866f0f4700afe48f7",
+          "gene_identity.json": "9af7a425beedfad853ed22069e61fb90509700c510d772132750fc400c0cb85a",
+          "metabolic_coverage.csv": "0bbefe5daa3054ffc2ff71591baa38b75d1c40681e59d6177d7a49b222a8fb02",
+          "metabolic_task_scores.csv": "02b937f96d0c4f1e647d2b154a9bfa36756e2a66161e9c3559c4a40385db6a82",
+          "official_completeness.json": "31ce9ae3d8badf1ac23b45735aa77f2931cd5c90cdbd0ec408980b1417ac0e36",
+          "projection-pca.json": "b0b227450645b2cb4c18dacac32a4463cf35b138bc3938bfcb7a663fa45d0ba2",
+          "projection-umap.json": "2f44332f6e9e79b0fc1eee7efac65739e9cd47c3cd72570711b63fb02e94218e",
+          "reactions.csv": "b7b5cde2e0db2f16afe06eb73d60ae9f0c0e82297ff21b5df7706ea4b5aa2fdc",
+          "report.html": "bcd598fc4c13608970e7699a2f482bc3e46dbcdded159badb927ba8da21aa997",
+          "summary.json": "62fffbe4597262e5bf94f39b5faac549acfccea12c4a5eb6286cae77e595fd40",
+          "tasks.csv": "469593c600d1320fe6294f261d3a15547d0668e354c9927d787394487f10db3e",
+          "inputs/observed.h5ad": "96ca6310a88575c078bda747fc4df93ec43623d8b3857ff9c87add22e62a505b"
+        },
+        "all_match_manifest": true,
+        "unchanged_after_exports": true
+      },
+      "input_files": {
+        "checked": 12,
+        "all_match": true
+      },
+      "unified": {
+        "record_id": "measured_9253d6f68c2e484bb6332bc4",
+        "record_kind": "measured",
+        "state": "completed",
+        "source_kind": "measured",
+        "groups": [
+          {
+            "id": "control",
+            "source_kind": "measured",
+            "count": 270
+          },
+          {
+            "id": "observed",
+            "source_kind": "measured",
+            "count": 16
+          }
+        ],
+        "units": {
+          "expression": "mean(log1p(CP10K))",
+          "delta": "difference in mean(log1p(CP10K)); observed − control",
+          "function": "expression-derived scCellFie task/reaction support score"
+        },
+        "coverage": {
+          "gene_count": 6546,
+          "metabolism": {
+            "available_metabolic_genes": 526,
+            "database_metabolic_genes": 931,
+            "full_gene_panel": 6546
+          }
+        },
+        "availability": {
+          "expression": {
+            "available": true,
+            "reason": null
+          },
+          "function": {
+            "available": true,
+            "reason": null
+          },
+          "projection": {
+            "available": true,
+            "reason": null
+          },
+          "comparison": {
+            "available": false,
+            "reason": "此结果仅包含实测群体描述性比较，未运行预测"
+          },
+          "export": {
+            "available": true,
+            "reason": null
+          }
+        },
+        "manifest_sha256": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932"
+      },
+      "projections": {
+        "pca": {
+          "counts": {
+            "control": 270,
+            "observed": 16
+          },
+          "displayed_counts": {
+            "control": 270,
+            "observed": 16
+          },
+          "total_cells": 286,
+          "displayed_cells": 286,
+          "parameters": null,
+          "provenance": {
+            "manifest_sha256": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932",
+            "projection_sha256": "b0b227450645b2cb4c18dacac32a4463cf35b138bc3938bfcb7a663fa45d0ba2",
+            "artifact": "projection-pca.json",
+            "research_fingerprint": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932"
+          },
+          "http_status": 200
+        },
+        "umap": {
+          "counts": {
+            "control": 270,
+            "observed": 16
+          },
+          "displayed_counts": {
+            "control": 270,
+            "observed": 16
+          },
+          "total_cells": 286,
+          "displayed_cells": 286,
+          "parameters": {
+            "n_components": 2,
+            "n_neighbors": 30,
+            "min_dist": 0.3,
+            "metric": "euclidean",
+            "random_state": 42,
+            "n_jobs": 1,
+            "init": "spectral",
+            "fit_sources": [
+              "control",
+              "observed"
+            ],
+            "preprocessing": {
+              "method": "PCA",
+              "n_components": 50,
+              "svd_solver": "randomized",
+              "random_state": 42,
+              "expression_units": "log1p(CP10K)",
+              "gene_wise_scaling": false
+            },
+            "package_versions": {
+              "umap-learn": "0.5.12",
+              "scikit-learn": "1.9.1"
+            }
+          },
+          "provenance": {
+            "manifest_sha256": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932",
+            "projection_sha256": "2f44332f6e9e79b0fc1eee7efac65739e9cd47c3cd72570711b63fb02e94218e",
+            "artifact": "projection-umap.json",
+            "research_fingerprint": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932"
+          },
+          "http_status": 200
+        }
+      },
+      "task_evidence": {
+        "analysis_id": "measured_9253d6f68c2e484bb6332bc4",
+        "analysis_manifest_sha256": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932",
+        "database_version": "scCellFie-0.6.2-human-Recon2",
+        "database_provenance": {
+          "manifest_sha256": "8abad7a25ffe134b99c4f6c79cb4c0c2ab02de727eca83bb59fca41e11a60c61",
+          "files": {
+            "Rxn-Info-Recon2-2.json": "3930736d67ff6beda56d5173c3e4b7ebeb768eb92c4aa7e872d1823d5cf136c1",
+            "Task-Info.csv": "1d5b148f8a1b440d6d7556bed346ea6e818e78b00a495c0d304996cb5a4222d3",
+            "Task_by_Rxn.csv": "5abd0aff87d02b29a0725c8f828deb62d2a03f536fc92c083c6c26d46c4a3447",
+            "Task_by_Gene.csv": "e19001535af75e99ed2e55965d5d5845bae0e6638188142a44dc99045d467c94",
+            "Rxn_by_Gene.csv": "5d800dc02c0741b15c7a4ffaa7ee82c722dfc1ebbace118641748f6c6fb0d7fc",
+            "Thresholds.csv": "10cf06e90df4f267426d34c7725a44dfe576e6cf9e739467a51b71500626eda0"
+          },
+          "source": "https://github.com/earmingol/scCellFie/tree/main/task_data/homo_sapiens",
+          "organism": "human"
+        },
+        "task": {
+          "id": "Synthesis of alanine from glutamine",
+          "category": "AMINO ACIDS METABOLISM",
+          "subcategory": "ALANINE METABOLISM",
+          "control": 0.9790555594847826,
+          "observed": 0.8321175676644534,
+          "observed_delta": -0.1469379918203291,
+          "recorded_gene_fraction": 1.0
+        },
+        "coverage": {
+          "present": 1,
+          "total": 1,
+          "missing": []
+        },
+        "units": {
+          "expression": "mean(log1p(CP10K))",
+          "function": "expression-derived scCellFie task/reaction support score"
+        },
+        "relationship_kind": "knowledge_association",
+        "http_status": 200,
+        "reaction_count": 1,
+        "missing_preserved_as_null": true
+      },
+      "task_evidence_missing_case": {
+        "task_id": "Synthesis of estradiol-17beta (E2) from androstenedione",
+        "coverage": {
+          "present": 2,
+          "total": 37,
+          "missing": [
+            "AKR1C3",
+            "CYP19A1",
+            "CYP1A1",
+            "CYP1A2",
+            "CYP1B1",
+            "CYP2A13",
+            "CYP2A6",
+            "CYP2A7",
+            "CYP2B6",
+            "CYP2C18",
+            "CYP2C19",
+            "CYP2C8",
+            "CYP2C9",
+            "CYP2D6",
+            "CYP2E1",
+            "CYP2F1",
+            "CYP2J2",
+            "CYP2S1",
+            "CYP2U1",
+            "CYP3A4",
+            "CYP3A43",
+            "CYP3A5",
+            "CYP3A7",
+            "CYP4B1",
+            "CYP4F11",
+            "CYP4F12",
+            "CYP4F8",
+            "CYP4X1",
+            "CYP4Z1",
+            "HSD17B1",
+            "HSD17B2",
+            "HSD17B3",
+            "HSD17B6",
+            "HSD17B7",
+            "HSD17B8"
+          ]
+        },
+        "http_status": 200,
+        "missing_preserved_as_null": true,
+        "present_zero_gene_ids": []
+      },
+      "basic_verified_at": "2026-11-07T10:52:03.022745+00:00",
+      "exports": {
+        "unified_json": {
+          "url": "/research/results/measured/measured_9253d6f68c2e484bb6332bc4/export",
+          "http_status": 200,
+          "bytes": 1438328,
+          "sha256": "f738534a510fceb857354e38027e2bd8b8c5675348778fe8b707b6518c6f879f",
+          "content_type": "application/json",
+          "filename": "attachment; filename=\"research-measured_9253d6f68c2e484bb6332bc4.json\"",
+          "manifest_header": "955aeaf22db95d8e046f18eb2148a7b36bef776200ca845333500efe0071d932",
+          "groups": [
+            {
+              "id": "control",
+              "source_kind": "measured",
+              "count": 270
+            },
+            {
+              "id": "observed",
+              "source_kind": "measured",
+              "count": 16
+            }
+          ],
+          "table_rows": {
+            "genes.csv": 6546,
+            "tasks.csv": 186,
+            "reactions.csv": 536
+          },
+          "findings_count": 0
+        },
+        "report_html": {
+          "url": "/measured/analyses/measured_9253d6f68c2e484bb6332bc4/download?kind=report",
+          "http_status": 200,
+          "bytes": 6556,
+          "sha256": "bcd598fc4c13608970e7699a2f482bc3e46dbcdded159badb927ba8da21aa997",
+          "content_type": "text/html; charset=utf-8",
+          "filename": "attachment; filename=\"measured_9253d6f68c2e484bb6332bc4_report.html\"",
+          "manifest_header": null
+        },
+        "genes_csv": {
+          "url": "/measured/analyses/measured_9253d6f68c2e484bb6332bc4/download?kind=genes",
+          "http_status": 200,
+          "bytes": 944439,
+          "sha256": "39cf511dbe1d21467aa2fef8eea7f0f9076b36679408574d560d5ff16eccec29",
+          "content_type": "text/csv; charset=utf-8",
+          "filename": "attachment; filename=\"measured_9253d6f68c2e484bb6332bc4_genes.csv\"",
+          "manifest_header": null,
+          "rows": 6546
+        },
+        "tasks_csv": {
+          "url": "/measured/analyses/measured_9253d6f68c2e484bb6332bc4/download?kind=tasks",
+          "http_status": 200,
+          "bytes": 59368,
+          "sha256": "2385c6a41169faed87accc5109f535fb2852b4326108a93cb5f1b2744cc4c29d",
+          "content_type": "text/csv; charset=utf-8",
+          "filename": "attachment; filename=\"measured_9253d6f68c2e484bb6332bc4_tasks.csv\"",
+          "manifest_header": null,
+          "rows": 186
+        },
+        "bundle": {
+          "url": "/measured/analyses/measured_9253d6f68c2e484bb6332bc4/download?kind=bundle",
+          "http_status": 200,
+          "bytes": 1047762,
+          "sha256": "84e0fdfe96d7d55b7b2430fc7418d01086378e8cf6ee464d8a7b59f5b525c164",
+          "content_type": "application/zip",
+          "filename": "attachment; filename=\"measured_9253d6f68c2e484bb6332bc4.zip\"",
+          "manifest_header": null,
+          "entries": [
+            "genes.csv",
+            "gene_identity.json",
+            "metabolic_coverage.csv",
+            "metabolic_task_scores.csv",
+            "official_completeness.json",
+            "projection-pca.json",
+            "projection-umap.json",
+            "reactions.csv",
+            "report.html",
+            "summary.json",
+            "tasks.csv",
+            "inputs/observed.h5ad",
+            "manifest.json"
+          ],
+          "frozen_entries_hash_matched": 12
+        },
+        "population_labels_verified": true
+      },
+      "exports_verified_at": "2026-11-07T10:52:22.628026+00:00"
+    }
+  ],
+  "final_service": {
+    "verified_at": "2026-11-07T10:51:47.111988+00:00",
+    "process_ids": {
+      "api": 32452,
+      "cpu": 18196,
+      "gpu": 16328
+    },
+    "ready": {
+      "service": "celllens",
+      "ready": true,
+      "checks": {
+        "database": true
+      },
+      "capabilities": {
+        "result_browsing": true,
+        "cpu_analysis": true,
+        "prediction": true
+      },
+      "workers": {
+        "mode": "external",
+        "live": [
+          {
+            "kind": "gpu",
+            "heartbeat_at": "2026-11-07T10:51:05.258526",
+            "capabilities": {
+              "cpu_analysis": false,
+              "missing_dependencies": [],
+              "prediction": true,
+              "cuda_detected": true,
+              "state_executable": true
+            }
+          },
+          {
+            "kind": "cpu",
+            "heartbeat_at": "2026-11-07T10:51:44.754243",
+            "capabilities": {
+              "cpu_analysis": true,
+              "missing_dependencies": [],
+              "prediction": false
+            }
+          },
+          {
+            "kind": "gpu",
+            "heartbeat_at": "2026-11-07T10:51:47.085068",
+            "capabilities": {
+              "cpu_analysis": false,
+              "missing_dependencies": [],
+              "prediction": true,
+              "cuda_detected": true,
+              "state_executable": true
+            }
+          }
+        ],
+        "cpu_available": true,
+        "prediction_available": true
+      }
+    }
+  },
+  "preservation": {
+    "old_files_checked": 138,
+    "unchanged": true,
+    "existing_import_unchanged": true
+  },
+  "completed_at": "2026-11-07T10:54:18.245892+00:00",
+  "result": "passed"
+}

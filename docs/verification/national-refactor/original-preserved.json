@@ -1,0 +1,46 @@
+[
+  {
+    "path": "README.md",
+    "unchanged": true
+  },
+  {
+    "path": "docs/screenshots/README.md",
+    "unchanged": true
+  },
+  {
+    "path": "frontend/src/components/GenePicker.vue",
+    "unchanged": true
+  },
+  {
+    "path": "frontend/src/components/MeasuredSetup.vue",
+    "unchanged": true
+  },
+  {
+    "path": "frontend/src/components/ParamPanel.vue",
+    "unchanged": true
+  },
+  {
+    "path": "frontend/src/components/ResultOverview.vue",
+    "unchanged": true
+  },
+  {
+    "path": "frontend/src/views/ResearchView.vue",
+    "unchanged": true
+  },
+  {
+    "path": "docs/screenshots/catalog-2026-10-23.png",
+    "unchanged": true
+  },
+  {
+    "path": "docs/screenshots/home-2026-10-23.png",
+    "unchanged": true
+  },
+  {
+    "path": "docs/screenshots/research-2026-10-23.png",
+    "unchanged": true
+  },
+  {
+    "path": "docs/screenshots/results-2026-10-23.png",
+    "unchanged": true
+  }
+]

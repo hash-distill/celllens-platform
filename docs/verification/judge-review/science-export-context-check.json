@@ -1,0 +1,62 @@
+{
+  "run_id": "run_feb6ebf11ef747ab",
+  "context_bytes": 23875,
+  "context_diagnostic_flip": false,
+  "context_reference_sha256": "67c54215a774edf9513985d733d102122e8af08adfbc4da708d67357f79caa11",
+  "context_artifacts": {
+    "measured_comparison.json": "2f7e529e1a23ac17bc86f3989b1cd045026bc068d06aac3fa1f095d3f7b606dc",
+    "comparison_manifest.json": "b62a066680960a41fc1bb718e4cc1238b3894a4bae07aa26bd24bf8a427fd3a5",
+    "comparison_metabolic_coverage.csv": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+    "comparison_diagnostics.json": "421409bbcc8574c0cc971bda7a7cc8e495cbb812fe6f7e0d3d18c609308f8dbd",
+    "comparison_diagnostics_manifest.json": "55e2d96fe01cb7ba1f21ef4fecc84c5a81490461862e9f821546013faa886448"
+  },
+  "export_original_tables": {
+    "gene_deltas.csv": {
+      "population": "original",
+      "rows": 2000
+    },
+    "metabolic_coverage.csv": {
+      "population": "original",
+      "rows": 218
+    }
+  },
+  "export_matched_tables": {
+    "genes": {
+      "population": "matched_comparison",
+      "rows": 2000
+    },
+    "tasks": {
+      "population": "matched_comparison",
+      "rows": 141
+    }
+  },
+  "export_original_groups": [
+    {
+      "id": "control",
+      "source_kind": "measured",
+      "count": 1024
+    },
+    {
+      "id": "predicted",
+      "source_kind": "prediction",
+      "count": 64
+    }
+  ],
+  "export_matched_groups": [
+    {
+      "id": "control",
+      "source_kind": "measured",
+      "count": 535
+    },
+    {
+      "id": "predicted",
+      "source_kind": "prediction",
+      "count": 48
+    },
+    {
+      "id": "observed",
+      "source_kind": "measured",
+      "count": 46
+    }
+  ]
+}

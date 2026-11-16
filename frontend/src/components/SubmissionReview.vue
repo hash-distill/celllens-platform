@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+defineProps<{title:string;parameters:Record<string,string|number>;prediction?:boolean}>()
+const emit=defineEmits<{confirm:[];cancel:[]}>(), dialog=ref<HTMLDialogElement|null>(null)
+onMounted(()=>dialog.value?.showModal())
+</script>
+<template><dialog ref="dialog" class="submission-review" @cancel.prevent="emit('cancel')"><header><span>03 / REVIEW &amp; RUN</span><h2>{{title}}</h2><p>核对研究条件，确认后创建一条独立实验记录。</p></header><dl><template v-for="(v,k) in parameters" :key="k"><dt>{{k}}</dt><dd>{{v}}</dd></template></dl><p class="scope">{{prediction?'模型输出用于探索性分析。匹配实测可帮助诊断表现，不能代替独立留出验证。':'分析比较实测组均值。没有独立生物学重复时，不把细胞当作独立重复报告显著性。'}}</p><footer><button class="btn" @click="emit('cancel')">返回修改</button><button class="btn btn-primary" @click="emit('confirm')">确认并创建分析</button></footer></dialog></template>
+<style scoped>.submission-review{width:560px;max-width:94vw;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--ink);padding:30px}.submission-review::backdrop{background:#173e2f77;backdrop-filter:blur(3px)}header span{font:10px Consolas,monospace;letter-spacing:1px;color:var(--primary)}h2{font-size:23px;font-weight:500;margin:18px 0 10px}header p,.scope{font-size:12px;color:var(--muted);line-height:1.9}.scope{background:var(--surface-soft);padding:15px;border-radius:8px}dl{display:grid;grid-template-columns:1fr 1.5fr;gap:16px;padding:22px 0;border-block:1px solid var(--border);font-size:13px}dt{color:var(--muted)}dd{margin:0;text-align:right}footer{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}</style>

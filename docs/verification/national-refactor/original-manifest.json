@@ -1,0 +1,46 @@
+[
+  {
+    "path": "README.md",
+    "sha256": "522204045a33a30b1174d93fc1e2cc6bfffd43de64ff8d540679629241367057"
+  },
+  {
+    "path": "docs/screenshots/README.md",
+    "sha256": "84d763a7cf4be0f54ed720a5b618770b7d7b23ab9d7a32f8a3bd59d86b06e661"
+  },
+  {
+    "path": "frontend/src/components/GenePicker.vue",
+    "sha256": "3fb3318b486976dc6d13d7abc029eae16e70eb3faf55b6492c1d86c4632b5c28"
+  },
+  {
+    "path": "frontend/src/components/MeasuredSetup.vue",
+    "sha256": "8b8d3efb80199506f8a62b01b1a00ae1bcb87df9f021d4c72cd04d8baeb882c0"
+  },
+  {
+    "path": "frontend/src/components/ParamPanel.vue",
+    "sha256": "239b08c1da0543036eeb19fa39a17f2b0edd7ee56a809d1842788408bdb1e346"
+  },
+  {
+    "path": "frontend/src/components/ResultOverview.vue",
+    "sha256": "05a2e0b4864bb7b739136125df88c7b8b62b39913f38864b9a705212549fa747"
+  },
+  {
+    "path": "frontend/src/views/ResearchView.vue",
+    "sha256": "2a0bed7c0fccb1a690022ea3a9b30422cad7e593c22df26efa1a6874203a2fb3"
+  },
+  {
+    "path": "docs/screenshots/catalog-2026-10-23.png",
+    "sha256": "25675f0cb2209c215824d359b0eef8d873aad0666c29dc3de5f7f5c49020c770"
+  },
+  {
+    "path": "docs/screenshots/home-2026-10-23.png",
+    "sha256": "97beeed3888996cfaee5bf6f006e7b7cee9166abd62ae935b87595640c410117"
+  },
+  {
+    "path": "docs/screenshots/research-2026-10-23.png",
+    "sha256": "86a7cc22363cb34a7d9430edefba785311813772df5a32a27968d554127280a1"
+  },
+  {
+    "path": "docs/screenshots/results-2026-10-23.png",
+    "sha256": "abdd51b1a1154444b559f99e81bcf69dd765159cd8231e70b319e4ab626d03d1"
+  }
+]

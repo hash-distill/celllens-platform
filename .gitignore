@@ -12,6 +12,8 @@ pytest-of-*/
 *.err
 data/raw/
 data/user_uploads/
+data/imports/
+data/runtime/
 data/derived/*
 !data/derived/.gitkeep
 data/demo/*
@@ -26,3 +28,6 @@ torchinductor*/
 # Root-level temporary test files and one-off design review exports.
 /tmp????????
 /DESIGN-IS-*/
+
+# Local browser automation sessions and snapshots.
+.playwright-cli/

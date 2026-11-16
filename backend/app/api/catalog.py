@@ -9,6 +9,7 @@ from backend.app.services.control_metadata import control_cell_count
 from backend.app.services.gene_education import categories_for, classify_gene, load_annotations
 from backend.app.services.measured_comparison import comparable_perturbations
 from backend.app.services.perturbation_catalog import query_pairs
+from backend.app.services.worker_status import prediction_ready
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
@@ -77,6 +78,7 @@ def data_summary(request: Request) -> JSONResponse:
 def contexts(request: Request) -> list[ContextItem]:
     container = request.app.state.container
     registry = container.registry
+    worker_ready = prediction_ready(container)
     output: list[ContextItem] = []
     for row in registry.models:
         dataset = next(
@@ -106,21 +108,14 @@ def contexts(request: Request) -> list[ContextItem]:
                 dataset_ready = dataset_ready and registry.asset_is_valid_cached(
                     dataset_entry, "split_path", "split_sha256"
                 )
-        online_ready = (
-            model_ready
-            and dataset_ready
-            and container.settings.worker_enabled
-            and container.settings.gpu_available
-        )
+        online_ready = model_ready and dataset_ready and worker_ready
         reasons = []
         if not model_ready:
             reasons.append("model assets are disabled, missing, or have invalid hashes")
         if not dataset_ready:
             reasons.append("control dataset is disabled, missing, or has an invalid hash")
-        if not container.settings.worker_enabled:
-            reasons.append("analysis worker is disabled")
-        if not container.settings.gpu_available:
-            reasons.append("GPU is unavailable")
+        if not worker_ready:
+            reasons.append("no live prediction worker with a verified CUDA/runtime capability")
         output.append(
             ContextItem(
                 cell_line=row["cell_line"],

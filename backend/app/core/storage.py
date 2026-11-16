@@ -3,8 +3,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
-from sqlalchemy import Engine, and_, create_engine, exists, func, or_, select, text
+from sqlalchemy import Engine, and_, create_engine, exists, func, or_, select, text, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.core.errors import InvalidTransitionError, JobAlreadyClaimedError
@@ -68,6 +70,7 @@ class RunStore:
     def __init__(self, database_url: str, *, create_schema: bool = False):
         self.engine: Engine = create_engine(database_url, pool_pre_ping=True, future=True)
         self.session_factory = sessionmaker(self.engine, expire_on_commit=False, class_=Session)
+        self._ownership = threading.local()
         if create_schema:
             Base.metadata.create_all(self.engine)
 
@@ -180,6 +183,7 @@ class RunStore:
         message: str | None = None,
     ) -> RunRecord:
         with self.session_factory.begin() as session:
+            self._lock_owned(session, run_id)
             model = session.scalar(select(RunModel).where(RunModel.run_id == run_id).with_for_update())
             if model is None:
                 raise KeyError(run_id)
@@ -215,6 +219,24 @@ class RunStore:
         now = datetime.now(UTC)
         lease = now + timedelta(seconds=lease_seconds)
         with self.session_factory.begin() as session:
+            live_attempt = exists().where(
+                RunAttemptModel.run_id == RunModel.run_id,
+                RunAttemptModel.status == "running",
+                RunAttemptModel.lease_expires_at >= now,
+            )
+            claimed = session.execute(
+                update(RunModel)
+                .where(
+                    RunModel.run_id == run_id,
+                    RunModel.status.notin_(["completed", "failed"]),
+                    ~live_attempt,
+                )
+                .values(updated_at=now)
+            )
+            if cast(CursorResult, claimed).rowcount != 1:
+                if session.get(RunModel, run_id) is None:
+                    raise KeyError(run_id)
+                raise JobAlreadyClaimedError(f"Run {run_id} is terminal or already owned")
             run = session.scalar(select(RunModel).where(RunModel.run_id == run_id).with_for_update())
             if run is None:
                 raise KeyError(run_id)
@@ -229,6 +251,14 @@ class RunStore:
             )
             if live is not None:
                 raise JobAlreadyClaimedError(f"Run {run_id} already has a live worker lease")
+            session.execute(
+                update(RunAttemptModel)
+                .where(
+                    RunAttemptModel.run_id == run_id,
+                    RunAttemptModel.status == "running",
+                )
+                .values(status="abandoned", finished_at=now)
+            )
             maximum = session.scalar(
                 select(func.max(RunAttemptModel.attempt_no)).where(RunAttemptModel.run_id == run_id)
             )
@@ -244,25 +274,67 @@ class RunStore:
             session.add(model)
             session.flush()
             result = RunAttempt(model.id, run_id, model.attempt_no, worker_id, lease)
+        owned = getattr(self._ownership, "attempts", {})
+        owned[run_id] = result.id
+        self._ownership.attempts = owned
         return result
+
+    def _lock_owned(self, session, run_id: str) -> None:
+        """A conditional UPDATE provides serialization on SQLite as well as MySQL."""
+        attempt_id = getattr(self._ownership, "attempts", {}).get(run_id)
+        conditions = [RunModel.run_id == run_id]
+        if attempt_id is not None:
+            conditions.append(
+                exists().where(
+                    RunAttemptModel.id == attempt_id,
+                    RunAttemptModel.run_id == RunModel.run_id,
+                    RunAttemptModel.status == "running",
+                    RunAttemptModel.lease_expires_at >= datetime.now(UTC),
+                )
+            )
+        result = session.execute(update(RunModel).where(*conditions).values(updated_at=RunModel.updated_at))
+        if result.rowcount != 1:
+            raise JobAlreadyClaimedError(f"Worker ownership lost for {run_id}")
+
+    def publish_attempt(self, run_id: str, partial, final) -> None:
+        if run_id not in getattr(self._ownership, "attempts", {}):
+            raise JobAlreadyClaimedError("Publishing requires a claimed attempt in this worker thread")
+        with self.session_factory.begin() as session:
+            self._lock_owned(session, run_id)
+            if final.exists():
+                raise FileExistsError(f"Immutable run directory already exists: {final}")
+            partial.replace(final)
 
     def heartbeat(self, attempt_id: int, lease_seconds: int) -> None:
         now = datetime.now(UTC)
         with self.session_factory.begin() as session:
-            model = session.get(RunAttemptModel, attempt_id)
-            if model is None:
-                raise KeyError(attempt_id)
-            model.heartbeat_at = now
-            model.lease_expires_at = now + timedelta(seconds=lease_seconds)
+            result = session.execute(
+                update(RunAttemptModel)
+                .where(
+                    RunAttemptModel.id == attempt_id,
+                    RunAttemptModel.status == "running",
+                    RunAttemptModel.lease_expires_at >= now,
+                )
+                .values(heartbeat_at=now, lease_expires_at=now + timedelta(seconds=lease_seconds))
+            )
+            if cast(CursorResult, result).rowcount != 1:
+                raise JobAlreadyClaimedError(f"Attempt lease lost: {attempt_id}")
 
     def finish_attempt(self, attempt_id: int, *, succeeded: bool, error_code: str | None = None) -> None:
         with self.session_factory.begin() as session:
-            model = session.get(RunAttemptModel, attempt_id)
-            if model is None:
-                raise KeyError(attempt_id)
-            model.status = "succeeded" if succeeded else "failed"
-            model.error_code = error_code
-            model.finished_at = datetime.now(UTC)
+            session.execute(
+                update(RunAttemptModel)
+                .where(
+                    RunAttemptModel.id == attempt_id,
+                    RunAttemptModel.status == "running",
+                    RunAttemptModel.lease_expires_at >= datetime.now(UTC),
+                )
+                .values(
+                    status="succeeded" if succeeded else "failed",
+                    error_code=error_code,
+                    finished_at=datetime.now(UTC),
+                )
+            )
 
     def force_attempt_lease(self, attempt_id: int, value: datetime) -> None:
         """Testing and administrative recovery hook."""
@@ -271,6 +343,58 @@ class RunStore:
             if model is None:
                 raise KeyError(attempt_id)
             model.lease_expires_at = value
+
+    def cancel(self, run_id: str) -> RunRecord:
+        now = datetime.now(UTC)
+        with self.session_factory.begin() as session:
+            # Serialize cancellation with publication, without assuming API ownership.
+            session.execute(
+                update(RunModel).where(RunModel.run_id == run_id).values(updated_at=RunModel.updated_at)
+            )
+            row = session.get(RunModel, run_id)
+            if row is None:
+                raise KeyError(run_id)
+            if row.status in {"completed", "failed"}:
+                return self._decode(row)
+            previous = row.status
+            row.status, row.error_code = "failed", "RUN_CANCELLED"
+            row.error_message, row.updated_at = "用户取消了预测任务", now
+            session.execute(
+                update(RunAttemptModel)
+                .where(RunAttemptModel.run_id == run_id, RunAttemptModel.status == "running")
+                .values(status="cancelled", finished_at=now, error_code="RUN_CANCELLED")
+            )
+            session.add(
+                RunEventModel(
+                    run_id=run_id,
+                    from_status=previous,
+                    to_status="failed",
+                    stage_progress=row.stage_progress,
+                    message="user cancelled",
+                    created_at=now,
+                )
+            )
+        return self.get(run_id)
+
+    def attempts(self, run_id: str) -> list[dict]:
+        with self.session_factory() as session:
+            rows = session.scalars(
+                select(RunAttemptModel)
+                .where(RunAttemptModel.run_id == run_id)
+                .order_by(RunAttemptModel.attempt_no)
+            )
+            return [
+                {
+                    "attempt_no": row.attempt_no,
+                    "status": row.status,
+                    "heartbeat_at": row.heartbeat_at.isoformat(),
+                    "lease_expires_at": row.lease_expires_at.isoformat(),
+                    "started_at": row.started_at.isoformat(),
+                    "finished_at": row.finished_at.isoformat() if row.finished_at else None,
+                    "error_code": row.error_code,
+                }
+                for row in rows
+            ]
 
     def list_recoverable_run_ids(self) -> list[str]:
         now = datetime.now(UTC)
@@ -300,6 +424,21 @@ class RunStore:
         """Reset an abandoned active run so a fresh leased attempt can replay it."""
         now = datetime.now(UTC)
         with self.session_factory.begin() as session:
+            live_attempt = exists().where(
+                RunAttemptModel.run_id == RunModel.run_id,
+                RunAttemptModel.status == "running",
+                RunAttemptModel.lease_expires_at >= now,
+            )
+            guard = session.execute(
+                update(RunModel)
+                .where(
+                    RunModel.run_id == run_id,
+                    ~live_attempt,
+                )
+                .values(updated_at=RunModel.updated_at)
+            )
+            if cast(CursorResult, guard).rowcount != 1:
+                raise JobAlreadyClaimedError(f"Run {run_id} still has a live worker lease")
             model = session.scalar(select(RunModel).where(RunModel.run_id == run_id).with_for_update())
             if model is None:
                 raise KeyError(run_id)
@@ -354,6 +493,21 @@ class RunStore:
         mime_type: str,
     ) -> None:
         with self.session_factory.begin() as session:
+            self._lock_owned(session, run_id)
+            existing = session.scalar(
+                select(RunArtifactModel).where(
+                    RunArtifactModel.run_id == run_id,
+                    RunArtifactModel.kind == kind,
+                )
+            )
+            if existing:
+                if (existing.relative_path, existing.sha256, existing.size_bytes) != (
+                    relative_path,
+                    sha256,
+                    size_bytes,
+                ):
+                    raise ValueError("An immutable registered artifact cannot be replaced")
+                return
             session.add(
                 RunArtifactModel(
                     run_id=run_id,

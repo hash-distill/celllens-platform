@@ -1,0 +1,240 @@
+{
+  "cases": [
+    {
+      "run_id": "run_34737097754841fd",
+      "version": "comparison-diagnostics-v2",
+      "original_files_unchanged": true,
+      "comparison_sha256": "7482d0ba4748007125adf23eabbb7ed9b575245b08ed2ccf8d673c05359a2f7f",
+      "diagnostics_sha256": "4a45c131a05e2b1a78dcfb1661f16bb8d34c94f9472090fad5930ff33ca70976",
+      "reference_selection_sha256": "a03fc8521d85a24ccef67dae2029b36b09f57a75d6ae911a60e17661ec34d25b",
+      "pooled": {
+        "signed_delta_pearson": 0.4979984340280784,
+        "mse": 0.013867706060409546,
+        "no_change_mse": 0.016101118177175522,
+        "mse_relative_to_no_change": 0.861288384310352,
+        "direction_agreement": 0.607
+      },
+      "equal_batch": {
+        "signed_delta_pearson": 0.4746180436684741,
+        "mse": 0.01395314373075962,
+        "no_change_mse": 0.01539492979645729,
+        "mse_relative_to_no_change": 0.9063466943493659,
+        "direction_agreement": 0.586
+      },
+      "baseline_consistent": true,
+      "coverage": {
+        "finite_paired_task_count": 141,
+        "knowledge_base_task_count": 218,
+        "unscored_task_count": 77,
+        "by_evidence_level": {
+          "supported": 7,
+          "exploratory": 2,
+          "insufficient": 132,
+          "unknown": 0
+        },
+        "coverage_sha256": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+        "scope": "comparison's own frozen metabolic coverage; RNA-derived task support, not flux",
+        "stratified_metrics": {
+          "supported": {
+            "finite_paired_task_count": 7,
+            "mae": 0.08835018457860293,
+            "spearman": 0.9285714285714288
+          },
+          "exploratory": {
+            "finite_paired_task_count": 2,
+            "mae": 0.06366165223645809,
+            "spearman": -0.9999999999999999
+          },
+          "insufficient": {
+            "finite_paired_task_count": 132,
+            "mae": 0.11590449727225902,
+            "spearman": 0.8571924340431528
+          },
+          "unknown": {
+            "finite_paired_task_count": 0,
+            "mae": null,
+            "spearman": null
+          }
+        },
+        "distinct_mean_triplets_8dp": 113,
+        "independence_note": "相同三元均值按 8 位小数分组仅提示相关结构；不同组也不能视作独立功能证据。"
+      }
+    },
+    {
+      "run_id": "run_aef55809479e4c21",
+      "version": "comparison-diagnostics-v2",
+      "original_files_unchanged": true,
+      "comparison_sha256": "9b379b96c9887a695506d0e79977d93186c1d0687ce94ce2ee4ba8dcfcae1f6e",
+      "diagnostics_sha256": "1150935cb682c058a2152db950400ec863eb113921ecc14178ee012de9b28cf2",
+      "reference_selection_sha256": "b337e16a2b1ac28885f58267b58fda22278eebbd70ef6aa6c2456dc7f5b84676",
+      "pooled": {
+        "signed_delta_pearson": 0.8943695971048221,
+        "mse": 0.005965097341686487,
+        "no_change_mse": 0.028604866936802864,
+        "mse_relative_to_no_change": 0.20853435028609854,
+        "direction_agreement": 0.753
+      },
+      "equal_batch": {
+        "signed_delta_pearson": 0.8864653228539524,
+        "mse": 0.00651924591511488,
+        "no_change_mse": 0.02949557825922966,
+        "mse_relative_to_no_change": 0.22102451621116798,
+        "direction_agreement": 0.74
+      },
+      "baseline_consistent": true,
+      "coverage": {
+        "finite_paired_task_count": 141,
+        "knowledge_base_task_count": 218,
+        "unscored_task_count": 77,
+        "by_evidence_level": {
+          "supported": 7,
+          "exploratory": 2,
+          "insufficient": 132,
+          "unknown": 0
+        },
+        "coverage_sha256": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+        "scope": "comparison's own frozen metabolic coverage; RNA-derived task support, not flux",
+        "stratified_metrics": {
+          "supported": {
+            "finite_paired_task_count": 7,
+            "mae": 0.17008030105796682,
+            "spearman": 0.8214285714285715
+          },
+          "exploratory": {
+            "finite_paired_task_count": 2,
+            "mae": 0.045181411005094665,
+            "spearman": 0.9999999999999999
+          },
+          "insufficient": {
+            "finite_paired_task_count": 132,
+            "mae": 0.06580305979707657,
+            "spearman": 0.9324919176605967
+          },
+          "unknown": {
+            "finite_paired_task_count": 0,
+            "mae": null,
+            "spearman": null
+          }
+        },
+        "distinct_mean_triplets_8dp": 113,
+        "independence_note": "相同三元均值按 8 位小数分组仅提示相关结构；不同组也不能视作独立功能证据。"
+      }
+    },
+    {
+      "run_id": "run_feb6ebf11ef747ab",
+      "version": "comparison-diagnostics-v2",
+      "original_files_unchanged": true,
+      "comparison_sha256": "2f7e529e1a23ac17bc86f3989b1cd045026bc068d06aac3fa1f095d3f7b606dc",
+      "diagnostics_sha256": "421409bbcc8574c0cc971bda7a7cc8e495cbb812fe6f7e0d3d18c609308f8dbd",
+      "reference_selection_sha256": "67c54215a774edf9513985d733d102122e8af08adfbc4da708d67357f79caa11",
+      "pooled": {
+        "signed_delta_pearson": 0.432156411431935,
+        "mse": 0.018080109730362892,
+        "no_change_mse": 0.019315775483846664,
+        "mse_relative_to_no_change": 0.9360281571652596,
+        "direction_agreement": 0.564
+      },
+      "equal_batch": {
+        "signed_delta_pearson": 0.3432510488556341,
+        "mse": 0.021043680608272552,
+        "no_change_mse": 0.01841660961508751,
+        "mse_relative_to_no_change": 1.1426468306649047,
+        "direction_agreement": 0.5405
+      },
+      "baseline_consistent": false,
+      "coverage": {
+        "finite_paired_task_count": 141,
+        "knowledge_base_task_count": 218,
+        "unscored_task_count": 77,
+        "by_evidence_level": {
+          "supported": 7,
+          "exploratory": 2,
+          "insufficient": 132,
+          "unknown": 0
+        },
+        "coverage_sha256": "6d7da85875f3599400db8d5adf244b32c7fc3881382a816989c81bdb167af531",
+        "scope": "comparison's own frozen metabolic coverage; RNA-derived task support, not flux",
+        "stratified_metrics": {
+          "supported": {
+            "finite_paired_task_count": 7,
+            "mae": 0.11089985210576944,
+            "spearman": 0.9642857142857145
+          },
+          "exploratory": {
+            "finite_paired_task_count": 2,
+            "mae": 0.09440363562819563,
+            "spearman": -0.9999999999999999
+          },
+          "insufficient": {
+            "finite_paired_task_count": 132,
+            "mae": 0.16417870106122057,
+            "spearman": 0.7886030682849343
+          },
+          "unknown": {
+            "finite_paired_task_count": 0,
+            "mae": null,
+            "spearman": null
+          }
+        },
+        "distinct_mean_triplets_8dp": 113,
+        "independence_note": "相同三元均值按 8 位小数分组仅提示相关结构；不同组也不能视作独立功能证据。"
+      }
+    }
+  ],
+  "research_contract": {
+    "original": [
+      {
+        "id": "control",
+        "source_kind": "measured",
+        "count": 1024
+      },
+      {
+        "id": "predicted",
+        "source_kind": "prediction",
+        "count": 64
+      }
+    ],
+    "matched": [
+      {
+        "id": "control",
+        "source_kind": "measured",
+        "count": 535
+      },
+      {
+        "id": "predicted",
+        "source_kind": "prediction",
+        "count": 48
+      },
+      {
+        "id": "observed",
+        "source_kind": "measured",
+        "count": 46
+      }
+    ],
+    "fingerprint_basis": "original-and-matched-comparison"
+  },
+  "csv_exports": {
+    "genes": {
+      "rows": 2000,
+      "first_metadata": {
+        "comparison_sha256": "2f7e529e1a23ac17bc86f3989b1cd045026bc068d06aac3fa1f095d3f7b606dc",
+        "observed_sha256": "734e59f7462278a5fedce85a7936cb333d5d15d48c7a0ce6b3b60b673995657b",
+        "source_revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "reference_selection_sha256": "67c54215a774edf9513985d733d102122e8af08adfbc4da708d67357f79caa11",
+        "diagnostics_sha256": "421409bbcc8574c0cc971bda7a7cc8e495cbb812fe6f7e0d3d18c609308f8dbd",
+        "metadata_url": "/api/v1/runs/run_feb6ebf11ef747ab/comparison/download?table=json"
+      }
+    },
+    "tasks": {
+      "rows": 141,
+      "first_metadata": {
+        "comparison_sha256": "2f7e529e1a23ac17bc86f3989b1cd045026bc068d06aac3fa1f095d3f7b606dc",
+        "observed_sha256": "734e59f7462278a5fedce85a7936cb333d5d15d48c7a0ce6b3b60b673995657b",
+        "source_revision": "d790193bb2c93726541a75ca3fa873a92ed44da5",
+        "reference_selection_sha256": "67c54215a774edf9513985d733d102122e8af08adfbc4da708d67357f79caa11",
+        "diagnostics_sha256": "421409bbcc8574c0cc971bda7a7cc8e495cbb812fe6f7e0d3d18c609308f8dbd",
+        "metadata_url": "/api/v1/runs/run_feb6ebf11ef747ab/comparison/download?table=json"
+      }
+    }
+  }
+}

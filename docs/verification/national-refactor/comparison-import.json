@@ -1,0 +1,44 @@
+[
+  {
+    "run_id": "run_34737097754841fd",
+    "state": "available",
+    "kind": "verified historical matched observation diagnosis",
+    "new_inference": false,
+    "expression": {
+      "gene_count": 2000,
+      "mae": 0.0839779308848083,
+      "mse": 0.013867705210253678,
+      "rmse": 0.11776122116492202,
+      "signed_delta_pearson": 0.4979987456976647,
+      "absolute_delta_pearson": 0.485620240946986,
+      "signed_delta_spearman": 0.3809320147330037,
+      "direction_agreement": 0.607,
+      "no_change_mae": 0.08537827672250568,
+      "no_change_mse": 0.016101124900144433,
+      "mse_relative_to_no_change": 0.8612879718813485,
+      "mse_improvement_over_no_change": 0.13871202811865146,
+      "beats_no_change_mse": true
+    }
+  },
+  {
+    "run_id": "run_aef55809479e4c21",
+    "state": "available",
+    "kind": "verified historical matched observation diagnosis",
+    "new_inference": false,
+    "expression": {
+      "gene_count": 2000,
+      "mae": 0.05888749092258513,
+      "mse": 0.005965097246563557,
+      "rmse": 0.07723404201881161,
+      "signed_delta_pearson": 0.89436956056688,
+      "absolute_delta_pearson": 0.8630040512603765,
+      "signed_delta_spearman": 0.7823506445876611,
+      "direction_agreement": 0.753,
+      "no_change_mae": 0.11029055514186621,
+      "no_change_mse": 0.028604861235529397,
+      "mse_relative_to_no_change": 0.20853438852394976,
+      "mse_improvement_over_no_change": 0.7914656114760502,
+      "beats_no_change_mse": true
+    }
+  }
+]

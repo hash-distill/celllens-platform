@@ -16,6 +16,7 @@ import { hasPredictionChange, predictionTrace } from '../../utils/predictionEvid
 import { metabolicGroupName, taskName } from '../../utils/biologyLocale'
 import { buildTraceExport } from '../../utils/exportArtifacts'
 import { featureFilenameToken } from '../../utils/download'
+import { coverageState } from '../../utils/resultOverview'
 
 const props = defineProps<{ runId: string }>()
 const route = useRoute()
@@ -23,9 +24,15 @@ const showCompleteAssociations = ref(false), projectionOpen = ref(false)
 const runs = useRunStore(), entry = computed(() => runs.entry(props.runId))
 const tasks = computed(() => (entry.value?.tasks.data?.items ?? []).filter(row => hasPredictionChange(row) || row.id === route.query.task))
 const synthetic = computed(() => isSyntheticResult(entry.value?.record?.request.mode, props.runId, entry.value?.record?.result_kind))
-const search = ref(''), category = ref(''), sort = ref('change')
+const search = ref(''), category = ref(''), sort = ref('coverage')
 const categories = computed(() => [...new Set(tasks.value.map(task => task.category).filter((value): value is string => !!value))].sort())
-const filtered = computed(() => tasks.value.filter(task => (!category.value || task.category === category.value) && `${taskName(task.id, task.label)} ${task.label} ${task.id}`.toLowerCase().includes(search.value.trim().toLowerCase())).slice().sort((a,b) => sort.value === 'name' ? taskName(a.id, a.label).localeCompare(taskName(b.id, b.label), 'zh-CN') : Math.abs(b.predicted_delta)-Math.abs(a.predicted_delta)))
+const filtered = computed(() => tasks.value.filter(task => (!category.value || task.category === category.value) && `${taskName(task.id, task.label)} ${task.label} ${task.id}`.toLowerCase().includes(search.value.trim().toLowerCase())).slice().sort((a,b) => {
+  const names = (a.category ?? '').localeCompare(b.category ?? '') || taskName(a.id, a.label).localeCompare(taskName(b.id, b.label), 'zh-CN')
+  if (sort.value === 'name') return taskName(a.id, a.label).localeCompare(taskName(b.id, b.label), 'zh-CN')
+  const aCoverage = coverageState(a.coverage) === 'unknown' ? -1 : a.coverage
+  const bCoverage = coverageState(b.coverage) === 'unknown' ? -1 : b.coverage
+  return bCoverage - aCoverage || names
+}))
 const { page, pageSize, pages, visible } = usePagedRows(filtered)
 const taskId = ref(''), reactionId = ref(''), selected = ref('task:')
 const projectionMethod = ref<'pca'|'umap'>('umap')
@@ -99,10 +106,10 @@ onBeforeUnmount(() => {traceController?.abort();networkController?.abort()})
     <p v-else-if="entry?.tasks.status!=='ok'" class="notice">正在读取本次运行的功能任务…</p>
     <div v-else class="function-layout">
       <aside class="task-browser" aria-label="功能任务列表">
-        <header><h3>代谢任务 <small>{{ filtered.length }} / {{ tasks.length }}</small></h3><p>按预测变化幅度浏览代谢任务。</p></header>
+        <header><h3>代谢任务 <small>{{ filtered.length }} / {{ tasks.length }}</small></h3><p>按覆盖与名称查找任务；变化仅在同一任务的群体间比较。</p></header>
         <label>搜索任务<input v-model="search" type="search" placeholder="名称或任务 ID" aria-label="搜索功能任务" /></label>
         <label>功能分类<select v-model="category" aria-label="功能分类"><option value="">全部分类</option><option v-for="item in categories" :key="item" :value="item">{{ metabolicGroupName(item) }}</option></select></label>
-        <label>排序<select v-model="sort" aria-label="功能任务排序"><option value="change">变化幅度</option><option value="name">任务名称</option></select></label>
+        <label>排序<select v-model="sort" aria-label="功能任务排序"><option value="coverage">覆盖与分类</option><option value="name">任务名称</option></select></label>
         <div class="task-options"><button v-for="item in visible" :key="item.id" class="task-option" :class="{active:taskId===item.id}" :aria-pressed="taskId===item.id" :data-task="item.id" @click="taskId=item.id"><span>{{ taskName(item.id, item.label) }}</span><small>{{ metabolicGroupName(item.category) }}</small><strong :class="item.predicted_delta<0?'negative':'positive'">Δ {{ fmtDelta(item.predicted_delta,3) }}</strong></button><p v-if="!filtered.length" class="muted">未找到匹配的任务，请调整筛选条件。</p></div>
         <TablePager v-model:page="page" v-model:page-size="pageSize" :pages="pages" :total="filtered.length" />
         <small class="scope-note">{{ entry?.tasks.data?.scope==='all'?'本次已评分任务':'主要响应任务' }}{{ entry?.tasks.data?.truncated?'（已截断）':'' }}。</small>

@@ -2,257 +2,142 @@
   <img src="frontend/public/favicon.png" width="88" height="88" alt="CellLens" />
 </p>
 <h1 align="center">细胞知镜 · CellLens</h1>
-<p align="center">面向单细胞基因扰动研究的预测与代谢功能分析工作台</p>
+<p align="center">从表达响应到可追溯的功能证据</p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="自有代码 MIT" /></a>
   <img src="https://img.shields.io/badge/Vue-3-42b883" alt="Vue 3" />
   <img src="https://img.shields.io/badge/FastAPI-Python%203.11-009688" alt="FastAPI / Python 3.11" />
-  <img src="https://img.shields.io/badge/MySQL-8.4%20%2B-4479a1" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Database-SQLite%20%2F%20MySQL-4479a1" alt="SQLite / MySQL" />
 </p>
 <p align="center">
-  <a href="#快速开始">快速开始</a> · <a href="#按需准备推理资源">模型下载</a> · <a href="docs/guide/USER_GUIDE.md">使用指南</a> · <a href="docs/DEPLOYMENT.md">部署文档</a> · <a href="docs/README.md">完整文档</a>
+  <a href="docs/使用说明.md">使用说明</a> · <a href="docs/演示流程.md">演示流程</a> · <a href="docs/CPU部署.md">CPU 部署</a> · <a href="docs/交付说明.md">交付说明</a>
 </p>
 
+**CellLens 是面向单细胞基因扰动研究的分析与结果解读平台。** 它将公开实测数据、自有 H5AD 分析和 STATE 模型推演接入同一工作台，帮助研究者核对表达响应、表达推断的代谢任务评分及其来源。实测分析可在 CPU 上独立运行；模型推演需要相应权重、真实输入、STATE 与 GPU 就绪。
 
-CellLens 是基于 **Vue 3 + FastAPI** 的单细胞扰动研究分析。先查询数据覆盖：**已有实测就直接分析真实对照与扰动细胞**；需要检查模型表现时再运行 STATE 并与实测比较；当前源无实测但模型支持时提供明确标注的探索预测。表达变化、scCellFie 评分、科研图和导出保留各自来源。
+![研究概览](docs/screenshots/home.jpg)
 
-当前支持 **K562、RPE1、Jurkat、HepG2** 四个背景。固定公开源有 **5,759 个实测背景／扰动组合**；模型支持 2,023 个非对照目标、共 8,092 个组合，其中 2,333 个在该版本中没有实测记录。**输入受支持不等于泛化已验证**；不宣称任意新基因或新细胞类型可预测。详见[完整范围与泛化证据](docs/GENERALIZATION.md)。
+首页视觉为概念示意；结果页中的数值来自具体记录，不能由首页图示推断细胞形态或生物学结论。
 
-![CellLens 实测分析](docs/screenshots/measured-2026-10-22.png)
+## 页面与研究流程
 
-截图读取本次实际完成的 K562 / AAAS 实测分析：按需提取 32 个真实扰动细胞，匹配后 1,360 个真实对照、6,546 个共同基因；没有模型预测群体。
+四个全局入口为 **研究概览、研究工作台、数据图谱、实验记录**。工作台提供 **实测数据分析** 与 **基因扰动预测** 两项任务；公开数据和自有 H5AD 是实测任务的两种来源。完成后进入四个结果视图。
 
-## 功能特性
-
-| 功能 | 可以做什么 |
+| 结果视图 | 用途 |
 |---|---|
-| 数据覆盖目录 | 查询固定公开源的真实细胞数、本地可用子集、模型支持和上游 test 声明；下载完整 CSV |
-| 实测直接分析 | CPU 分析真实对照与目标观测的共同基因、表达变化、PCA/UMAP 及 scCellFie 分数，无需 STATE 权重 |
-| 在线扰动预测 | 选择细胞背景、单基因扰动、细胞数与随机种子，提交 STATE 推理 |
-| 按需准备资源 | 在连接服务页下载所选背景的权重与配套文件，准备真实对照，查看进度、取消和重试 |
-| 单细胞与表达分析 | 查看 PCA / UMAP、基因响应和群体差异；图中每个点代表细胞 |
-| 代谢功能分析 | 查看 scCellFie 任务、反应、关联网络及预测基因面板的覆盖限制 |
-| AI 科研解读 | 解读实测摘要或预测结果；预测支持科研图与匹配比较，发送前预览摘要 |
-| 实测对比 | 有匹配观测时查看表达误差、相关性与不变化基线；无观测时显示不可用原因 |
-| 记录与比较 | 统一入口分别查看实测、预测历史及预测结果比较，保留来源身份 |
-| 科研导出 | CSV / JSON、分析 ZIP、双语 PDF 报告及 SVG / PDF / PNG 科研图 |
+| 研究总览 | 核对数据来源、细胞背景、目标基因、组别人数、覆盖与可用模块 |
+| 表达响应 | 查看基因表达差、已有真实派生投影和同一基因的组间分布 |
+| 功能证据 | 按覆盖、分类与名称检索任务；实测任务可追查关联反应、GPR 和基因证据 |
+| 实验对照 | 查看匹配群体、批次权重敏感性和覆盖分层；缺少观测时明确说明不可用 |
 
-主导航收敛为“研究分析、记录与比较、数据与方法、使用说明”。结果概览先给出关键基因、代谢任务及所选任务的对照/扰动数值，PCA/UMAP 等专业检查按需展开。任务按关联基因覆盖率、再按绝对差值排序，默认显示前 8 项，可展开本分类全部任务；覆盖不等于可靠性或显著性。
+代谢任务的原始评分不能作为跨任务的统一强弱尺度。任务浏览按覆盖与元数据组织；基因表达差仍可按绝对值排序。结构导航是阅读辅助，PCA/UMAP 表示表达状态，均不代表真实空间位置、细胞运动或形态预测。
 
-**科研边界：**模型预测、实测观测、历史冻结结果和合成演示分别标注。代谢任务分数反映表达对功能的支持程度，不是实测代谢通量；PCA / UMAP 坐标不表示细胞形态或物理位置。当前匹配观测诊断未证明训练排除，不能称为独立留出验证。系统暂不提供任意用户数据上传分析入口。
+| 研究工作台 | 结果工作台 |
+|---|---|
+| ![研究工作台](docs/screenshots/research.jpg) | ![结果工作台](docs/screenshots/result.jpg) |
+
+![数据图谱](docs/screenshots/catalog.jpg)
+
+截图范围见[页面截图](docs/screenshots/README.md)。当前模型背景包括 K562、Jurkat、RPE1、HepG2；可选目标和真实覆盖以目录及当前资产校验为准。自有数据可以使用自己的单一背景标签，只开放实测与功能分析。
 
 ## 快速开始
 
-下面是 **Windows PowerShell** 的完整启动路径。所有命令在 `celllens-platform` 仓库根目录执行。Linux、远程数据库和进程管理见[部署文档](docs/DEPLOYMENT.md)。
-
-需要 Python 3.11、[uv](https://docs.astral.sh/uv/getting-started/installation/)、Node.js / npm 和 MySQL。若使用下方容器数据库，还需启动 Docker Desktop。推理需要兼容当前 PyTorch 的 NVIDIA GPU 与驱动；**启动页面不要求先下载模型权重。**
-
-### 1. 获取代码与安装依赖
+本地轻量启动使用 **SQLite、独立 API 和 CPU worker**。准备 Python 3.11/3.12、Node.js 与 uv，在独立项目副本中执行：
 
 ```powershell
-git clone https://github.com/hash-distill/celllens-platform.git
-cd celllens-platform
-uv sync --locked --python 3.11 --extra analysis --extra report
-npm.cmd --prefix frontend ci
-if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item -LiteralPath .env.example -Destination .env
-}
+powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\run-local.ps1 -Install -Port 8028
 ```
 
-以上安装用于实测分析与科研报告。`analysis` 包含 AnnData、scCellFie、范围读取和降维依赖，`report` 提供原有绘图／PDF 能力；这些依赖与模型权重是两回事。需要 STATE 预测时改用 `uv sync --locked --python 3.11 --extra analysis --extra model --extra report`，并准备 GPU。预测环境锁定 `arc-state==0.11.1`、`torch==2.14.0`，PyTorch 来自 CUDA 13.2 索引。再次同步时保留所需 extras。
-
-只做实测分析或没有兼容 GPU 时，在 `.env` 中将 `CELLLENS_WORKER_ENABLED` 和 `CELLLENS_GPU_AVAILABLE` 都改为 `false`。实测任务仍可执行；这两个开关控制预测入口。源码不附带历史实验记录，缺少的实测子集会在明确提交后按需读取。
-
-### 2. 启动 MySQL（二选一）
-
-**新环境：使用仓库提供的 Docker 数据库。**
+首次安装根据锁文件安装 CPU 分析依赖、构建前端并迁移本副本的 `data/runtime/celllens.db`。已经安装时省略 `-Install`：
 
 ```powershell
-docker compose up -d mysql
-docker compose ps mysql
+powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\run-local.ps1 -Port 8028
 ```
 
-等待 `celllens-mysql` 显示 `healthy`。模板端口为 **宿主机 `3307` → 容器 `3306`**；`.env.example` 的本地连接与其对应。模板账户仅用于本地开发，公开部署时同步修改 Compose 和 `.env` 中的凭据。数据库数据保存在命名卷中。
-
-**已有本机 MySQL：启动原项目实例即可，无需 Docker。**
-
-已有按本项目配置的本机数据库时，可使用：
+脚本检查端口、数据库与 CPU worker 心跳，通过后再报告就绪。打开 <http://127.0.0.1:8028>；工作台位于 `/research`，目录位于 `/data-catalog`，记录位于 `/records`，服务状态位于 `/status`。停止本副本服务：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_mysql.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\stop-local.ps1
 ```
 
-其他电脑使用本机 MySQL 时，将已初始化的 `mysqld.exe` 和数据目录传给脚本，或使用数据库自身的服务管理方式；详见[本机数据库配置](docs/DEPLOYMENT.md#本机-mysql)。已有或远程实例还需将实际连接写入 `.env`。**不要让本机实例和容器同时争用 3307，也不要把另一个 3306 实例当成项目数据库。**
+停止脚本核对工作区、PID、进程创建时间和模块命令，保留数据库、结果与日志。若 `.venv` 是共享环境的链接，`-Install` 会拒绝修改它；可复用已安装环境启动，或为新副本建立专用环境。
 
-### 3. 启动应用
+源码包不含模型权重、原始数据和历史结果。空安装会显示资源尚未准备，完成科学分析还需按[CPU 部署](docs/CPU部署.md)与[资源说明](docs/INFERENCE_RESOURCES.md)准备适用资产。
+
+### 可选 GPU 推演
+
+已有完整环境时追加 `-Gpu`，启动独立 GPU worker：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -ApiPort 8001
+powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\run-local.ps1 -Gpu -Port 8028
 ```
 
-脚本依次检查端口、连接 MySQL、执行 Alembic 迁移、核验表结构、构建前端，再启动应用。未变化的前端会复用构建；数据库必须先启动。使用本机项目 MySQL 时，也可加 `-StartLocalMysql` 合并启动步骤。
+全新专用环境可使用 `-Install -Gpu` 安装模型依赖。预测启动要求 CUDA、STATE 与 worker 心跳通过真实探针，具体背景仍需权重和输入校验。CPU 模式不要求安装模型依赖，也不会生成合成预测替代缺失资源。
 
-| 入口 | 地址 |
-|---|---|
-| 实测分析 | <http://127.0.0.1:8001/measured> |
-| 数据覆盖目录 | <http://127.0.0.1:8001/data-catalog> |
-| 模型预测工作台 | <http://127.0.0.1:8001/workbench> |
-| 记录与比较 | <http://127.0.0.1:8001/records> |
-| 连接服务 / 资源准备 | <http://127.0.0.1:8001/status#inference-resources> |
-| API 文档 | <http://127.0.0.1:8001/docs> |
-| 健康检查 | <http://127.0.0.1:8001/api/v1/health> |
+### 自有 H5AD
 
-本文统一显式使用 **8001**。脚本默认端口仍是 8000；需要更换端口时修改 `-ApiPort`，浏览器地址也随之修改。终端保持运行，按 `Ctrl+C` 停止应用。
+管理员在本地或私有模式配置允许根目录，用户在工作台提供根目录下单个 `.h5ad` 的相对路径，完成预检后提交。当前不是任意文件浏览器，也不提供浏览器上传或自有数据 STATE 推演。
 
-### 4. 先查覆盖，再选择分析方式
+- 明确选择 `raw_counts`、`cp10k` 或 `log1p_cp10k`；原始计数按完整输入面板计算每个细胞的分母，再裁剪分析基因。
+- 指定组别列、对照值、目标值与背景；基因标识需唯一，数值不得含 NaN/Inf，两个组均需有细胞。
+- 受文件、细胞数、基因数及矩阵大小上限约束；现有 `cell_line` 列需与所选单一背景一致。
 
-打开“数据目录”，搜索例如 **K562 / ALDOA**，点击“直接分析实测”。设置目标观测上限，提交后查看实际匹配人数、共同基因、表达差异和投影；完整 CSV／ZIP／HTML 下载位于实测结果，历史统一从“记录与比较”进入。已有有效本地输入优先复用，缺少时只提取相应真实细胞，不生成替代观测。完整说明见[实测分析](docs/MEASURED_ANALYSIS.md)。
+具体字段、限制与配置见[使用说明](docs/使用说明.md)和[CPU 部署](docs/CPU部署.md)。导入后的预检清单、选中人数与结果来源均保留，不能将表达尺度猜测为已确认事实。
 
-“本源有实测”与“已下载”分别显示。没有源记录且模型支持时，可选择探索预测；它不表示该组合在其他研究中未测，也不表示模型已经可靠泛化。已有实测时仍可显式预测，再进入原有“预测与实测”评估。
-
-### 5. 需要预测时准备所需背景
-
-打开“连接服务”，找到“按需准备细胞背景”，选择例如 **RPE1**，阅读官方来源与许可后勾选确认，点击 **下载并准备**。准备完成后返回工作台，确认该背景显示在线可用，再提交实验。
-
-无需先手工下载四套权重，也无需先准备完整 atlas。资源卡片可在模型文件缺失时正常使用。若资源已准备但工作台仍不可用，按页面提示检查 GPU、worker、Python 依赖与共享资产。
-
-## 按需准备推理资源
-
-![连接服务中的推理资源管理](docs/screenshots/inference-resources.png)
-
-| 背景 | 模型与配套文件 | 真实对照 |
-|---|---:|---|
-| K562 | 约 467 MiB / 6 个文件 | 已有合法对照复用；缺失时按背景提取 |
-| RPE1 | 约 467 MiB / 6 个文件 | 同上 |
-| Jurkat | 约 467 MiB / 6 个文件 | 同上 |
-| HepG2 | 约 467 MiB / 6 个文件 | 同上 |
-
-点击哪个背景，就只下载该背景的 checkpoint、上游配置、变量维度和三类映射文件。源码已包含基因面板、应用模型配置、拆分配置与冻结 scCellFie 数据库，四个背景共享这些配套能力。
-
-- **下载位置：**运行后端的电脑或服务器项目目录。远程访问时，文件保存在服务器上。
-- **来源与校验：**权重固定为官方 [ST-HVG-Replogle](https://huggingface.co/arcinstitute/ST-HVG-Replogle/tree/bb6a9562cbbf1fd152df14cc53b4cc7517c77175) 版本；每个文件验证大小与 SHA-256 后才启用。有效文件直接复用，临时文件不算就绪。
-- **真实对照：**从固定 [State-Replogle-Filtered](https://huggingface.co/datasets/arcinstitute/State-Replogle-Filtered/tree/d790193bb2c93726541a75ca3fa873a92ed44da5) 版本范围读取所选背景最多 1,024 个非靶向细胞，种子为 42；会读取共享元数据，但不整包下载约 30 GB 的 atlas。
-- **中断处理：**同一项目一次准备一个背景。可取消、重试，权重支持范围续传；服务中断后任务显示可重试，对照提取重新执行。上游不支持续传时安全重新下载该文件。
-- **历史保留：**已有有效对照不覆盖；新提取的对照登记新版本，保留原 dataset ID 与文件供旧实验追溯。
-- **磁盘空间：**下载前检查至少两份所选模型大小的空闲空间，另需为 Python 环境、对照及实验结果预留空间。
-
-资源准备不安装驱动或 Python 依赖，也不自动下载实测诊断集或全部训练数据。**资源就绪表示输入文件通过检查；工作台的在线入口还检查资产与 worker/GPU 启用开关。实际驱动及依赖需按部署文档核验；这些均不等于模型准确性验证。**完整契约与实现见[资源管理说明](docs/INFERENCE_RESOURCES.md)。
-
-## 开发与配置
-
-### 开发模式
-
-数据库与 Python 依赖准备好后运行：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -Mode Development -ApiPort 8001 -FrontendPort 5173
-```
-
-访问 <http://127.0.0.1:5173/workbench>。脚本启动 Vite，并将 API 代理到所选后端端口；前端支持热更新。构建后运行由 FastAPI 同源提供前端，无需单独启动 Vite。
-
-### 主要配置
-
-配置保存在根目录 `.env`，首次从 `.env.example` 复制；已有配置不要覆盖。
-
-| 配置 | 用途 |
-|---|---|
-| `CELLLENS_DATABASE_URL` | MySQL 实际连接；本地模板使用 `127.0.0.1:3307/celllens` |
-| `CELLLENS_WORKER_ENABLED` | 是否执行新预测；CPU 实测分析独立运行 |
-| `CELLLENS_GPU_AVAILABLE` | 允许 GPU 在线入口；实际 GPU 状态见服务页，依赖需另行检查 |
-| `CELLLENS_STATE_EXECUTABLE` | STATE 命令，默认 `state` |
-| `CELLLENS_CREATE_DATABASE_SCHEMA` | 保持 `false`，由 Alembic 管理表结构 |
-| `CELLLENS_ALLOW_SYNTHETIC_RESULTS` | 正式运行保持 `false` |
-
-系统设置页支持多组命名 AI 连接、获取并搜索模型列表、手动填写模型，以及通用 JSON / `.env` 文件或粘贴导入。可设置推理强度、Claude 思考模式、输出预算和上下文窗口；发送前显示摘要与输入预算估算，超限提示调整。Key 按连接仅保留于当前标签页会话，不写入实验结果，导出配置不含密钥。使用外部模型会发送当前选择的摘要；模型目录获取与文本生成测试分别执行，真实可用性取决于服务和账号，参见 [AI 解读配置](docs/guide/ASSISTANT_SETTINGS.md)。
-
-进程环境变量优先于 `.env`。Windows 启动脚本会拒绝终端遗留的 worker/GPU 覆盖，按提示清除后重试，或使用新终端。服务器、反向代理、无 GPU 模式与手动启动见[部署文档](docs/DEPLOYMENT.md)。当前 Compose **只管理数据库**，尚无完整应用 Docker 镜像。
-
-### 检查命令
-
-```powershell
-uv sync --locked --python 3.11 --extra analysis --extra model --extra report --group dev
-uv run --no-sync pytest backend/tests -q
-uv run --no-sync ruff check backend/app scripts
-uv run --no-sync basedpyright
-npm.cmd --prefix frontend run typecheck
-npm.cmd --prefix frontend run build
-```
-
-数据库可单独检查：`uv run --no-sync python scripts/check_mysql.py`。`scripts/audit_registry.py` 审计整个登记目录，未下载的可选背景会被报告为缺失；只使用某个背景时，以页面中的该背景就绪条件为准。历史测试与本次验证范围见[验收记录](docs/README.md#截图与检查记录)，不把单元测试或构建通过当作独立科研验证。
-
-## 技术架构
+## 架构与部署
 
 ```mermaid
 flowchart LR
-    UI[Vue 3 工作台] --> API[FastAPI / 请求校验]
-    API --> DB[(MySQL / 运行记录)]
-    API --> CATALOG[固定源覆盖目录]
-    CATALOG --> MEASURED[真实对照与观测 / CPU 分析]
-    MEASURED --> ANALYSIS
-    API --> Q[单消费者任务队列]
-    Q --> STATE[STATE 扰动表达预测]
-    STATE --> ANALYSIS[表达分析与 scCellFie 代谢评分]
-    ANALYSIS --> FILES[校验并发布结果文件]
-    FILES --> UI
-    API --> ASSETS[按背景下载与核验资源]
+    UI[Vue 研究工作台] --> API[FastAPI 请求校验与只读结果]
+    API --> DB[(SQLite / MySQL)]
+    CPU[独立 CPU worker] --> DB
+    GPU[可选 GPU worker] --> DB
+    CPU --> M[实测表达与功能分析]
+    GPU --> P[STATE 预测与派生分析]
+    M --> F[哈希校验与不可变产物]
+    P --> F
+    F --> API
 ```
 
-| 层次 | 技术 |
+API 负责校验、入队与读取；worker 通过租约认领任务，按 attempt 隔离暂存文件。API 重启不终止独立 worker；中断任务按租约恢复，完成产物经校验后原子发布。来源清单、研究发现与导出包绑定具体记录，公共导出剔除私人发现与本机输入路径。
+
+| 模式 | 范围 |
 |---|---|
-| 页面与状态 | Vue 3、TypeScript、Vue Router、Pinia、Vite 6 |
-| 图表与科研导出 | ECharts、Three.js、Matplotlib、ReportLab |
-| API 与数据访问 | FastAPI、Pydantic、SQLAlchemy、Alembic、MySQL |
-| 科学计算 | STATE、scCellFie、AnnData、Scanpy、NumPy、pandas |
-| 任务与产物 | 单消费者队列、数据库锁与租约心跳、文件 SHA-256、原子发布 |
+| 本地 | 仅回环访问，SQLite 轻量启动，适合单机使用 |
+| 私有工作空间 | 工作空间令牌或会话认证；仍是单工作空间，不提供多人数据隔离 |
+| 公共只读 | 只开放白名单内的已完成冻结结果；禁用计算、导入、私人发现和外部解读 |
 
-直接实测分析使用输入文件的完整共同基因面板，人数按共同批次筛选后记录；已有输入面板可能本身较窄，实际基因数以结果为准。模型预测使用各背景 2,000 个有序基因。表达均值差为 mean(log1p(CP10K)) 的差，不是显著性；代谢评分前恢复线性 CP10K。大型文件保存在文件系统，MySQL 的六张业务表分别保存预测与实测历史（另有迁移版本表）。匹配实测比较独立准备，不改写原预测产物。详细方法见[模型与数据](docs/MODEL_AND_DATA.md)。
+`/api/v1/ready` 返回 HTTP 200 表示数据库和浏览入口可用；CPU 与预测能力分别由未过期的 worker 心跳和实际依赖/设备探针判断，仍需核对具体数据与模型资产。
 
-## 目录结构
+**新部署以 [CPU 部署](docs/CPU部署.md)为准。** MySQL 仍可用于兼容既有环境；旧[部署参考](docs/DEPLOYMENT.md)保留 MySQL、Compose 和手动配置说明，其旧启动方式不能代替独立 worker 部署。Linux systemd 模板已提供，目标服务器、HTTPS 与反向代理配置仍需现场验收。
 
-```text
-celllens-platform/
-├── backend/app/          API、任务编排、模型适配与资源管理
-├── backend/tests/        后端回归测试
-├── frontend/             Vue 页面、图表与构建脚本
-├── configs/              模型、分析与拆分配置
-├── data/registry/        资产登记、基因面板与冻结代谢库
-├── models/               页面下载的模型文件（不随 Git 分发）
-├── data/raw/             输入数据（不随 Git 分发）
-├── data/derived/         下载状态与运行产物（不随 Git 分发）
-├── scripts/              启动、数据准备与检查工具
-├── docs/                 使用、部署、方法与验收文档
-├── licenses/             第三方许可副本
-├── .env.example          本地配置模板
-├── docker-compose.yml    MySQL 数据库配置
-└── pyproject.toml        Python 依赖，版本由 uv.lock 锁定
-```
+## 已验证的范围
 
-源码不包含本机 `.env`、安装依赖、完整模型、原始 H5AD 或历史运行产物。备份或迁移实验时，需同时保留数据库、登记输入与对应的文件产物，包括 `data/derived/runs/` 和 `data/derived/measured/`；详见[备份与迁移](docs/OPERATIONS.md#备份迁移与清理)。
+本机已完成真实 K562 / ALDOA CPU 分析、Jurkat / ALDOA 新 GPU 推演、API 独立重启、worker 中断恢复、CPU/GPU 取消，以及受控 H5AD 导入。正式服务停止并重启后 CPU/GPU 能力恢复，研究发现保留；公共访问与导出边界也已验收。导入验收使用真实公开数据的子集，**不是新开展的生物实验**。历史模型案例通过哈希核验恢复，恢复记录不计为新推理。
 
-## 常见问题
+本轮评审改进完成后，后端 **538 项功能回归**、前端 **60 项检查**通过；全项目 Python 类型检查、Ruff、前端类型检查与 808 模块生产构建通过。实际完成一条新 GPU 预测、两条新 CPU 实测分析，并核验结果、来源和导出。390 / 900 / 1440 / 1920 像素宽度完成浏览器检查，138 个已有产物哈希不变。详细范围、截图与限制见[评审改进](docs/评审改进.md)和[本轮验收](docs/verification/judge-review/)。此前的中断恢复、访问边界和 Windows 启停证据保留在[初轮验收](docs/verification/national-refactor/)。
 
-| 问题 | 处理 |
-|---|---|
-| MySQL `2003` / `WinError 10061`，启动直接退出 | 先启动 `.env` 指向的数据库。默认项目地址为 `127.0.0.1:3307`；只启动 Uvicorn 不会启动 MySQL |
-| 8000 被占用或出现 `[PORT_IN_USE]` | 用 `-ApiPort 8001` 或其他空闲端口。检查包含 Listen / Bound / Established 的占用信息；客户端绑定端口也可能阻止启动 |
-| 下载失败或网络中断 | 检查能否访问 Hugging Face 官方源，点击重试；已有有效文件复用，失败文件不会冒充已就绪 |
-| 资源已就绪，但不能提交实验 | 检查 GPU、worker、STATE 与 Python 依赖，阅读工作台给出的具体原因 |
-| 对照提取失败 | 确认已安装 `analysis` / `report`（预测环境可同时保留 `model`）及网络可达；缺少依赖时不会生成假对照 |
-| 页面 503，提示缺少前端构建 | 执行 `npm.cmd --prefix frontend run build`，或移除启动脚本的 `-SkipBuild` |
-| 新部署看不到旧实验 | 新库没有历史记录；迁移时同时复制原数据库和 `data/derived/runs/` 等对应产物 |
-| 没有 GPU 能否分析 | 关闭 `.env` 中 worker/GPU 两项，安装 analysis 依赖后可直接分析实测；新 STATE 推理仍需 GPU |
+这些结果验证实现与运行链路，不构成模型独立科学验证。尚未完成 Linux 现场部署、远程 HTTPS 验收、多用户隔离或移动设备实机验证；也未开展新的留出实验、科研消融和研究者试用。
 
-更多处理步骤见[运行与检查](docs/OPERATIONS.md)。共享服务器需要额外的访问控制与目标环境验收；当前没有多用户权限隔离能力，任务执行随单个 Web 进程启动。
+## 科研解释边界
 
-## 文档与来源
+- 实测、模型预测和表达推断的功能评分分别标注；scCellFie 任务评分不等于代谢通量。
+- 表达均值差为 `mean(log1p(CP10K))` 的组间差，不是 log2FC，也不自动代表统计显著性。
+- 功能任务分类来自匹配版本的冻结知识库；缺失信息保持未知，不能推断细胞器定位。
+- 缺失实测对照、资源或模块会明确显示不可用；历史产物保持原样，读取时不补造数值。
+- 研究发现与导出支持复核和追溯，不能替代独立实验验证或因果结论。
 
-- [使用指南](docs/guide/USER_GUIDE.md) · [模型与数据](docs/MODEL_AND_DATA.md) · [资源下载](docs/INFERENCE_RESOURCES.md)
-- [实测直接分析](docs/MEASURED_ANALYSIS.md) · [模型泛化证据与完整候选名单](docs/GENERALIZATION.md)
-- [部署与启动](docs/DEPLOYMENT.md) · [API](docs/API.md) · [维护说明](docs/MAINTENANCE.md)
-- [第三方许可与引用](docs/THIRD_PARTY_NOTICES.md) · [完整文档目录](docs/README.md)
+## 文档与交付
 
-感谢 [STATE / Arc Institute](https://github.com/ArcInstitute/state) 与 [scCellFie](https://github.com/earmingol/scCellFie) 提供上游方法。README 的信息组织参考了 [RuoYi-FastAPI](https://github.com/insistence/RuoYi-FastAPI) 与 [vue-fastapi-admin](https://github.com/baizunxian/vue-fastapi-admin)，功能和启动命令以本仓库实现为准。
+- [使用说明](docs/使用说明.md) · [演示流程](docs/演示流程.md) · [CPU 部署](docs/CPU部署.md)
+- [交付说明](docs/交付说明.md) · [重构进度](docs/重构进度.md) · [页面截图](docs/screenshots/README.md)
+- [模型与数据](docs/MODEL_AND_DATA.md) · [实测方法](docs/MEASURED_ANALYSIS.md) · [资源下载](docs/INFERENCE_RESOURCES.md)
+- [旧 MySQL 部署参考](docs/DEPLOYMENT.md) · [维护参考](docs/OPERATIONS.md) · [第三方说明](docs/THIRD_PARTY_NOTICES.md)
+
+交付源码包含前后端、依赖锁文件、数据库迁移、启动脚本与部署模板。**不包含 `.env`、权重、原始 H5AD、历史运行数据库、完整结果产物或已安装依赖环境。** 复现指定结果需要其数据库记录、冻结输入登记与完整产物，不能仅复制截图。`scripts/import_verified_runs.py` 用于核验并恢复已完成的真实历史预测，恢复不触发新推理。
+
+GitHub 仓库：[hash-distill/celllens-platform](https://github.com/hash-distill/celllens-platform)，访问以仓库实际授权为准。
 
 ## 许可
 
-CellLens 自有代码与文档采用 [MIT License](LICENSE)。STATE 源码、模型、数据和输出受其上游条款约束，其中模型有非商业使用限制；scCellFie 等依赖也各自保留许可。**本项目 MIT 不覆盖第三方模型和数据。**详见 [NOTICE](NOTICE) 与[第三方说明](docs/THIRD_PARTY_NOTICES.md)。
+CellLens 自有代码与文档采用 [MIT License](LICENSE)。第三方模型、数据与软件各自遵循上游条款；项目 MIT 不覆盖第三方资产，STATE 模型的非商业限制也不会因本项目许可证而解除。详见 [NOTICE](NOTICE) 与[第三方说明](docs/THIRD_PARTY_NOTICES.md)。

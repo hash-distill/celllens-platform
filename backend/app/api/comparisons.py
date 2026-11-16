@@ -1,11 +1,13 @@
 """Read-only access to genuine measured perturbation comparisons."""
 
 import json
+import threading
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 
+from backend.app.api.resources import same_origin
 from backend.app.schemas import RunStatus
 from backend.app.services.cell_state import CellStateUnavailable
 from backend.app.services.export_tables import export_table
@@ -18,10 +20,13 @@ from backend.app.services.measured_comparison import (
 )
 
 router = APIRouter(prefix="/runs", tags=["measured comparison"])
+_diagnostics_lock = threading.Lock()
 
 
 def _document(run_id: str, request: Request) -> dict:
     container = request.app.state.container
+    if getattr(container.settings, "deployment_mode", "local") == "public":
+        raise HTTPException(403, detail={"code": "PRIVATE_COMPARISON_DISABLED"})
     try:
         record = container.store.get(run_id)
     except KeyError as exc:
@@ -84,6 +89,30 @@ def get_comparison(run_id: str, request: Request) -> dict:
     return _document(run_id, request)
 
 
+@router.post("/{run_id}/comparison/diagnostics/prepare")
+def prepare_comparison_diagnostics(run_id: str, request: Request) -> dict:
+    same_origin(request)
+    document = _document(run_id, request)
+    if document["status"] != "available":
+        raise HTTPException(409, detail={"code": "MEASURED_COMPARISON_UNAVAILABLE"})
+    if not _diagnostics_lock.acquire(blocking=False):
+        raise HTTPException(
+            409, detail={"code": "DIAGNOSTICS_BUSY", "message": "另一个诊断正在准备，请稍后重试。"}
+        )
+    try:
+        from backend.app.services.comparison_diagnostics import prepare_diagnostics
+
+        prepare_diagnostics(request.app.state.container.settings.project_root, run_id)
+        return _document(run_id, request)
+    except (ComparisonUnavailable, OSError, ValueError, KeyError, ImportError) as exc:
+        raise HTTPException(
+            409,
+            detail={"code": "DIAGNOSTICS_UNAVAILABLE", "message": f"诊断未能完成；原冻结结果保持不变：{exc}"},
+        ) from exc
+    finally:
+        _diagnostics_lock.release()
+
+
 @router.get("/{run_id}/comparison/download")
 def download_comparison(run_id: str, request: Request, table: Literal["json", "genes", "tasks"] = "json"):
     doc = _document(run_id, request)
@@ -96,10 +125,13 @@ def download_comparison(run_id: str, request: Request, table: Literal["json", "g
         try:
             content, _ = export_table(request.app.state.container, run_id, table, "comparison")
         except (CellStateUnavailable, ComparisonUnavailable, OSError, ValueError, KeyError) as exc:
-            raise HTTPException(409, detail={
-                "code": "COMPARISON_EXPORT_UNAVAILABLE",
-                "message": "实测比较导出来源未通过校验，请检查冻结文件。",
-            }) from exc
+            raise HTTPException(
+                409,
+                detail={
+                    "code": "COMPARISON_EXPORT_UNAVAILABLE",
+                    "message": "实测比较导出来源未通过校验，请检查冻结文件。",
+                },
+            ) from exc
         extension, mime = "csv", "text/csv"
     return Response(
         content,

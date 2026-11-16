@@ -19,6 +19,8 @@ class AppContainer:
 
 
 def build_container(settings: Settings) -> AppContainer:
+    from backend.app.db import research_models  # noqa: F401
+
     registry = AssetRegistry(settings.project_root, settings.registry_root)
     store = RunStore(settings.database_url, create_schema=settings.create_database_schema)
     pipeline = AnalysisPipeline(
@@ -39,5 +41,5 @@ def build_container(settings: Settings) -> AppContainer:
         worker_id=settings.worker_id,
         lease_seconds=settings.job_lease_seconds,
     )
-    queue = SingleGpuJobQueue(pipeline.run)
+    queue = SingleGpuJobQueue(pipeline.run, embedded=settings.worker_mode == "embedded")
     return AppContainer(settings, registry, store, pipeline, queue)

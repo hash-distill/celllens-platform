@@ -1,0 +1,333 @@
+diff --git a/README.md b/README.md
+index 4c5d81d..52f2d2e 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+   <img src="frontend/public/favicon.png" width="88" height="88" alt="CellLens" />
+ </p>
+ <h1 align="center">细胞知镜 · CellLens</h1>
+-<p align="center">面向单细胞基因扰动研究的预测与代谢功能分析工作台</p>
++<p align="center">面向单细胞基因扰动研究的分析与结果解读平台</p>
+ <p align="center">
+   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="自有代码 MIT" /></a>
+   <img src="https://img.shields.io/badge/Vue-3-42b883" alt="Vue 3" />
+@@ -10,17 +10,18 @@
+   <img src="https://img.shields.io/badge/MySQL-8.4%20%2B-4479a1" alt="MySQL" />
+ </p>
+ <p align="center">
+-  <a href="#快速开始">快速开始</a> · <a href="#按需准备推理资源">模型下载</a> · <a href="docs/guide/USER_GUIDE.md">使用指南</a> · <a href="docs/DEPLOYMENT.md">部署文档</a> · <a href="docs/README.md">完整文档</a>
++  <a href="#系统简介">系统简介</a> · <a href="#界面预览">界面预览</a> · <a href="#快速开始">快速开始</a> · <a href="docs/guide/USER_GUIDE.md">使用指南</a> · <a href="docs/DEPLOYMENT.md">部署文档</a> · <a href="#项目仓库与开源计划">项目仓库</a>
+ </p>
+ 
++## 系统简介
+ 
+-CellLens 是基于 **Vue 3 + FastAPI** 的单细胞扰动研究分析。先查询数据覆盖：**已有实测就直接分析真实对照与扰动细胞**；需要检查模型表现时再运行 STATE 并与实测比较；当前源无实测但模型支持时提供明确标注的探索预测。表达变化、scCellFie 评分、科研图和导出保留各自来源。
++**细胞知镜（CellLens）是一款面向单细胞基因扰动研究的分析与结果解读平台。** 它围绕“某个基因受到抑制后，细胞的表达状态与代谢功能线索如何变化”这一问题，将数据查询、实测分析、模型预测、可视化与 AI 辅助解读整合到同一研究流程中。
+ 
+-当前支持 **K562、RPE1、Jurkat、HepG2** 四个背景。固定公开源有 **5,759 个实测背景／扰动组合**；模型支持 2,023 个非对照目标、共 8,092 个组合，其中 2,333 个在该版本中没有实测记录。**输入受支持不等于泛化已验证**；不宣称任意新基因或新细胞类型可预测。详见[完整范围与泛化证据](docs/GENERALIZATION.md)。
++系统面向生物研究者、生物信息学分析人员及相关专业学习者，帮助用户比较对照与扰动细胞的表达特征，查看基因响应、细胞状态分布和表达推断的代谢任务评分，结合数据来源理解结果，并导出图表与数据，为后续研究和实验设计提供可核对的线索。
+ 
+-![CellLens 实测分析](docs/screenshots/measured-2026-10-22.png)
++![细胞知镜系统首页](docs/screenshots/home-2026-10-23.png)
+ 
+-截图读取本次实际完成的 K562 / AAAS 实测分析：按需提取 32 个真实扰动细胞，匹配后 1,360 个真实对照、6,546 个共同基因；没有模型预测群体。
++系统首页：从研究问题出发，连接数据、分析与结果解读。
+ 
+ ## 功能特性
+ 
+@@ -34,13 +35,46 @@ CellLens 是基于 **Vue 3 + FastAPI** 的单细胞扰动研究分析。先查
+ | 代谢功能分析 | 查看 scCellFie 任务、反应、关联网络及预测基因面板的覆盖限制 |
+ | AI 科研解读 | 解读实测摘要或预测结果；预测支持科研图与匹配比较，发送前预览摘要 |
+ | 实测对比 | 有匹配观测时查看表达误差、相关性与不变化基线；无观测时显示不可用原因 |
+-| 记录与比较 | 统一入口分别查看实测、预测历史及预测结果比较，保留来源身份 |
++| 记录与比较 | 在统一表格查看实测与预测记录，按类别筛选，从结果解读继续查看图表与比较 |
+ | 科研导出 | CSV / JSON、分析 ZIP、双语 PDF 报告及 SVG / PDF / PNG 科研图 |
+ 
+-主导航收敛为“研究分析、记录与比较、数据与方法、使用说明”。结果概览先给出关键基因、代谢任务及所选任务的对照/扰动数值，PCA/UMAP 等专业检查按需展开。任务按关联基因覆盖率、再按绝对差值排序，默认显示前 8 项，可展开本分类全部任务；覆盖不等于可靠性或显著性。
++主导航为“研究分析、结果解读、实验记录、数据与方法、使用说明”。结果概览先给出关键基因、代谢任务及所选任务的对照/扰动数值，PCA/UMAP 等专业检查按需展开。任务按关联基因覆盖率、再按绝对差值排序，默认显示前 8 项，可展开本分类全部任务；覆盖不等于可靠性或显著性。
++
++当前按 **K562、RPE1、Jurkat、HepG2** 四种细胞背景组织分析入口。具体实测覆盖、模型支持范围及泛化证据见[模型支持与数据范围](docs/GENERALIZATION.md)。
+ 
+ **科研边界：**模型预测、实测观测、历史冻结结果和合成演示分别标注。代谢任务分数反映表达对功能的支持程度，不是实测代谢通量；PCA / UMAP 坐标不表示细胞形态或物理位置。当前匹配观测诊断未证明训练排除，不能称为独立留出验证。系统暂不提供任意用户数据上传分析入口。
+ 
++## 界面预览
++
++以下为当前系统的真实页面截图，更多来源与截图范围见[页面截图说明](docs/screenshots/README.md)。
++
++<details>
++<summary>研究分析：统一设置实测分析与模型预测</summary>
++
++![研究分析与实验设置](docs/screenshots/research-2026-10-23.png)
++
++选择分析类型、细胞背景和扰动基因，核对覆盖信息并设置采样参数。
++
++</details>
++
++<details>
++<summary>结果解读：查看表达变化与代谢功能线索</summary>
++
++![结果解读与功能概览](docs/screenshots/results-2026-10-23.png)
++
++从关键基因和代谢任务进入具体结果，区分实测与预测来源；已有结果的页面展示不代表本次重新运行模型或完成独立验证。
++
++</details>
++
++<details>
++<summary>数据目录：查询公开实测覆盖与可用分析路径</summary>
++
++![公开扰动数据目录](docs/screenshots/catalog-2026-10-23.png)
++
++按细胞背景和基因查询实测覆盖、本地数据与模型支持范围，再选择直接分析或模型预测。
++
++</details>
++
+ ## 快速开始
+ 
+ 下面是 **Windows PowerShell** 的完整启动路径。所有命令在 `celllens-platform` 仓库根目录执行。Linux、远程数据库和进程管理见[部署文档](docs/DEPLOYMENT.md)。
+@@ -49,6 +83,8 @@ CellLens 是基于 **Vue 3 + FastAPI** 的单细胞扰动研究分析。先查
+ 
+ ### 1. 获取代码与安装依赖
+ 
++仓库目前为私有，以下获取源码步骤适用于已获仓库访问权限的账号；未来开源后将面向公众开放。
++
+ ```powershell
+ git clone https://github.com/hash-distill/celllens-platform.git
+ cd celllens-platform
+@@ -97,7 +133,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -
+ | 实测分析 | <http://127.0.0.1:8001/measured> |
+ | 数据覆盖目录 | <http://127.0.0.1:8001/data-catalog> |
+ | 模型预测工作台 | <http://127.0.0.1:8001/workbench> |
+-| 记录与比较 | <http://127.0.0.1:8001/records> |
++| 结果解读 | <http://127.0.0.1:8001/records?view=results> |
++| 实验记录 | <http://127.0.0.1:8001/records> |
+ | 连接服务 / 资源准备 | <http://127.0.0.1:8001/status#inference-resources> |
+ | API 文档 | <http://127.0.0.1:8001/docs> |
+ | 健康检查 | <http://127.0.0.1:8001/api/v1/health> |
+@@ -106,7 +143,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_system.ps1 -
+ 
+ ### 4. 先查覆盖，再选择分析方式
+ 
+-打开“数据目录”，搜索例如 **K562 / ALDOA**，点击“直接分析实测”。设置目标观测上限，提交后查看实际匹配人数、共同基因、表达差异和投影；完整 CSV／ZIP／HTML 下载位于实测结果，历史统一从“记录与比较”进入。已有有效本地输入优先复用，缺少时只提取相应真实细胞，不生成替代观测。完整说明见[实测分析](docs/MEASURED_ANALYSIS.md)。
++打开“数据目录”，搜索例如 **K562 / ALDOA**，点击“直接分析实测”。设置目标观测上限，提交后查看实际匹配人数、共同基因、表达差异和投影；完整 CSV／ZIP／HTML 下载位于实测结果，历史统一从“实验记录”进入。已有有效本地输入优先复用，缺少时只提取相应真实细胞，不生成替代观测。完整说明见[实测分析](docs/MEASURED_ANALYSIS.md)。
+ 
+ “本源有实测”与“已下载”分别显示。没有源记录且模型支持时，可选择探索预测；它不表示该组合在其他研究中未测，也不表示模型已经可靠泛化。已有实测时仍可显式预测，再进入原有“预测与实测”评估。
+ 
+@@ -231,6 +268,8 @@ celllens-platform/
+ 
+ ## 常见问题
+ 
++
++
+ | 问题 | 处理 |
+ |---|---|
+ | MySQL `2003` / `WinError 10061`，启动直接退出 | 先启动 `.env` 指向的数据库。默认项目地址为 `127.0.0.1:3307`；只启动 Uvicorn 不会启动 MySQL |
+@@ -256,3 +295,9 @@ celllens-platform/
+ ## 许可
+ 
+ CellLens 自有代码与文档采用 [MIT License](LICENSE)。STATE 源码、模型、数据和输出受其上游条款约束，其中模型有非商业使用限制；scCellFie 等依赖也各自保留许可。**本项目 MIT 不覆盖第三方模型和数据。**详见 [NOTICE](NOTICE) 与[第三方说明](docs/THIRD_PARTY_NOTICES.md)。
++
++## 项目仓库与开源计划
++
++GitHub 仓库：[hash-distill/celllens-platform](https://github.com/hash-distill/celllens-platform)。
++
++**当前仓库为私人仓库（Private），暂未向公众开放访问，未来将开源。** 开源时间与后续发布信息以该仓库的更新为准；当前仅已获授权的账号可以访问和克隆。
+diff --git a/docs/screenshots/README.md b/docs/screenshots/README.md
+index daf4c32..ed3d4ca 100644
+--- a/docs/screenshots/README.md
++++ b/docs/screenshots/README.md
+@@ -1,6 +1,21 @@
+ # 日期明确的页面截图
+ 
+-以下截图来自 2026-10-10 运行中的正式构建和真实模型结果回放，用于保留该版本的展示证据。2026-10-20 已整合新主题，当前外观以 [前端整合验收](../verification/2026-10-20-frontend-theme-integration.md) 为准。
++本目录按日期保存运行中的真实页面。项目 README 使用下方 2026-10-23 的截图；旧截图仅说明对应日期的界面与结果，不代表当前外观。
++
++## 2026-10-23 当前构建
++
++| 文件 | 内容与范围 |
++|---|---|
++| [home-2026-10-23.png](home-2026-10-23.png) | 系统首页及主要研究入口；首页背景为概念视觉，不是模型生成的细胞影像 |
++| [research-2026-10-23.png](research-2026-10-23.png) | 研究分析页，选择 K562 / ALDOA 并读取真实覆盖；仅展示设置，没有提交新分析 |
++| [results-2026-10-23.png](results-2026-10-23.png) | 读取已保存的 HepG2 / ALDOA 模型结果，运行 ID 为 `run_41504106326f404d`；本次截图未重新运行模型 |
++| [catalog-2026-10-23.png](catalog-2026-10-23.png) | 当前数据目录，查询固定公开源的实测覆盖与模型支持范围 |
++
++截图保留页面中的数据来源和解释边界，不作为模型准确性、独立泛化或生物学因果验证的证据。
++
++## 2026-10-10 历史构建
++
++以下截图来自当时运行中的构建与真实模型结果回放，用于保留该版本的展示证据。2026-10-20 已整合新主题，主题整合过程见[前端整合验收](../verification/2026-10-20-frontend-theme-integration.md)。
+ 
+ | 文件 | 内容 |
+ |---|---|
+diff --git a/frontend/src/components/GenePicker.vue b/frontend/src/components/GenePicker.vue
+index 83e4d32..8e189f6 100644
+--- a/frontend/src/components/GenePicker.vue
++++ b/frontend/src/components/GenePicker.vue
+@@ -64,18 +64,22 @@ onBeforeUnmount(() => window.clearTimeout(closeTimer))
+ 
+ <template>
+   <div class="gene-picker">
+-    <label class="label" for="perturbation-category">基因功能分类 · Gene function class</label>
+-    <select id="perturbation-category" v-model="category" class="input gene-category-select" :disabled="loading" @change="changeCategory"><option value="">全部可用扰动基因</option><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name_zh }} · {{ item.name_en }}（{{ item.count }}）</option></select>
+-    <label class="label" for="perturbation-input">扰动基因</label>
+-    <div class="perturbation-box">
+-      <input id="perturbation-input" v-model="query" class="input" type="text" role="combobox" :aria-expanded="dropdownOpen" aria-controls="perturbation-listbox" :aria-activedescendant="dropdownOpen && highlightIndex>=0 ? `perturbation-option-${highlightIndex}` : undefined" aria-autocomplete="list" placeholder="搜索扰动基因…" autocomplete="off" :disabled="loading" @focus="openDropdown" @click="openDropdown" @input="openDropdown" @blur="closeSoon" @keydown="keydown" />
+-      <div v-if="dropdownOpen" id="perturbation-listbox" class="dropdown" role="listbox" aria-label="可选扰动基因"><p v-if="loading" class="dropdown-note">正在加载扰动列表…</p><p v-else-if="!filteredItems.length" class="dropdown-note">无匹配的可用扰动</p><template v-else><button v-for="(symbol,index) in filteredItems" :id="`perturbation-option-${index}`" :key="symbol" type="button" role="option" :aria-label="symbol" :aria-selected="modelValue===symbol" class="dropdown-item" :class="{highlighted:index===highlightIndex}" @mousedown.prevent @click="pick(symbol)">{{ symbol }}<small aria-hidden="true">{{ categoryNames(symbol) }}</small></button></template></div>
++    <div class="gene-picker-controls">
++      <label class="label" for="perturbation-category">基因功能分类 · Gene function class</label>
++      <select id="perturbation-category" v-model="category" class="input gene-category-select" :disabled="loading" @change="changeCategory"><option value="">全部可用扰动基因</option><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name_zh }} · {{ item.name_en }}（{{ item.count }}）</option></select>
++      <label class="label" for="perturbation-input">扰动基因</label>
++      <div class="perturbation-box">
++        <input id="perturbation-input" v-model="query" class="input" type="text" role="combobox" :aria-expanded="dropdownOpen" aria-controls="perturbation-listbox" :aria-activedescendant="dropdownOpen && highlightIndex>=0 ? `perturbation-option-${highlightIndex}` : undefined" aria-autocomplete="list" placeholder="搜索扰动基因…" autocomplete="off" :disabled="loading" @focus="openDropdown" @click="openDropdown" @input="openDropdown" @blur="closeSoon" @keydown="keydown" />
++        <div v-if="dropdownOpen" id="perturbation-listbox" class="dropdown" role="listbox" aria-label="可选扰动基因"><p v-if="loading" class="dropdown-note">正在加载扰动列表…</p><p v-else-if="!filteredItems.length" class="dropdown-note">无匹配的可用扰动</p><template v-else><button v-for="(symbol,index) in filteredItems" :id="`perturbation-option-${index}`" :key="symbol" type="button" role="option" :aria-label="symbol" :aria-selected="modelValue===symbol" class="dropdown-item" :class="{highlighted:index===highlightIndex}" @mousedown.prevent @click="pick(symbol)">{{ symbol }}<small aria-hidden="true">{{ categoryNames(symbol) }}</small></button></template></div>
++      </div>
++    </div>
++    <div class="gene-picker-details">
++      <p v-if="selectedAnnotation" class="selected-gene-annotation"><strong>已选 {{ selectedAnnotation.symbol }}</strong><span v-if="selectedAnnotation.name_zh" lang="zh-CN">{{ selectedAnnotation.name_zh }}</span><span lang="en">{{ selectedAnnotation.name_en }}</span><span>{{ categoryNames(selectedAnnotation.symbol) }}</span></p>
++      <slot />
++      <GeneCategoryGuide :categories="categories" :selected="category" />
++      <p v-if="warning" class="field-error">{{ warning }}</p>
++      <p v-if="error" class="field-error">扰动列表加载失败：{{ error }} <button type="button" class="btn btn-ghost btn-sm" @click="emit('retry')">重试</button></p>
+     </div>
+-    <p v-if="selectedAnnotation" class="selected-gene-annotation"><strong>已选 {{ selectedAnnotation.symbol }}</strong><span v-if="selectedAnnotation.name_zh" lang="zh-CN">{{ selectedAnnotation.name_zh }}</span><span lang="en">{{ selectedAnnotation.name_en }}</span><span>{{ categoryNames(selectedAnnotation.symbol) }}</span></p>
+-    <slot />
+-    <GeneCategoryGuide :categories="categories" :selected="category" />
+-    <p v-if="warning" class="field-error">{{ warning }}</p>
+-    <p v-if="error" class="field-error">扰动列表加载失败：{{ error }} <button type="button" class="btn btn-ghost btn-sm" @click="emit('retry')">重试</button></p>
+   </div>
+ </template>
+ 
+diff --git a/frontend/src/components/MeasuredSetup.vue b/frontend/src/components/MeasuredSetup.vue
+index 72140b2..b8a6ae5 100644
+--- a/frontend/src/components/MeasuredSetup.vue
++++ b/frontend/src/components/MeasuredSetup.vue
+@@ -76,9 +76,11 @@ onBeforeUnmount(() => lifetime.abort())
+         <div class="sampling-fields"><div><label class="label" for="measured-cap">目标实测细胞上限</label><input id="measured-cap" v-model="draft.measuredMaxCells" type="number" min="1" max="4096" step="1" class="input" aria-describedby="measured-cap-hint"/><p v-if="maxCellsError" class="field-error">{{ maxCellsError }}</p><p id="measured-cap-hint" class="field-hint">1–4096；控制实测扰动组采样上限，对照数量另行核验。</p></div><div><label class="label" for="measured-seed">采样种子</label><input id="measured-seed" v-model="draft.measuredSeed" type="number" min="0" max="2147483647" step="1" class="input"/><p v-if="seedError" class="field-error">{{ seedError }}</p><p class="field-hint">固定种子便于重现。</p></div></div>
+       </div>
+       <div class="measured-target"><GenePicker v-model="draft.perturbation" :context="draft.cellLine" :items="choices?.items ?? []" :genes="choices?.genes" :categories="choices?.categories" :loading="choicesLoading" :error="choicesError" :warning="choices?.classification?.warning" @retry="choicesRefresh++">
++      </GenePicker></div>
++      <div class="measured-support">
+         <div class="coverage-state" role="status"><span v-if="coverageLoading">正在核对固定源覆盖…</span><template v-else-if="coverageError"><span>覆盖读取失败：{{ coverageError }}</span><button type="button" class="btn btn-sm" @click="coverageRefresh++">重试覆盖查询</button></template><template v-else-if="coverage?.source_status === 'measured'"><strong>固定源有实测数据</strong><span>源中扰动细胞 {{ coverage.source_cell_count ?? '未知' }} 个</span><span>{{ coverage.local_verified ? `本地已核验 ${coverage.local_measured_cells} 个实测扰动细胞` : '启动时按需读取这一组合的数据' }}</span></template><span v-else-if="coverage?.source_status === 'not_in_source'">当前固定源未收录该组合的实测数据，可切换实验类型查看模型预测。</span><span v-else-if="coverage?.source_status === 'unknown'">该组合的源覆盖尚未确认，暂不能启动实测分析。</span><span v-else>输入扰动基因后核对实测覆盖。</span><span v-if="coverage && !coverage.model_supported">该组合未列入当前模型的支持词表，不影响已确认数据的实测分析。</span></div>
+         <RouterLink :to="catalogTarget" class="catalog-link">查询这一组合的数据覆盖 →</RouterLink>
+-      </GenePicker></div>
++      </div>
+     </fieldset>
+     <p v-if="actionError" class="notice notice-danger" role="alert">{{ actionError }}</p>
+     <div v-if="draft.measuredUncertain" class="notice notice-warn" role="alert"><p>提交结果待确认。请先核对实验记录，避免重复创建。</p><div class="btn-row"><RouterLink to="/records?category=measured" class="btn btn-sm">核对实测记录</RouterLink><button class="btn btn-sm" type="button" :disabled="draft.measuredSubmitting" @click="draft.measuredUncertain=false">已核对记录，允许再次提交</button></div></div>
+@@ -88,4 +90,18 @@ onBeforeUnmount(() => lifetime.abort())
+ 
+ <style scoped>
+ .measured-setup{padding:24px;display:grid;gap:18px}.measured-fields{padding:0;margin:0;border:0;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:32px}.measured-fields>div{min-width:0}.measured-fields .label{margin:0 0 8px}.measured-fields .input,.measured-fields .select{width:100%;min-height:42px}.sampling-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px}.field-hint{font-size:11px;color:var(--muted);line-height:1.8;margin:8px 0 0}.field-error{font-size:12px;color:var(--danger)}.coverage-state{margin:16px 0;padding:15px;font-size:12px;line-height:1.9;color:var(--muted)}.coverage-state span{display:block}.coverage-state strong{color:var(--primary);font-weight:500}.catalog-link{font-size:12px;color:var(--primary)}.measured-submit{justify-self:end;min-width:170px;padding:11px 22px;font-size:13px}.notice p{margin-top:0}@media(max-width:900px){.measured-fields{grid-template-columns:1fr;gap:24px}}@media(max-width:480px){.sampling-fields{grid-template-columns:1fr}}
++
++.measured-fields>.measured-context,.measured-fields>.measured-target{display:contents}
++.measured-context :deep(.cell-background-picker){grid-column:1;grid-row:1;display:flex;flex-direction:column}
++.measured-context :deep(.cell-choice-group){flex:1}
++.measured-context .sampling-fields{grid-column:1;grid-row:2;margin-top:0;align-content:start}
++.measured-target :deep(.gene-picker){display:contents}
++.measured-target :deep(.gene-picker-controls){grid-column:2;grid-row:1;min-width:0}
++.measured-target :deep(.gene-picker-details){grid-column:2;grid-row:2;min-width:0}
++.measured-target :deep(.gene-picker-details>:first-child){margin-top:0}
++.measured-support{grid-column:1/-1;border-top:1px solid var(--border);padding-top:18px}
++.measured-support .coverage-state{padding:0;margin:0 0 10px}
++@media(max-width:900px){
++  .measured-context :deep(.cell-background-picker),.measured-context .sampling-fields,.measured-target :deep(.gene-picker-controls),.measured-target :deep(.gene-picker-details){grid-column:1;grid-row:auto}
++}
+ </style>
+diff --git a/frontend/src/components/ParamPanel.vue b/frontend/src/components/ParamPanel.vue
+index 6c8f1f3..80dada2 100644
+--- a/frontend/src/components/ParamPanel.vue
++++ b/frontend/src/components/ParamPanel.vue
+@@ -201,6 +201,13 @@ async function copySubmitDiagnostics(): Promise<void> {
+         <!-- 扰动基因 -->
+         <div class="field perturbation-field">
+           <GenePicker v-model="draft.perturbation" :context="draft.cellLine" :items="perturbationState?.items ?? []" :genes="perturbationState?.genes" :categories="geneCategories" :loading="perturbationState?.loading ?? true" :error="perturbationState?.error?.message" :warning="perturbationState?.classification?.warning" @retry="catalog.loadPerturbations(draft.cellLine, 'online', true)">
++          </GenePicker>
++          <p v-if="perturbationError && draft.perturbation && !perturbationState?.error" class="field-error">
++            {{ perturbationError }}
++          </p>
++        </div>
++
++        <div v-if="draft.perturbation || measuredOptions.length" class="source-details">
+           <div v-if="draft.perturbation" class="source-coverage" aria-live="polite">
+             <p v-if="sourceLoading">正在核对当前固定源的实测覆盖…</p>
+             <template v-else-if="sourceCoverage?.source_status === 'measured'"><strong>该组合在固定源中有实测数据</strong><p>源中有 {{ sourceCoverage.source_cell_count ?? '未知数量的' }} 个目标扰动细胞；{{ sourceCoverage.local_verified ? '本地已有经核验的实测数据。' : '实测分析可按需读取这一组合。' }}</p><RouterLink :to="measuredTarget" class="btn btn-primary btn-sm">直接分析实测数据</RouterLink><p>如需评估模型，可明确运行下方预测，再在结果的“实测对比”中查看可用评估。</p></template>
+@@ -210,10 +217,6 @@ async function copySubmitDiagnostics(): Promise<void> {
+             <RouterLink :to="catalogTarget" class="source-catalog-link">查看该组合的数据覆盖 →</RouterLink>
+           </div>
+           <div v-if="measuredOptions.length" class="measured-shortcuts"><span>本地已备实测对比：</span><button v-for="item in measuredOptions" :key="item.perturbation" type="button" @click="draft.perturbation=item.perturbation">{{item.perturbation}} · {{item.measured_cells}} 个实测细胞</button></div>
+-          </GenePicker>
+-          <p v-if="perturbationError && draft.perturbation && !perturbationState?.error" class="field-error">
+-            {{ perturbationError }}
+-          </p>
+         </div>
+ 
+         <p v-if="!onlineReady" class="notice notice-warn">
+@@ -326,4 +329,24 @@ async function copySubmitDiagnostics(): Promise<void> {
+ }
+ .measured-shortcuts{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:10px;color:var(--muted)}.measured-shortcuts>span,.measured-shortcuts>small{flex-basis:100%;line-height:1.8}.measured-shortcuts>button{background:var(--card);border:1px solid var(--border);color:var(--primary);padding:6px 9px;cursor:pointer;font:inherit}
+ .source-coverage{margin:12px 0;padding:0;font-size:11px;line-height:1.8;color:var(--muted)}.source-coverage>strong{font-weight:500;color:var(--primary)}.source-coverage>p{margin:7px 0}.source-coverage .btn{font-size:11px}.source-catalog-link{display:inline-block;margin-top:6px;color:var(--primary)}
++
++/* Share rows so the two input columns align independently of coverage notes. */
++.horizontal .context-field,.horizontal .perturbation-field{display:contents}
++.horizontal .context-field :deep(.cell-background-picker){grid-column:1;grid-row:1;display:flex;flex-direction:column}
++.horizontal .context-field :deep(.cell-choice-group){flex:1}
++.horizontal .sampling-fields{grid-column:1;grid-row:2;margin-top:0;align-content:start}
++.horizontal .perturbation-field :deep(.gene-picker){display:contents}
++.horizontal .perturbation-field :deep(.gene-picker-controls){grid-column:2;grid-row:1;min-width:0}
++.horizontal .perturbation-field :deep(.gene-picker-details){grid-column:2;grid-row:2;min-width:0}
++.horizontal .perturbation-field :deep(.gene-picker-details>:first-child){margin-top:0}
++.horizontal .perturbation-field>.field-error{grid-column:2}
++.source-details{border-top:1px solid var(--border);padding-top:18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start}
++.horizontal .source-details{grid-column:1/-1}
++.source-details .source-coverage,.source-details .measured-shortcuts{margin:0;min-width:0}
++.source-details .measured-shortcuts{max-width:300px}
++@media(max-width:900px){
++  .horizontal>.card{grid-template-columns:1fr}
++  .horizontal .context-field :deep(.cell-background-picker),.horizontal .sampling-fields,.horizontal .perturbation-field :deep(.gene-picker-controls),.horizontal .perturbation-field :deep(.gene-picker-details),.horizontal .perturbation-field>.field-error{grid-column:1;grid-row:auto}
++  .source-details{grid-template-columns:1fr}
++}
+ </style>
+diff --git a/frontend/src/components/ResultOverview.vue b/frontend/src/components/ResultOverview.vue
+index 784e348..35c05c4 100644
+--- a/frontend/src/components/ResultOverview.vue
++++ b/frontend/src/components/ResultOverview.vue
+@@ -29,7 +29,7 @@ const categoryTasks = computed(() => rankedTasks.value.filter(task => activeCate
+ const visibleTasks = computed(() => showAllTasks.value ? categoryTasks.value : categoryTasks.value.slice(0, 8))
+ const selectedTask = computed(() => visibleTasks.value.find(task => task.id === selectedTaskId.value) ?? visibleTasks.value[0] ?? null)
+ const comparison = computed(() => selectedTask.value ? comparisonBars(selectedTask.value, props.sourceKind) : null)
+-const topGenes = computed(() => rankGenes(props.genes).slice(0, 5))
++const topGenes = computed(() => rankGenes(props.genes).slice(0, 12))
+ const fullCount = computed(() => props.tasks.filter(task => coverageState(task.coverage) === 'full').length)
+ const partialCount = computed(() => props.tasks.filter(task => coverageState(task.coverage) === 'partial').length)
+ const unknownCount = computed(() => props.tasks.length - fullCount.value - partialCount.value)
+@@ -105,7 +105,7 @@ function selectTask(id: string) {
+       </aside>
+ 
+       <div class="function-summary">
+-        <div class="function-heading">
++        <div class="overview-function-heading">
+           <div class="section-heading"><span class="section-index">02</span><h3>代谢相关功能</h3></div>
+           <span class="task-total">已加载 {{ tasks.length }} 项任务</span>
+         </div>
+@@ -157,7 +157,10 @@ function selectTask(id: string) {
+ 
+ <style scoped>
+ .result-overview{container-type:inline-size;margin:0 0 24px;border:1px solid var(--border);background:var(--card);border-radius:8px;overflow:hidden;color:var(--ink)}
+-.overview-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 28px 20px}.eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 12px;font-size:11px;letter-spacing:.06em;color:var(--muted)}.eyebrow span{padding:3px 7px;background:var(--primary-weak);color:var(--primary-strong);border-radius:3px;letter-spacing:0}.overview-heading h2{font-size:27px;font-weight:500;margin:0;letter-spacing:-.025em}.overview-heading h2>span{color:var(--border-strong);padding:0 8px;font-weight:300}.overview-subtitle{font-size:12px;color:var(--muted);margin:9px 0 0;line-height:1.7}.interpret-button{border:1px solid var(--primary);background:var(--primary-weak);color:var(--primary-strong);padding:10px 14px;border-radius:5px;cursor:pointer;font-size:12px;white-space:nowrap}.interpret-button span{margin-left:14px}.interpret-button:disabled{opacity:.5;cursor:default}.population-counts{display:flex;gap:24px;flex-wrap:wrap;padding:0 28px 20px;font-size:11px;color:var(--muted)}.population-counts>span{display:flex;gap:6px;align-items:center}.population-counts strong{font-size:13px;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}.population-counts i{height:6px;width:6px;border-radius:50%;background:var(--border-strong)}.population-counts i.predicted{background:var(--primary)}.population-counts i.observed{background:#bc8455}.evidence-notes{margin:0 28px 22px;padding:11px 14px;background:var(--surface-soft);border-left:2px solid var(--border-strong);font-size:11px;line-height:1.8;color:var(--muted)}.evidence-notes p{margin:3px 0}.evidence-notes strong{font-weight:500;color:var(--ink)}.evidence-notes .baseline-failed strong{color:#a36432}.overview-body{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,2fr);border-top:1px solid var(--border)}.gene-summary{padding:24px;border-right:1px solid var(--border)}.function-summary{padding:24px;min-width:0}.section-heading{display:flex;gap:10px;align-items:baseline}.section-index{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}.section-heading h3{font-size:15px;font-weight:500;margin:0}.section-caption{font-size:11px;line-height:1.8;color:var(--muted);margin:10px 0 16px}.gene-list{border-top:1px solid var(--border)}.gene-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:15px 0;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--ink);cursor:pointer}.gene-identity{flex:1;min-width:0;overflow-wrap:anywhere}.gene-identity strong{display:block;font-size:13px;font-weight:500}.gene-identity small{display:block;font-size:10px;color:var(--faint);margin-top:3px}.row-arrow{color:var(--faint);font-size:12px}.delta-number{font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}.delta-number.positive{color:#a45c35}.delta-number.negative{color:var(--primary-strong)}.delta-number.missing{color:var(--faint);font-size:10px}.reading-note{font-size:10px;line-height:1.9;color:var(--muted);margin:18px 0 0}.function-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.task-total{font-size:10px;color:var(--faint)}.coverage-summary{display:flex;gap:18px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-bottom:14px}.coverage-summary strong{font-weight:500;color:var(--ink);margin-left:3px}.category-list{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}.category-list button{border:1px solid var(--border);border-radius:4px;padding:6px 9px;background:var(--card);font-size:10px;color:var(--muted);cursor:pointer}.category-list button[aria-pressed=true]{border-color:var(--primary);color:var(--primary-strong);background:var(--primary-weak)}.function-detail{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(210px,1fr);gap:20px;align-items:start}.task-selection{min-width:0}.task-list-heading{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--faint);padding:0 9px 9px}.task-list{display:grid;gap:4px;max-height:430px;overflow-y:auto;padding:2px}.task-row{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:10px;border:1px solid transparent;border-radius:4px;background:var(--surface-soft);color:var(--ink);cursor:pointer;width:100%}.task-row[aria-pressed=true]{border-color:var(--primary);background:var(--primary-weak)}.task-identity{min-width:0;overflow-wrap:anywhere}.task-identity strong{display:block;font-size:11px;line-height:1.6;font-weight:500}.task-identity small{display:block;font-size:9px;color:var(--muted);margin-top:4px}.task-identity small.full{color:var(--primary-strong)}.task-row .delta-number{font-size:11px}.task-row .delta-number.missing{font-size:9px}.show-all{font-size:10px;color:var(--primary-strong);border:0;background:transparent;cursor:pointer;padding:12px 2px 0;text-align:left;line-height:1.7}.task-comparison{padding:18px;border:1px solid var(--border);border-radius:5px;min-width:0}.detail-label{font-size:10px;color:var(--faint);margin:0 0 9px}.task-comparison h4{font-size:14px;font-weight:500;line-height:1.6;margin:0;overflow-wrap:anywhere}.task-id{font-size:9px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere;margin:6px 0 10px}.coverage-tag{display:inline-block;font-size:9px;padding:4px 6px;border:1px solid var(--border);border-radius:3px;color:var(--muted)}.coverage-tag.full{color:var(--primary-strong);background:var(--primary-weak);border-color:transparent}.comparison-bars{margin:22px 0 18px}.comparison-row{margin-bottom:16px}.bar-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:10px;color:var(--muted);margin-bottom:7px}.bar-heading strong{font-size:11px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}.bar-track{height:9px;position:relative;background:var(--figure-track-bg);border-radius:2px}.bar-track.missing{background:repeating-linear-gradient(135deg,var(--border) 0,var(--border) 3px,var(--surface-soft) 3px,var(--surface-soft) 6px)}.bar-fill{position:absolute;top:0;height:100%;background:var(--border-strong);border-radius:1px}.bar-fill.predicted{background:var(--primary)}.bar-fill.observed{background:#bc8455}.zero-marker{position:absolute;top:-2px;height:13px;width:1px;background:var(--faint);z-index:1}.scale-labels{display:flex;justify-content:space-between;gap:5px;font-size:9px;color:var(--faint);font-variant-numeric:tabular-nums}.comparison-note,.missing-key{font-size:10px;line-height:1.8;color:var(--muted);margin:10px 0 0}.missing-key{font-size:9px;color:var(--faint)}.overview-footer{font-size:10px;line-height:1.8;color:var(--muted);background:var(--surface-soft);padding:13px 28px;border-top:1px solid var(--border)}.overview-empty{padding:36px 28px;border-top:1px solid var(--border);font-size:13px}.overview-empty strong{font-weight:500}.overview-empty p,.small-empty{font-size:12px;color:var(--muted);line-height:1.8}.gene-row:hover,.task-row:hover{background:var(--primary-weak)}button:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
++.overview-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 28px 20px}.eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 12px;font-size:11px;letter-spacing:.06em;color:var(--muted)}.eyebrow span{padding:3px 7px;background:var(--primary-weak);color:var(--primary-strong);border-radius:3px;letter-spacing:0}.overview-heading h2{font-size:27px;font-weight:500;margin:0;letter-spacing:-.025em}.overview-heading h2>span{color:var(--border-strong);padding:0 8px;font-weight:300}.overview-subtitle{font-size:12px;color:var(--muted);margin:9px 0 0;line-height:1.7}.interpret-button{border:1px solid var(--primary);background:var(--primary-weak);color:var(--primary-strong);padding:10px 14px;border-radius:5px;cursor:pointer;font-size:12px;white-space:nowrap}.interpret-button span{margin-left:14px}.interpret-button:disabled{opacity:.5;cursor:default}.population-counts{display:flex;gap:24px;flex-wrap:wrap;padding:0 28px 20px;font-size:11px;color:var(--muted)}.population-counts>span{display:flex;gap:6px;align-items:center}.population-counts strong{font-size:13px;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}.population-counts i{height:6px;width:6px;border-radius:50%;background:var(--border-strong)}.population-counts i.predicted{background:var(--primary)}.population-counts i.observed{background:#bc8455}.evidence-notes{margin:0 28px 22px;padding:11px 14px;background:var(--surface-soft);border-left:2px solid var(--border-strong);font-size:11px;line-height:1.8;color:var(--muted)}.evidence-notes p{margin:3px 0}.evidence-notes strong{font-weight:500;color:var(--ink)}.evidence-notes .baseline-failed strong{color:#a36432}.overview-body{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,2fr);border-top:1px solid var(--border)}.gene-summary{padding:24px;border-right:1px solid var(--border)}.function-summary{padding:24px;min-width:0}.section-heading{display:flex;gap:10px;align-items:baseline}.section-index{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}.section-heading h3{font-size:15px;font-weight:500;margin:0}.section-caption{font-size:11px;line-height:1.8;color:var(--muted);margin:10px 0 16px}.gene-list{border-top:1px solid var(--border)}.gene-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:15px 0;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--ink);cursor:pointer}.gene-identity{flex:1;min-width:0;overflow-wrap:anywhere}.gene-identity strong{display:block;font-size:13px;font-weight:500}.gene-identity small{display:block;font-size:10px;color:var(--faint);margin-top:3px}.row-arrow{color:var(--faint);font-size:12px}.delta-number{font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}.delta-number.positive{color:#a45c35}.delta-number.negative{color:var(--primary-strong)}.delta-number.missing{color:var(--faint);font-size:10px}.reading-note{font-size:10px;line-height:1.9;color:var(--muted);margin:18px 0 0}.overview-function-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.task-total{font-size:10px;color:var(--faint)}.coverage-summary{display:flex;gap:18px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-bottom:14px}.coverage-summary strong{font-weight:500;color:var(--ink);margin-left:3px}.category-list{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}.category-list button{border:1px solid var(--border);border-radius:4px;padding:6px 9px;background:var(--card);font-size:10px;color:var(--muted);cursor:pointer}.category-list button[aria-pressed=true]{border-color:var(--primary);color:var(--primary-strong);background:var(--primary-weak)}.function-detail{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(210px,1fr);gap:20px;align-items:start}.task-selection{min-width:0}.task-list-heading{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--faint);padding:0 9px 9px}.task-list{display:grid;gap:4px;max-height:430px;overflow-y:auto;padding:2px}.task-row{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:10px;border:1px solid transparent;border-radius:4px;background:var(--surface-soft);color:var(--ink);cursor:pointer;width:100%}.task-row[aria-pressed=true]{border-color:var(--primary);background:var(--primary-weak)}.task-identity{min-width:0;overflow-wrap:anywhere}.task-identity strong{display:block;font-size:11px;line-height:1.6;font-weight:500}.task-identity small{display:block;font-size:9px;color:var(--muted);margin-top:4px}.task-identity small.full{color:var(--primary-strong)}.task-row .delta-number{font-size:11px}.task-row .delta-number.missing{font-size:9px}.show-all{font-size:10px;color:var(--primary-strong);border:0;background:transparent;cursor:pointer;padding:12px 2px 0;text-align:left;line-height:1.7}.task-comparison{padding:18px;border:1px solid var(--border);border-radius:5px;min-width:0}.detail-label{font-size:10px;color:var(--faint);margin:0 0 9px}.task-comparison h4{font-size:14px;font-weight:500;line-height:1.6;margin:0;overflow-wrap:anywhere}.task-id{font-size:9px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere;margin:6px 0 10px}.coverage-tag{display:inline-block;font-size:9px;padding:4px 6px;border:1px solid var(--border);border-radius:3px;color:var(--muted)}.coverage-tag.full{color:var(--primary-strong);background:var(--primary-weak);border-color:transparent}.comparison-bars{margin:22px 0 18px}.comparison-row{margin-bottom:16px}.bar-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:10px;color:var(--muted);margin-bottom:7px}.bar-heading strong{font-size:11px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}.bar-track{height:9px;position:relative;background:var(--figure-track-bg);border-radius:2px}.bar-track.missing{background:repeating-linear-gradient(135deg,var(--border) 0,var(--border) 3px,var(--surface-soft) 3px,var(--surface-soft) 6px)}.bar-fill{position:absolute;top:0;height:100%;background:var(--border-strong);border-radius:1px}.bar-fill.predicted{background:var(--primary)}.bar-fill.observed{background:#bc8455}.zero-marker{position:absolute;top:-2px;height:13px;width:1px;background:var(--faint);z-index:1}.scale-labels{display:flex;justify-content:space-between;gap:5px;font-size:9px;color:var(--faint);font-variant-numeric:tabular-nums}.comparison-note,.missing-key{font-size:10px;line-height:1.8;color:var(--muted);margin:10px 0 0}.missing-key{font-size:9px;color:var(--faint)}.overview-footer{font-size:10px;line-height:1.8;color:var(--muted);background:var(--surface-soft);padding:13px 28px;border-top:1px solid var(--border)}.overview-empty{padding:36px 28px;border-top:1px solid var(--border);font-size:13px}.overview-empty strong{font-weight:500}.overview-empty p,.small-empty{font-size:12px;color:var(--muted);line-height:1.8}.gene-row:hover,.task-row:hover{background:var(--primary-weak)}button:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
++.gene-summary{display:flex;flex-direction:column;min-width:0}
++.gene-list{display:grid;flex:1;grid-auto-rows:minmax(40px,1fr)}
++.gene-row{min-height:40px;padding:10px 0}
+ @media(max-width:1350px){.overview-heading{padding:22px}.population-counts{padding-left:22px;padding-right:22px}.gene-summary,.function-summary{padding:18px}.overview-body{grid-template-columns:minmax(190px,.7fr) minmax(0,2fr)}.function-detail{gap:12px;grid-template-columns:minmax(0,1fr) minmax(190px,1fr)}.task-comparison{padding:14px}.evidence-notes{margin-left:22px;margin-right:22px}}
+ @media(max-width:1000px){.overview-body{grid-template-columns:1fr}.gene-summary{border-right:0;border-bottom:1px solid var(--border)}.gene-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px}.function-detail{grid-template-columns:minmax(0,1.1fr) minmax(210px,1fr)}}
+ @container(max-width:900px){.overview-body{grid-template-columns:1fr}.gene-summary{border-right:0;border-bottom:1px solid var(--border)}.gene-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px}}
+diff --git a/frontend/src/views/ResearchView.vue b/frontend/src/views/ResearchView.vue
+index ccfacb2..8da3260 100644
+--- a/frontend/src/views/ResearchView.vue
++++ b/frontend/src/views/ResearchView.vue
+@@ -49,5 +49,5 @@ const description = computed(() => experimentType.value === 'measured'
+ </template>
+ 
+ <style scoped>
+-.research-page{max-width:1500px;margin:0 auto}.experiment-setup{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);overflow:visible}.setup-heading{padding:24px 28px;display:flex;justify-content:space-between;gap:32px;align-items:center;border-bottom:1px solid var(--border)}.setup-heading h2{font-size:18px;font-weight:500;margin:0 0 8px}.setup-heading p{font-size:12px;line-height:1.8;color:var(--muted);margin:0}.experiment-type-field{width:230px;flex-shrink:0}.experiment-type-field .label{margin:0 0 8px}.experiment-type-field select{width:100%;min-height:42px}.experiment-description{display:flex;align-items:baseline;gap:16px;margin:0;padding:12px 28px 0;color:var(--muted);font-size:12px;line-height:1.9}.experiment-description>span{white-space:nowrap;color:var(--primary);font-weight:600}.experiment-setup :deep(.param-panel>.card){border:0;margin:0;background:transparent;border-radius:0}.research-notes{display:flex;justify-content:space-between;gap:24px;margin-top:22px;font-size:12px;color:var(--muted);line-height:1.8}.research-notes p{margin:0}.research-notes a{color:var(--primary);white-space:nowrap}@media(max-width:900px){.setup-heading{align-items:flex-start;flex-direction:column;gap:18px}.experiment-type-field{width:100%}.research-notes{flex-direction:column;gap:8px}.experiment-setup :deep(.horizontal>.card){grid-template-columns:1fr}.experiment-setup :deep(.horizontal .perturbation-field){grid-column:1}.experiment-description{align-items:flex-start;flex-direction:column;gap:4px}}
++.research-page{max-width:1500px;margin:0 auto}.experiment-setup{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);overflow:visible}.setup-heading{padding:24px 28px;display:flex;justify-content:space-between;gap:32px;align-items:flex-start;border-bottom:1px solid var(--border)}.setup-heading h2{font-size:18px;font-weight:500;margin:0 0 8px}.setup-heading p{font-size:12px;line-height:1.8;color:var(--muted);margin:0}.experiment-type-field{width:230px;flex-shrink:0}.experiment-type-field .label{margin:0 0 8px}.experiment-type-field select{width:100%;min-height:42px}.experiment-description{display:flex;align-items:baseline;gap:16px;margin:0;padding:12px 28px 0;color:var(--muted);font-size:12px;line-height:1.9}.experiment-description>span{white-space:nowrap;color:var(--primary);font-weight:600}.experiment-setup :deep(.param-panel>.card){border:0;margin:0;background:transparent;border-radius:0}.research-notes{display:flex;justify-content:space-between;gap:24px;margin-top:22px;font-size:12px;color:var(--muted);line-height:1.8}.research-notes p{margin:0}.research-notes a{color:var(--primary);white-space:nowrap}@media(max-width:900px){.setup-heading{align-items:flex-start;flex-direction:column;gap:18px}.experiment-type-field{width:100%}.research-notes{flex-direction:column;gap:8px}.experiment-setup :deep(.horizontal>.card){grid-template-columns:1fr}.experiment-setup :deep(.horizontal .perturbation-field){grid-column:1}.experiment-description{align-items:flex-start;flex-direction:column;gap:4px}}
+ </style>

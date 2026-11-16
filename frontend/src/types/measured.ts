@@ -4,19 +4,20 @@ export type MeasuredTableKind = 'genes' | 'tasks' | 'reactions'
 export type MeasuredDownloadKind = 'bundle' | MeasuredTableKind | 'projection' | 'report'
 export interface MeasuredRequest { cell_line: MeasuredCellLine; perturbation: string; max_cells: number; seed: number }
 export interface MeasuredRow {
-  gene?: string; task?: string; reaction?: string; label?: string
+  gene?: string; task?: string; reaction?: string; label?: string; category?: string | null; subcategory?: string | null
   control: number | null; observed: number | null; observed_delta: number | null; gene_fraction?: number | null
 }
 export interface MeasuredCounts { control: number; observed: number }
 export interface MeasuredSummary {
-  analysis_id: string; source_kind: 'measured'; cell_line: MeasuredCellLine; perturbation: string
+  analysis_id: string; source_kind: 'measured'; cell_line: string; perturbation: string
   input_counts: MeasuredCounts; counts: MeasuredCounts; source_cell_count: number; gene_count: number
   expression_units: string; top_genes: MeasuredRow[]
   metabolism: { available: boolean; database_version?: string; task_count?: number; reaction_count?: number; top_tasks?: MeasuredRow[]; reason?: string }
   projections: { pca: { available: boolean; method?: string; reason?: string }; umap: { available: boolean; method?: string; reason?: string } }
   batch_matching: Record<string, unknown>; warnings: string[]; provenance: Record<string, unknown>; limitations?: string[]
 }
-export interface MeasuredAnalysis extends MeasuredRequest {
+export interface MeasuredAnalysis extends Omit<MeasuredRequest, 'cell_line'> {
+  cell_line: string; import_id?: string | null; source?: { kind?: string; import_id?: string; [key: string]: unknown }
   id: string; status: MeasuredStatus; progress: number; message: string | null
   created_at: string; updated_at: string; source_kind: 'measured'; summary: MeasuredSummary | null; error_message: string | null
 }

@@ -1,0 +1,127 @@
+{
+  "source_root": "D:\\全球校园人工智能精英大赛\\celllens-national",
+  "old_frozen_files": 138,
+  "old_frozen_files_unchanged": true,
+  "h5_preflight_real_fixture_passed": true,
+  "checks": [
+    {
+      "record": "run_7413f05770d14a22",
+      "endpoint": "result",
+      "status": 200,
+      "sha256": "a083601587c95b7eb202f5095dacd3b655c00522a4c029f4a4f759d789f42bae"
+    },
+    {
+      "record": "run_7413f05770d14a22",
+      "endpoint": "/export",
+      "status": 200,
+      "sha256": "42273e4029b4ab171d48708383ecb73ce18ee570546fc2b5c4ad77218def8181"
+    },
+    {
+      "record": "run_7413f05770d14a22",
+      "endpoint": "/projection?embedding=pca",
+      "status": 200,
+      "sha256": "941a1f5f8a7aa5ddbaef0f253c473a2d43bda949395d8875eb7b7843ed352db0"
+    },
+    {
+      "record": "measured_beecf1c152044ecaa59df964",
+      "endpoint": "result",
+      "status": 200,
+      "sha256": "b5e2efc782a380b6b2345612c860cc206eecceae0d1ae483edbfc211842d1700"
+    },
+    {
+      "record": "measured_beecf1c152044ecaa59df964",
+      "endpoint": "/export",
+      "status": 200,
+      "sha256": "43a1eec7ce8c1d9d05ad92164759bde31083ba59944b02e625b94bfcd9bfccb1"
+    },
+    {
+      "record": "measured_beecf1c152044ecaa59df964",
+      "endpoint": "/projection?embedding=pca",
+      "status": 200,
+      "sha256": "437da4d4062b905102cb41d110d647797cc7f7e854e93fb9ee255024da3bfda6"
+    },
+    {
+      "record": "measured_9253d6f68c2e484bb6332bc4",
+      "endpoint": "result",
+      "status": 200,
+      "sha256": "10306793738b28d9aa8998f40e4148214d59d9c298ad3b8772f95c0fafefdc8c"
+    },
+    {
+      "record": "measured_9253d6f68c2e484bb6332bc4",
+      "endpoint": "/export",
+      "status": 200,
+      "sha256": "f738534a510fceb857354e38027e2bd8b8c5675348778fe8b707b6518c6f879f"
+    },
+    {
+      "record": "measured_9253d6f68c2e484bb6332bc4",
+      "endpoint": "/projection?embedding=pca",
+      "status": 200,
+      "sha256": "b9df312bbae71bdc9ed479d4073f79135c393bd5097bac117826a657b45b1097"
+    }
+  ],
+  "readiness": {
+    "service": "celllens",
+    "ready": true,
+    "checks": {
+      "database": true
+    },
+    "capabilities": {
+      "result_browsing": true,
+      "cpu_analysis": true,
+      "prediction": true
+    },
+    "workers": {
+      "mode": "external",
+      "live": [
+        {
+          "kind": "gpu",
+          "heartbeat_at": "2026-11-07T10:59:43.392659",
+          "capabilities": {
+            "cpu_analysis": false,
+            "missing_dependencies": [],
+            "prediction": true,
+            "cuda_detected": true,
+            "state_executable": true
+          }
+        },
+        {
+          "kind": "cpu",
+          "heartbeat_at": "2026-11-07T10:59:45.791665",
+          "capabilities": {
+            "cpu_analysis": true,
+            "missing_dependencies": [],
+            "prediction": false
+          }
+        }
+      ],
+      "cpu_available": true,
+      "prediction_available": true
+    }
+  },
+  "assistant_context_local_only_http_status": 200,
+  "processes": {
+    "workspace": "D:\\全球校园人工智能精英大赛\\celllens-national",
+    "api": {
+      "pid": 39052,
+      "parent_pid": 17852,
+      "created_at": "2026-11-07T10:57:32.3148730Z",
+      "command_line": "\"D:\\全球校园人工智能精英大赛\\celllens-national\\.venv\\Scripts\\python.exe\" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --no-proxy-headers"
+    },
+    "gpu_enabled": true,
+    "port": 8028,
+    "gpu": {
+      "pid": 3400,
+      "parent_pid": 17852,
+      "created_at": "2026-11-07T10:57:31.8046240Z",
+      "command_line": "\"D:\\全球校园人工智能精英大赛\\celllens-national\\.venv\\Scripts\\python.exe\" -m backend.app.worker --kind gpu"
+    },
+    "schema_version": 1,
+    "worker": {
+      "pid": 22892,
+      "parent_pid": 17852,
+      "created_at": "2026-11-07T10:57:31.3057980Z",
+      "command_line": "\"D:\\全球校园人工智能精英大赛\\celllens-national\\.venv\\Scripts\\python.exe\" -m backend.app.worker --kind cpu"
+    }
+  },
+  "preserved_findings_count": 1
+}

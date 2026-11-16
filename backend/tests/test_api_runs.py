@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.config import Settings
 from backend.app.main import create_app
-from backend.app.schemas import CreateRunRequest, RunSummary
+from backend.app.schemas import CreateRunRequest, RunStatus, RunSummary
 
 
 def _write_registry(root: Path) -> None:
@@ -69,6 +69,7 @@ def test_old_expression_summary_warning_does_not_rewrite_the_artifact(tmp_path: 
     _write_registry(tmp_path)
     app = create_app(_settings(tmp_path, worker_enabled=False))
     app.state.container.store.create("run_old", CreateRunRequest(cell_line="K562", perturbation="MYC"))
+    app.state.container.store.transition("run_old", RunStatus.COMPLETED, 100)
     root = app.state.container.settings.derived_root / "run_old"
     root.mkdir(parents=True)
     path = root / "summary.json"

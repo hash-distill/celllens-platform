@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.core import registry as registry_module
 from backend.app.main import create_app
+from backend.app.services.worker_status import heartbeat
 from backend.tests.test_api_modes import settings, write_registry
 
 
@@ -23,6 +24,7 @@ def test_context_readiness_reuses_unchanged_asset_hashes_but_execution_rechecks(
 
     monkeypatch.setattr(registry_module, "file_sha256", measured)
     app = create_app(settings(tmp_path, gpu_available=True, worker_enabled=True))
+    heartbeat(app.state.container.store, "test-prediction-worker", "gpu", {"prediction": True})
     with TestClient(app) as client:
         for _ in range(3):
             assert client.get("/api/v1/catalog/contexts").json()[0]["online_ready"]
@@ -36,6 +38,7 @@ def test_context_readiness_reuses_unchanged_asset_hashes_but_execution_rechecks(
 def test_changed_or_removed_asset_immediately_invalidates_readiness(tmp_path):
     write_registry(tmp_path, valid=True)
     app = create_app(settings(tmp_path, gpu_available=True, worker_enabled=True))
+    heartbeat(app.state.container.store, "test-prediction-worker", "gpu", {"prediction": True})
     checkpoint = tmp_path / "models/m/checkpoints/final.ckpt"
     with TestClient(app) as client:
         assert client.get("/api/v1/catalog/contexts").json()[0]["online_ready"]
@@ -50,8 +53,11 @@ def test_changed_or_removed_asset_immediately_invalidates_readiness(tmp_path):
 def test_api_import_does_not_initialize_statistical_diagnostics():
     root = Path(__file__).resolve().parents[2]
     result = subprocess.run(
-        [sys.executable, "-c", "import sys; import backend.app.main; "
-         "assert 'scipy.stats' not in sys.modules"],
+        [
+            sys.executable,
+            "-c",
+            "import sys; import backend.app.main; assert 'scipy.stats' not in sys.modules",
+        ],
         cwd=root,
         env={**os.environ, "CELLLENS_WORKER_ENABLED": "false"},
         capture_output=True,

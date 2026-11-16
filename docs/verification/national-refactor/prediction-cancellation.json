@@ -1,0 +1,7 @@
+{
+  "run_id": "run_25eefe2d4d5143fa",
+  "before_cancel": "state_running",
+  "final_status": "failed",
+  "error_code": "RUN_CANCELLED",
+  "completed_result_directory_exists": false
+}

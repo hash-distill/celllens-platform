@@ -1,0 +1,14 @@
+{
+  "analysis_id": "measured_00c6134fec4544efb1ad3b6d",
+  "state": "completed",
+  "attempt_no": 1,
+  "counts": {
+    "control": 754,
+    "observed": 77
+  },
+  "gene_count": 6546,
+  "task_count": 186,
+  "api_restarted": true,
+  "cpu_worker_restarted": false,
+  "note": "API restarted independently while CPU job was submitted; original worker and attempt retained."
+}

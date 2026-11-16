@@ -27,6 +27,7 @@ from backend.app.services.cell_state import CellStateUnavailable, cell_state_doc
 from backend.app.services.cell_state_figure import render_cell_state
 from backend.app.services.cell_state_preparation import prepared_figure
 from backend.app.services.export_names import figure_filename
+from backend.app.services.worker_status import prediction_ready
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -152,15 +153,13 @@ async def create_run(payload: CreateRunRequest, request: Request) -> CreateRunRe
                 "supported_alternatives": sorted(supported)[:20],
             },
         )
-    if not container.settings.worker_enabled:
+    if not prediction_ready(container):
         raise HTTPException(
             status_code=503,
-            detail={"code": "WORKER_UNAVAILABLE", "message": "The analysis worker is disabled"},
-        )
-    if not container.settings.gpu_available:
-        raise HTTPException(
-            status_code=503,
-            detail={"code": "GPU_UNAVAILABLE", "message": "STATE inference is disabled on this host"},
+            detail={
+                "code": "WORKER_UNAVAILABLE",
+                "message": "没有可用的预测 worker 心跳与 CUDA/runtime 能力；已有排队任务将保留待恢复",
+            },
         )
     try:
         asset_hashes = {
@@ -233,7 +232,7 @@ def get_summary(run_id: str, request: Request) -> RunSummary:
     except KeyError as exc:
         raise HTTPException(status_code=404, detail={"code": "RUN_NOT_FOUND"}) from exc
     summary_path: Path = container.settings.derived_root / run_id / "summary.json"
-    if not summary_path.is_file():
+    if record.status != RunStatus.COMPLETED or not summary_path.is_file():
         return RunSummary(
             run_id=run_id,
             status=record.status,
@@ -321,7 +320,8 @@ def get_metabolic_tasks(
                 delta = grouped.loc["predicted"] - grouped.loc["control"]
                 trace_tasks = _optional_trace_tasks(run_id, request)
                 items = []
-                for task in delta.abs().sort_values(ascending=False).index:
+                # Different task scales are not a shared effect-size ranking.
+                for task in delta.index:
                     value = float(delta[task])
                     if not math.isfinite(value):
                         continue
@@ -349,6 +349,17 @@ def get_metabolic_tasks(
                             "determinant_genes": [],
                         }
                     )
+                items.sort(
+                    key=lambda item: (
+                        -item["coverage"]
+                        if math.isfinite(item["coverage"]) and 0 <= item["coverage"] <= 1
+                        else 1,
+                        item.get("category") or "",
+                        item.get("subcategory") or "",
+                        item["label"],
+                        item["id"],
+                    )
+                )
             except (OSError, ValueError, KeyError, TypeError) as exc:
                 raise HTTPException(status_code=500, detail={"code": "INVALID_ARTIFACT"}) from exc
             return {
@@ -510,8 +521,9 @@ def get_reactions(
     return {"items": items, "limit": limit, "truncated": len(delta) > limit}
 
 
-@router.get("/{run_id}/report", response_class=Response,
-            responses={200: {"content": {"application/pdf": {}}}})
+@router.get(
+    "/{run_id}/report", response_class=Response, responses={200: {"content": {"application/pdf": {}}}}
+)
 def get_report(run_id: str, request: Request) -> Response:
     _artifact_path(run_id, "summary.json", request)
     from backend.app.services.pdf_report import build_report_pdf
@@ -519,17 +531,29 @@ def get_report(run_id: str, request: Request) -> Response:
     try:
         content = build_report_pdf(request.app.state.container, run_id)
     except ImportError as exc:
-        raise HTTPException(status_code=503, detail={
-            "code": "REPORT_DEPENDENCY", "message": "PDF 报告组件暂不可用，请联系管理员",
-        }) from exc
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "REPORT_DEPENDENCY",
+                "message": "PDF 报告组件暂不可用，请联系管理员",
+            },
+        ) from exc
     except (CellStateUnavailable, CellLensError, OSError, KeyError, ValueError) as exc:
-        raise HTTPException(status_code=409, detail={
-            "code": "REPORT_UNAVAILABLE", "message": "报告来源核验失败，请重试或检查运行文件",
-        }) from exc
-    return Response(content, media_type="application/pdf", headers={
-        "Content-Disposition": f'attachment; filename="celllens-{run_id}.pdf"',
-        "Cache-Control": "no-store",
-    })
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "REPORT_UNAVAILABLE",
+                "message": "报告来源核验失败，请重试或检查运行文件",
+            },
+        ) from exc
+    return Response(
+        content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="celllens-{run_id}.pdf"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.get("/{run_id}/provenance")

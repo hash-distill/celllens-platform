@@ -1,0 +1,23 @@
+[Unit]
+Description=CellLens private CPU API
+After=network.target celllens-migrate.service
+Requires=celllens-migrate.service
+
+[Service]
+User=celllens
+Group=celllens
+WorkingDirectory=/srv/celllens
+EnvironmentFile=/etc/celllens/celllens.env
+Environment=CELLLENS_DEPLOYMENT_MODE=private
+Environment=CELLLENS_WORKER_MODE=external
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/celllens/.venv/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/celllens/data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,66 @@
+{
+  "startup_script": "ops/run-local.ps1 -Gpu -Port 8028",
+  "stop_script": "ops/stop-local.ps1",
+  "stop_confirmed": true,
+  "restart_confirmed": true,
+  "ready": {
+    "service": "celllens",
+    "ready": true,
+    "checks": {
+      "database": true
+    },
+    "capabilities": {
+      "result_browsing": true,
+      "cpu_analysis": true,
+      "prediction": true
+    },
+    "workers": {
+      "mode": "external",
+      "live": [
+        {
+          "kind": "cpu",
+          "heartbeat_at": "2026-11-07T05:56:05.61278",
+          "capabilities": {
+            "cpu_analysis": true,
+            "missing_dependencies": [],
+            "prediction": false
+          }
+        },
+        {
+          "kind": "gpu",
+          "heartbeat_at": "2026-11-07T05:56:07.553111",
+          "capabilities": {
+            "cpu_analysis": false,
+            "missing_dependencies": [],
+            "prediction": true,
+            "cuda_detected": true,
+            "state_executable": true
+          }
+        }
+      ],
+      "cpu_available": true,
+      "prediction_available": true
+    }
+  },
+  "public_ready": {
+    "service": "celllens",
+    "ready": true,
+    "checks": {
+      "database": true
+    },
+    "capabilities": {
+      "result_browsing": true,
+      "cpu_analysis": false,
+      "prediction": false
+    },
+    "workers": {
+      "mode": "disabled",
+      "live": [],
+      "cpu_available": false,
+      "prediction_available": false
+    }
+  },
+  "preserved_finding_count": 1,
+  "checked_result": "measured_00c6134fec4544efb1ad3b6d",
+  "test_execution": "real local Windows services"
+}

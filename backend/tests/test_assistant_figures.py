@@ -259,7 +259,14 @@ def test_comparison_context_uses_only_matched_rows_and_population(assistant_clie
     genes = context["data"]["top_genes"]
     assert len(genes) == 20 and genes[0]["id"] == "MATCHED_24" and genes[-1]["id"] == "MATCHED_5"
     assert genes[0]["control"] == 2 and genes[0]["predicted"] == -22 and genes[0]["observed"] == 3
-    assert context["data"]["metabolic_tasks"] == report["tasks"]
+    assert context["data"]["metabolic_tasks"] == [
+        {
+            **task,
+            "coverage": None,
+            "evidence_level": "unknown",
+        }
+        for task in report["tasks"]
+    ]
     assert context["data"]["population_matching"] == report["population_matching"]
     assert context["data"]["units"] == report["units"]
     assert "匹配" in context["scope"] and "原实验" in context["scope"]
@@ -281,6 +288,83 @@ def test_comparison_context_requires_verified_comparison(assistant_client):
     response = client.get("/api/v1/assistant/context", params=params(view="comparison"))
     assert response.status_code == 409, response.text
     assert response.json()["detail"]["code"] == "COMPARISON_UNAVAILABLE"
+    assert not calls
+
+
+def test_comparison_context_exposes_verified_baseline_flip_without_cell_ids_or_network(
+    assistant_client, matched_comparison
+):
+    from backend.app.assistant import interpretation_messages
+    from backend.app.services.comparison_diagnostics import VERSION
+
+    client, calls, figure_calls, _ = assistant_client
+    comparison_dir, _ = matched_comparison
+    root = client.app.state.container.settings.project_root
+    folder = root / "data/derived/comparison_diagnostics" / VERSION / "run_figure"
+    folder.mkdir(parents=True)
+    # Explicit synthetic sensitivity fixture, bound to the fixture comparison.
+    diagnostics = {
+        "version": VERSION,
+        "run_id": "run_figure",
+        "implementation_sha256": "f" * 64,
+        "batch_sensitivity": {
+            "pooled_cells": {"mse_relative_to_no_change": 0.936028},
+            "equal_batch_weight": {"mse_relative_to_no_change": 1.142647},
+            "baseline_conclusion_consistent": False,
+            "limitations": ["批次权重敏感，不能当作稳定增益"],
+            "batch_counts": {"PRIVATE_BATCH_CELL": list(range(5000))},
+        },
+        "evaluation_protocol": {
+            "status": "frozen_selection",
+            "reference_selection_sha256": "b" * 64,
+            "comparison_policy": "仅相同参考群体选择指纹可横比",
+            "selected_cells": ["PRIVATE_REFERENCE_CELL"] * 5000,
+        },
+        "task_statistics": {
+            "stratified_metrics": {"unknown": {"finite_paired_task_count": 1, "spearman": None}},
+            "distinct_mean_triplets_8dp": 1,
+            "independence_note": "有限任务数不是独立证据数",
+        },
+        "task_score_structures": {},
+    }
+    atomic_write_json(folder / "diagnostics.json", diagnostics)
+    atomic_write_json(
+        folder / "manifest.json",
+        {
+            "version": VERSION,
+            "run_id": "run_figure",
+            "comparison_manifest_sha256": file_sha256(comparison_dir / "manifest.json"),
+            "comparison_sha256": file_sha256(comparison_dir / "comparison.json"),
+            "diagnostics_sha256": file_sha256(folder / "diagnostics.json"),
+        },
+    )
+    response = client.get("/api/v1/assistant/context", params=params(view="comparison"))
+    assert response.status_code == 200, response.text
+    context = response.json()
+    comparison = context["data"]["measured_comparison"]
+    assert comparison["batch_sensitivity"]["baseline_conclusion_consistent"] is False
+    assert comparison["batch_sensitivity"]["equal_batch_weight"]["mse_relative_to_no_change"] == 1.142647
+    assert comparison["evaluation_protocol"]["reference_selection_sha256"] == "b" * 64
+    assert comparison["task_coverage"]["finite_paired_task_count"] == 1
+    assert comparison["task_coverage"]["by_evidence_level"]["unknown"] == 1
+    assert context["artifact_sha256"]["comparison_diagnostics.json"] == file_sha256(
+        folder / "diagnostics.json"
+    )
+    assert context["artifact_sha256"]["comparison_diagnostics_manifest.json"] == file_sha256(
+        folder / "manifest.json"
+    )
+    serialized = json.dumps(context, ensure_ascii=False)
+    assert "PRIVATE_REFERENCE_CELL" not in serialized and "PRIVATE_BATCH_CELL" not in serialized
+    assert len(serialized.encode("utf-8")) < 48_000
+    messages = interpretation_messages(context, "comparison", "")
+    assert "基线结论不一致" in messages[0]["content"]
+    assert '"baseline_conclusion_consistent": false' in messages[-1]["content"]
+    assert not calls and not figure_calls
+    (folder / "diagnostics.json").write_text("{}")
+    assert (
+        client.post("/api/v1/assistant/interpret", json=body(context, purpose="comparison")).status_code
+        == 409
+    )
     assert not calls
 
 

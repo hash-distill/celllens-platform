@@ -1,0 +1,78 @@
+✔ both result views map visible tabs to backend selection enums and preserve exact selected IDs (271.4567ms)
+✔ imported K562 retry retains its frozen import identity and never queries the public catalog (50.8126ms)
+✔ public measured retry still revalidates coverage and preserves sampling parameters (35.598ms)
+✔ findings snapshot the selected evidence, abort old saves on record change and ignore late responses (24.3818ms)
+✔ record exports are cancelled on source-kind changes even when IDs are identical (14.1816ms)
+✔ evidence labels distinguish measured groups from model diagnostics without rewriting source values (11.1279ms)
+✔ latest access inspection wins over an older authenticated response and unmount aborts inspection (14.0855ms)
+✔ logout failures stay visible and keep the current workspace instead of rejecting silently (8.5077ms)
+✔ browser navigation between research paths resets review step and in-flight import locks path buttons (14.1298ms)
+✔ controlled import exposes pending validation and aborts it after unmount (12.7561ms)
+✔ uncertain imported analysis submission prevents duplicate creation and keeps parent informed (7.8232ms)
+✔ readiness consumes worker capabilities separately from browsing readiness and drops stale probes (31.281ms)
+✔ public workspace startup skips private catalog preloading while preserving service readiness (7.6298ms)
+✔ public data catalog exposes only published backgrounds and blocks private CSV requests (27.567ms)
+✔ prediction cancellation prevents duplicate POSTs, refreshes actual state and remains blocked publicly (20.1529ms)
+✔ cancelled prediction progress is neutral and does not claim an execution failure (7.9729ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 568.9077
+
+✔ mixed history keeps source identity and correct detail routes, including synthetic evidence (1.7868ms)
+✔ merge order uses UTC database timestamps, with stable ties, before filtering and pagination (10.98ms)
+✔ category, case-insensitive search and completed-result filters apply to both sources (0.4054ms)
+✔ all source pages are loaded, not just the first page of each category (0.4282ms)
+✔ partial, shifting and cancelled responses never masquerade as complete history (0.7756ms)
+✔ approved navigation keeps research, coverage and one source-filterable record table (2.0068ms)
+✔ private measured records preserve input provenance instead of claiming public data (0.2612ms)
+✔ cancelled predictions are listed and filtered as cancelled while real failures stay failed (0.2685ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 25.1751
+
+✔ legacy empty replies explain a possible reasoning budget issue without inventing a confirmed cause (205.828ms)
+✔ source changes clear stale figures and measured selections retain exact IDs (13.7716ms)
+✔ measured previews display observation values, exact selected rows and no prediction figures (42.1075ms)
+✔ run previews retain prediction and chart behavior (31.363ms)
+✔ matched comparison previews label all three matched means and both deltas (35.3711ms)
+✔ measured API calls retain the source, exact feature ID and reviewed context hash (6.4092ms)
+✔ comparison previews reject old backend envelopes or a mismatched returned view (17.4729ms)
+✔ comparison previews accept the verified matched branch without blocking ordinary overview (11.1225ms)
+✔ model default requests check backend support before sending and retain null lengths (8.2458ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 381.0811
+
+✔ page copy does not brand the system as a test release (15.4321ms)
+✔ synthetic-result messages describe their source without development jargon (1.3782ms)
+✔ connection checks and scientific limitations remain explicit (0.8229ms)
+✔ routine explanations do not occupy blue notice boxes (2.5342ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26.5772
+
+Result overview: finite/missing values, coverage order, signed shared scale and measured-only comparison passed
+
+Run overview: population isolation, missing tasks, panel coverage, target presence and AI population mapping and public frozen readers passed
+
+Prediction evidence: finite/nonzero checks, scored paths, no unsupported attribution, frozen source preserved.

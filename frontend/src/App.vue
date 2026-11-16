@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
+import AccessGate from './components/AccessGate.vue'
 import SectionNavigation from './components/SectionNavigation.vue'
 import UtilityRail from './components/UtilityRail.vue'
 import FloatingAssistant from './components/FloatingAssistant.vue'
@@ -12,6 +13,7 @@ import { useServiceStore } from './stores/service'
 import { useCatalogStore } from './stores/catalog'
 import { useRunStore } from './stores/run'
 import { useUiStore } from './stores/ui'
+import { accessSession } from './stores/access'
 
 const service = useServiceStore()
 const catalog = useCatalogStore()
@@ -22,14 +24,19 @@ const route = useRoute()
 /** 开发数据来源标记（生产构建不启用） */
 const mockOn = isMockEnabled()
 
+function workspaceReady(): void {
+  void service.refresh()
+  if (!accessSession.value?.read_only) void catalog.load()
+}
+
 function onVisibilityChange(): void {
   // 页面恢复可见：立即补一次轮询；隐藏时轮询自动降频（间隔在调度时读取）
   if (document.visibilityState === 'visible') runs.wakePolling()
 }
 
 onMounted(() => {
-  void service.refresh()
-  void catalog.load()
+
+
   document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
@@ -38,18 +45,18 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<template>
+<template><AccessGate @ready="workspaceReady">
   <AppHeader />
   <div v-if="mockOn" class="mock-banner" role="status">
     示例数据模式 · 当前显示合成示例。
   </div>
   <ConnectionBanner />
-  <main :class="{'research-main': route.path !== '/', 'assistant-docked': assistantOpen && assistantSource}">
+  <main :class="{'research-main': route.path !== '/', 'assistant-docked': !accessSession?.read_only && assistantOpen && assistantSource}">
     <SectionNavigation />
     <RouterView />
   </main>
   <UtilityRail />
-  <FloatingAssistant />
+  <FloatingAssistant v-if="!accessSession?.read_only" />
 
   <!-- 轻量提示 -->
   <div class="toast-stack" aria-live="polite">
@@ -68,10 +75,11 @@ onBeforeUnmount(() => {
       <button class="toast-close" type="button" :aria-label="'关闭提示'" @click="ui.dismiss(toast.id)">×</button>
     </div>
   </div>
-</template>
+</AccessGate></template>
 
 <style scoped>
-main.assistant-docked{margin-right:516px;min-width:0}
+main.assistant-docked{min-width:0}
+@media(min-width:1600px){main.assistant-docked{margin-right:596px}}
 .assistant-docked :deep(.active-experiment),.assistant-docked :deep(.state-heading),.assistant-docked :deep(.figure-toolbar){flex-wrap:wrap}
 .assistant-docked :deep(.state-feature-controls){flex-wrap:wrap}
 .assistant-docked :deep(.figure-insight){align-items:flex-start}

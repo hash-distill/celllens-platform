@@ -1,0 +1,35 @@
+{
+  "id": "measured_ad6bdad81013413493d363db",
+  "status": "completed",
+  "import_id": "import_75219a9293f845edaadfce8c",
+  "source": {
+    "kind": "controlled_private_h5ad",
+    "import_id": "import_75219a9293f845edaadfce8c",
+    "source_sha256": "7e6b34cf4f58ee69126b95ecf2e479caca40dc7b0388860962b4f2a4c2598a94",
+    "type": "controlled_private_h5ad"
+  },
+  "attempt_no": 2,
+  "attempts": [
+    {
+      "attempt_no": 1,
+      "status": "abandoned",
+      "started_at": "2026-11-07T05:36:58.950195",
+      "finished_at": "2026-11-07T05:38:24.972327",
+      "error_message": null
+    },
+    {
+      "attempt_no": 2,
+      "status": "completed",
+      "started_at": "2026-11-07T05:38:24.989037",
+      "finished_at": "2026-11-07T05:40:03.252952",
+      "error_message": null
+    }
+  ],
+  "counts": {
+    "control": 16,
+    "observed": 16
+  },
+  "gene_count": 6546,
+  "intentional_worker_termination": true,
+  "source_kind": "real-data subset assembled for acceptance, not new biological experiment"
+}

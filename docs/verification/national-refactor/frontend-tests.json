@@ -1,0 +1,30 @@
+[
+  {
+    "script": "test-national-research.mjs",
+    "exit_code": 0
+  },
+  {
+    "script": "test-research-records.mjs",
+    "exit_code": 0
+  },
+  {
+    "script": "test-measured-assistant.mjs",
+    "exit_code": 0
+  },
+  {
+    "script": "test-release-copy.mjs",
+    "exit_code": 0
+  },
+  {
+    "script": "test-result-overview.mjs",
+    "exit_code": 0
+  },
+  {
+    "script": "test-run-overview.mjs",
+    "exit_code": 0
+  },
+  {
+    "script": "check-prediction-evidence.mjs",
+    "exit_code": 0
+  }
+]

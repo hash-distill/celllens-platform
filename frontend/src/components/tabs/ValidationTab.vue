@@ -210,7 +210,7 @@ function retry(): void {
           <p class="state-empty-title">没有成对有效值</p>
           <p class="muted small">
             {{ view === 'genes' ? '已加载基因记录中没有同时提供观测变化的条目。' : '已加载任务中没有提供观测变化的条目。' }}
-            {{ isOnline ? '在线预测不提供匹配观测。' : '' }}
+            {{ isOnline ? '此处仅读取原运行产物；另行准备的匹配实测请查看实验对照。' : '' }}
           </p>
         </div>
       </BlockState>

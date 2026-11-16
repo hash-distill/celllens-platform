@@ -145,6 +145,11 @@ def _extract_missing(root: Path, request: dict, groups: dict, staging: Path, rep
 
 
 def prepare_inputs(root: Path, request: dict, staging: Path, report: Any) -> dict:
+    if request.get("import_id"):
+        from backend.app.services.controlled_import import prepare_import_inputs
+
+        return prepare_import_inputs(root, request, staging, report)
+
     import numpy as np
 
     if not isinstance(request.get("source_cell_count"), int) or request["source_cell_count"] <= 0:

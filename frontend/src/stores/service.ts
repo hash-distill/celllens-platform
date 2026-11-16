@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { api } from '../api/client'
 import { ApiError } from '../api/http'
-import type { HealthResponse, ReadyChecks } from '../types/run'
+import type { HealthResponse, ReadyChecks, ReadyCapabilities, WorkerStatus } from '../types/run'
 
 export type ServiceLevel = 'unknown' | 'ok' | 'degraded' | 'down'
 
@@ -12,6 +12,8 @@ interface ServiceState {
   readyHttpStatus: number | null
   ready: boolean | null
   checks: ReadyChecks | null
+  capabilities: ReadyCapabilities | null
+  workers: WorkerStatus | null
   lastCheckedAt: string | null
   checking: boolean
   /** 最近一次健康检查是否为网络级失败（驱动顶部连接异常提示条） */
@@ -33,6 +35,8 @@ export const useServiceStore = defineStore('service', {
     readyHttpStatus: null,
     ready: null,
     checks: null,
+    capabilities: null,
+    workers: null,
     lastCheckedAt: null,
     checking: false,
     networkDown: false,
@@ -76,6 +80,8 @@ export const useServiceStore = defineStore('service', {
             this.healthFieldsOk = null
             this.ready = null
             this.checks = null
+            this.capabilities = null
+            this.workers = null
             this.readyHttpStatus = null
             this.lastCheckedAt = new Date().toISOString()
             return
@@ -90,9 +96,13 @@ export const useServiceStore = defineStore('service', {
           if (body) {
             this.ready = Boolean(body.ready) && httpStatus === 200
             this.checks = body.checks ?? null
+            this.capabilities = body.capabilities ?? null
+            this.workers = body.workers ?? null
           } else {
             this.ready = httpStatus === 200
             this.checks = null
+            this.capabilities = null
+            this.workers = null
           }
         } catch (err) {
           if (err instanceof ApiError && err.kind === 'network') {
@@ -100,6 +110,8 @@ export const useServiceStore = defineStore('service', {
           }
           this.ready = null
           this.checks = null
+          this.capabilities = null
+          this.workers = null
           this.readyHttpStatus = err instanceof ApiError ? err.status : null
         }
         this.lastCheckedAt = new Date().toISOString()

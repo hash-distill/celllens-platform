@@ -1,0 +1,23 @@
+[
+  {
+    "run_id": "run_34737097754841fd",
+    "status": "restored",
+    "files_verified": 23,
+    "manifest_sha256": "a0f0621cfe8005af1b8ef7025c5fc20d591b40bc064f7b272f7b692d60343196",
+    "new_inference": false
+  },
+  {
+    "run_id": "run_aef55809479e4c21",
+    "status": "restored",
+    "files_verified": 23,
+    "manifest_sha256": "3919107ae780c35fbe838dda020d52c39415979f71b017f714bd2e28456cbc61",
+    "new_inference": false
+  },
+  {
+    "run_id": "run_a69d03a3be9e492b",
+    "status": "restored",
+    "files_verified": 23,
+    "manifest_sha256": "a6b26f91b07505e139943802d4a1532f324bb63d9cf6fd5b93f93187fb05a46b",
+    "new_inference": false
+  }
+]

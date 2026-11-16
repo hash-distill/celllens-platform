@@ -10,7 +10,7 @@ from backend.app.config import Settings
 from backend.app.core.run_manifest import file_sha256
 from backend.app.main import create_app
 from backend.app.services.completeness import compute_official_completeness
-from backend.app.services.coverage_catalog import cached_completeness, coverage_catalog
+from backend.app.services.coverage_catalog import clear_completeness_cache, coverage_catalog
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def coverage_app(tmp_path, monkeypatch):
         create_database_schema=True,
         worker_enabled=False,
     )
-    cached_completeness.cache_clear()
+    clear_completeness_cache()
 
     def loader(*_):
         return database, "fixture-v1"
@@ -57,7 +57,7 @@ def coverage_app(tmp_path, monkeypatch):
     monkeypatch.setattr("backend.app.services.scientific_analysis._load_frozen_database", loader)
     app = create_app(settings)
     yield app, settings, database
-    cached_completeness.cache_clear()
+    clear_completeness_cache()
 
 
 def test_registered_panel_coverage_changes_without_creating_experiments(coverage_app):
