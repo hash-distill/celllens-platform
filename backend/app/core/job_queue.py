@@ -9,12 +9,15 @@ logger = logging.getLogger(__name__)
 class SingleGpuJobQueue:
     """One consumer serializes STATE work on the single A6000."""
 
-    def __init__(self, handler: JobHandler):
+    def __init__(self, handler: JobHandler, *, embedded: bool = True):
         self._handler = handler
+        self._embedded = embedded
         self._queue: asyncio.Queue[str | None] = asyncio.Queue()
         self._task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
+        if not self._embedded:
+            return
         if self._task is None:
             self._task = asyncio.create_task(self._worker(), name="celllens-gpu-worker")
 
@@ -25,7 +28,9 @@ class SingleGpuJobQueue:
             self._task = None
 
     async def submit(self, run_id: str) -> None:
-        await self._queue.put(run_id)
+        if self._embedded:
+            await self._queue.put(run_id)
+        # External mode polls persisted RunStore rows; no process-local queue.
 
     async def _worker(self) -> None:
         while True:

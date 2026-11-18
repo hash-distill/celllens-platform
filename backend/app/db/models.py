@@ -119,3 +119,33 @@ class MeasuredAnalysisModel(Base):
     manifest_sha256: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    claim_token: Mapped[str | None] = mapped_column(String(40), index=True)
+    worker_id: Mapped[str | None] = mapped_column(String(128))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    cancel_requested: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class MeasuredAttemptModel(Base):
+    __tablename__ = "measured_attempts"
+    __table_args__ = (UniqueConstraint("analysis_id", "attempt_no", name="uq_measured_attempt"),)
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    analysis_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("measured_analyses.id", ondelete="CASCADE"), index=True
+    )
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+
+class WorkerHeartbeatModel(Base):
+    __tablename__ = "worker_heartbeats"
+    worker_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    capabilities_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

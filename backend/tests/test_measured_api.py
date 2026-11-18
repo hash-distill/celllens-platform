@@ -69,7 +69,8 @@ def test_measured_table_accepts_complete_long_task_identifier(tmp_path, monkeypa
         )
         assert response.status_code == 200, response.text
         assert response.json()["items"] == [
-            {"task": task, "control": 1.0, "observed": 2.0, "observed_delta": 1.0}
+            {"task": task, "control": 1.0, "observed": 2.0, "observed_delta": 1.0,
+             "category": None, "subcategory": None}
         ]
         assert (
             client.get(

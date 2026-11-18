@@ -44,9 +44,9 @@ function mountPanel(properties, options = {}) {
     '../api/assistant': api,
     '../api/http': { ApiError: TestApiError },
     '../stores/preferences': {
-      apiKey: vue.ref(''), modelReady: vue.ref(Boolean(options.ready)), modelPreferences: options.preferences ?? {}, modelConnection: () => ({}),
+      apiKey: vue.ref(''), modelReady: vue.ref(Boolean(options.ready)), modelPreferences: options.preferences ?? {}, modelConnection: () => (options.connection ?? {}),
     },
-    '../utils/csv': { downloadBlob() {} },
+    '../utils/csv': { downloadBlob: options.download ?? (() => {}) },
     '../utils/format': {
       fmtNumber: value => String(value), fmtDelta: value => String(value),
     },
@@ -102,6 +102,9 @@ test('source changes clear stale figures and measured selections retain exact ID
     store.assistantFigure.value = { view: 'chart', feature_id: 'STALE' }
     store.openAssistant(true)
     assert.equal(store.assistantSelection.value.view, 'genes')
+    store.openChartAssistant({view:'chart',chart_type:'distribution',feature_kind:'gene',feature_id:'ALDOA'})
+    assert.equal(store.assistantSelection.value.chart_type,'distribution')
+    assert.equal(store.assistantSelection.value.feature_id,'ALDOA')
     source.value = { kind: 'run', id: 'run_second', title: 'second', completed: true, view: 'overview' }
     assert.equal(store.assistantFigure.value, null)
     assert.equal(store.assistantSelection.value.view, 'overview')
@@ -236,4 +239,144 @@ test('model default requests check backend support before sending and retain nul
   await assert.rejects(stale.interpret(context,'interpret',connection),/重启 CellLens/)
   await assert.rejects(stale.test(connection),/重启 CellLens/)
   assert.deepEqual(requests,['/assistant/capabilities','/assistant/capabilities'])
+})
+
+const chatContext = (hash = 'verified-context') => ({
+  source_kind:'measured', source_id:'measured_fixture', selection:{view:'overview'},
+  context_sha256:hash, data:{cell_line:'test',perturbation:'test'},
+  request_budget:{system_bytes:300,user_bytes:{interpret:600}},
+})
+const chatReply = text => ({text,model:'test-model',generated_at:'2026-11-16T00:00:00Z',finish_reason:'stop'})
+
+test('follow-ups carry only completed same-context turns and retry does not resend its own answer', async () => {
+  const requests = []
+  const {application,state} = mountPanel({sourceKind:'measured',sourceId:'measured_fixture',selection:{view:'overview'}}, {
+    ready:true, preferences:{max_tokens:2000,context_window:32000},
+    fetch:async (path,options) => {requests.push({path,options});return chatReply(`answer ${requests.length}`)},
+  })
+  try {
+    state.context = chatContext()
+    state.question = 'first question'
+    await state.generate()
+    assert.equal(state.turns.length,1)
+    assert.equal(state.turns[0].state,'complete')
+    state.question = 'follow-up question'
+    await state.generate()
+    assert.deepEqual(requests[1].options.body.history,[{question:'first question',purpose:'interpret',answer:'answer 1'}])
+    assert.equal(requests[1].options.body.history_context_sha256,'verified-context')
+    await state.retryTurn(state.turns[1])
+    assert.equal(state.turns.length,2)
+    assert.deepEqual(requests[2].options.body.history,[{question:'first question',purpose:'interpret',answer:'answer 1'}])
+    state.context = chatContext('changed-context')
+    assert.equal(state.history.length,0)
+    state.newConversation()
+    assert.equal(state.turns.length,0)
+  } finally {application.unmount()}
+})
+
+test('cancelled responses are discarded and never become conversation history', async () => {
+  let resolveRequest
+  const {application,state} = mountPanel({sourceKind:'measured',sourceId:'measured_fixture',selection:{view:'overview'}}, {
+    ready:true, preferences:{max_tokens:2000,context_window:32000},
+    fetch:() => new Promise(resolve => {resolveRequest = resolve}),
+  })
+  try {
+    state.context = chatContext()
+    const pending = state.generate()
+    await Promise.resolve()
+    state.cancel()
+    resolveRequest(chatReply('late result'))
+    await pending
+    assert.equal(state.result,null)
+    assert.equal(state.turns[0].state,'cancelled')
+    assert.equal(state.history.length,0)
+  } finally {application.unmount()}
+})
+
+test('history is bounded to six complete turns and rejects excessive answer/request bytes before sending', async () => {
+  let calls = 0
+  const {application,state} = mountPanel({sourceKind:'measured',sourceId:'measured_fixture',selection:{view:'overview'}}, {
+    ready:true, preferences:{max_tokens:2000,context_window:32000}, fetch:async () => {calls++;return chatReply('ok')},
+  })
+  try {
+    state.context = chatContext()
+    for (let index=0;index<8;index++) state.turns.push({id:index,question:`q${index}`,purpose:'interpret',context:chatContext(),result:chatReply(`a${index}`),state:'complete',error:''})
+    assert.equal(state.history.length,6)
+    assert.equal(state.history[0].question,'q2')
+    state.turns[7].result.text = 'x'.repeat(16001)
+    assert.equal(state.historyOverBudget,true)
+    await state.generate()
+    assert.equal(calls,0)
+    state.turns = [0,1,2].map(id => ({id,question:'q',purpose:'interpret',context:chatContext(),result:chatReply('中'.repeat(8000)),state:'complete',error:''}))
+    assert.equal(state.historyOverBudget,true)
+    await state.generate()
+    assert.equal(calls,0)
+    state.turns = [0,1,2].map(id => ({id,question:'q',purpose:'interpret',context:chatContext(),result:chatReply('中'.repeat(7000)),state:'complete',error:''}))
+    state.question = '中'.repeat(1200)
+    assert.ok(state.historyBytes < 64000)
+    assert.equal(state.historyOverBudget,true, 'entire request must fit middleware cap, including current question')
+    await state.generate()
+    assert.equal(calls,0)
+  } finally {application.unmount()}
+})
+
+test('assistant Markdown produces escaped Vue text blocks including tables, never executable HTML', () => {
+  const {application,state} = mountPanel({sourceKind:'measured',sourceId:'measured_fixture',selection:{view:'overview'}})
+  try {
+    const blocks = state.markdownBlocks('# Finding\n\n| Gene | Delta |\n| --- | ---: |\n| <img src=x onerror=alert(1)> | 2 |\n\n```html\n<script>alert(1)</script>\n```')
+    assert.equal(blocks[0].kind,'heading')
+    const table = blocks.find(block => block.kind === 'table')
+    assert.equal(table.rows[1][0],'<img src=x onerror=alert(1)>')
+    assert.equal(blocks.find(block => block.kind === 'code').text,'<script>alert(1)</script>')
+    assert.ok(!sourceText('components/AssistantPanel.vue').includes('v-html'))
+    assert.deepEqual(state.inlineParts('**key** `value`'),[{kind:'strong',text:'key'},{kind:'text',text:' '},{kind:'code',text:'value'}])
+  } finally {application.unmount()}
+})
+
+test('older failed or cancelled turns do not hide later standalone preview or copy errors', () => {
+  const {application,state} = mountPanel({sourceKind:'measured',sourceId:'measured_fixture',selection:{view:'overview'}})
+  try {
+    state.turns = [{id:1,question:'q',purpose:'interpret',context:chatContext(),result:null,state:'error',error:'generation failure'}]
+    state.error = 'generation failure'
+    assert.equal(state.standaloneError,false, 'the generation error is already rendered on its turn')
+    state.error = 'preview failed'
+    assert.equal(state.standaloneError,true)
+    state.error = 'copy failed'
+    assert.equal(state.standaloneError,true)
+    state.turns[0].state = 'cancelled'
+    state.error = 'generation failure'
+    assert.equal(state.standaloneError,true, 'cancelled turns never suppress standalone error messages')
+    state.error = ''
+    assert.equal(state.standaloneError,false)
+  } finally {application.unmount()}
+})
+
+test('follow-up export retains the exact submitted history and hash without connection credentials', async () => {
+  let calls = 0, exportedBlob
+  const {application,state} = mountPanel({sourceKind:'measured',sourceId:'measured_fixture',selection:{view:'overview'}}, {
+    ready:true, preferences:{max_tokens:2000,context_window:32000},
+    connection:{api_key:'secret-key-never-export',model:'test-model',max_tokens:2000,context_window:32000},
+    fetch:async () => chatReply(`answer ${++calls}`),
+    download:blob => {exportedBlob = blob},
+  })
+  try {
+    state.context = chatContext()
+    state.question = 'initial question'
+    await state.generate()
+    state.question = 'follow-up question'
+    await state.generate()
+    state.turns[0].result.text = 'subsequently changed local answer'
+    state.downloadTurn(state.turns[1])
+    const raw = await exportedBlob.text(), exported = JSON.parse(raw)
+    assert.deepEqual(exported.conversation_history,[{question:'initial question',purpose:'interpret',answer:'answer 1'}])
+    assert.equal(exported.history_context_sha256,'verified-context')
+    assert.equal(exported.context.context_sha256,exported.history_context_sha256)
+    assert.equal(exported.interpretation.text,'answer 2')
+    assert.ok(!raw.includes('secret-key-never-export'))
+    assert.ok(!Object.hasOwn(exported,'connection'))
+    state.downloadTurn(state.turns[0])
+    const first = JSON.parse(await exportedBlob.text())
+    assert.deepEqual(first.conversation_history,[])
+    assert.equal(first.history_context_sha256,null)
+  } finally {application.unmount()}
 })

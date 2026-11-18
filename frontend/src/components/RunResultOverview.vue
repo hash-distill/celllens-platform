@@ -3,19 +3,25 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '../api/http'
 import { useRunStore } from '../stores/run'
+import { accessSession } from '../stores/access'
 import { openAssistant } from '../stores/assistantSource'
 import type { MeasuredComparison } from '../types/comparison'
 import type { CoverageCatalogue } from '../types/coverage'
-import type { OverviewRow, OverviewTaskRow } from '../utils/resultOverview'
+import type { ResearchSelection, ResearchResult } from '../types/research'
+import type { StructureTask } from '../utils/researchCanvas'
+import type { OverviewRow } from '../utils/resultOverview'
 import { finiteValue } from '../utils/resultOverview'
 import { metabolicGroupName, taskName } from '../utils/biologyLocale'
 import { isSyntheticResult } from '../utils/source'
 import ResultOverview from './ResultOverview.vue'
+import SingleCellAtlas from './SingleCellAtlas.vue'
 import CellStateTab from './tabs/CellStateTab.vue'
+import ResearchCanvas from './ResearchCanvas.vue'
 
-const props = defineProps<{ runId: string }>()
-const emit = defineEmits<{ 'comparison-mode': [matched: boolean] }>()
+const props = defineProps<{ runId: string; originalResult?: ResearchResult | null }>()
+const emit = defineEmits<{ 'comparison-mode': [matched: boolean]; 'focus-task': [id: string]; selection: [value: ResearchSelection] }>()
 const runs = useRunStore(), route = useRoute(), router = useRouter()
+const readOnly = computed(() => Boolean(accessSession.value?.read_only))
 const entry = computed(() => runs.entry(props.runId))
 const record = computed(() => entry.value?.record)
 const comparison = ref<MeasuredComparison | null>(null)
@@ -42,7 +48,7 @@ const targetInPanel = computed(() => {
 const genes = computed<OverviewRow[]>(() => matched.value
   ? (matched.value.genes ?? []).map(row => ({ id: row.id, control: finiteValue(row.control), predicted: finiteValue(row.predicted), observed: finiteValue(row.observed), delta: finiteValue(row.predicted_delta) }))
   : originalGenes.value.map(row => ({ id: row.gene, control: row.control, predicted: row.predicted, observed: null, delta: row.predicted_delta })))
-const tasks = computed<OverviewTaskRow[]>(() => {
+const tasks = computed<StructureTask[]>(() => {
   const original = new Map((entry.value?.tasks.data?.items ?? []).map(row => [row.id, row]))
   const paired = new Map((matched.value?.tasks ?? []).map(row => [row.id, row]))
   const metadata = new Map((coverage.value?.tasks ?? []).map(row => [row.id, row]))
@@ -54,14 +60,18 @@ const tasks = computed<OverviewTaskRow[]>(() => {
     return {
       id, label: taskName(id, detail?.label ?? saved?.label),
       category: metabolicGroupName(detail?.category ?? saved?.category),
+      rawCategory: detail?.category ?? saved?.category,
       control, predicted,
       observed: matched.value ? finiteValue(paired.get(id)?.observed) : null,
       delta: control !== null && predicted !== null ? finiteValue(predicted - control) : null,
-      coverage: !matched.value || samePanel.value ? finiteValue(detail?.fraction_present_all) : null,
+      coverage: !matched.value || samePanel.value ? finiteValue(detail?.fraction_present_all) ?? (readOnly.value && entry.value?.tasks.data?.scope === 'all' && !entry.value.tasks.data.truncated ? finiteValue(saved?.coverage) : null) : null,
     }
   })
 })
-const populationCounts = computed(() => matched.value?.parameters?.population_counts ?? matched.value?.population_matching?.selected_cells)
+const originalGroups = computed(() => props.originalResult?.record_id === props.runId ? props.originalResult.populations?.original.groups ?? props.originalResult.groups : [])
+const populationCounts = computed(() => matched.value?.parameters?.population_counts ?? matched.value?.population_matching?.selected_cells ?? Object.fromEntries(originalGroups.value.map(group => [group.id, group.count])))
+const baselineSensitive = computed(() => matched.value?.batch_sensitivity?.status === 'available' && typeof matched.value.batch_sensitivity.baseline_conclusion_consistent === 'boolean' ? !matched.value.batch_sensitivity.baseline_conclusion_consistent : null)
+const geneCount = computed(() => matched.value ? matched.value.genes?.length ?? null : entry.value?.genes.data?.truncated ? null : originalGenes.value.length || null)
 const baselineRatio = computed(() => finiteValue(matched.value?.expression?.mse_relative_to_no_change))
 
 async function loadContext() {
@@ -69,7 +79,7 @@ async function loadContext() {
   controller?.abort()
   const current = controller = new AbortController(), runId = props.runId
   comparison.value = null; coverage.value = null; comparisonError.value = ''; coverageError.value = ''; loading.value = true
-  if (synthetic.value) { loading.value = false; return }
+  if (synthetic.value || readOnly.value) { loading.value = false; return }
   const results = await Promise.allSettled([
     apiFetch<MeasuredComparison>(`/runs/${encodeURIComponent(runId)}/comparison`, { signal: current.signal, timeoutMs: 120000 }),
     apiFetch<CoverageCatalogue>('/coverage', { query: { run_id: runId }, signal: current.signal }),
@@ -88,7 +98,7 @@ async function loadContext() {
   else coverageError.value = '任务关联基因覆盖暂不可用，覆盖将标记为未知。'
   loading.value = false
 }
-watch(() => props.runId, () => {
+watch([() => props.runId, readOnly], () => {
   projectionOpen.value = false
   const current = entry.value
   if (current?.genes.status === 'idle') void runs.loadGenes(props.runId)
@@ -97,6 +107,7 @@ watch(() => props.runId, () => {
 }, { immediate: true })
 onBeforeUnmount(() => { controller?.abort(); clearTimeout(retryTimer) })
 function openDetail(kind: 'gene' | 'task', id: string) {
+  if (readOnly.value) return
   if (kind === 'task' && !entry.value?.tasks.data?.items.some(task => task.id === id)) {
     void router.replace({ path: '/methods/coverage', query: { run: props.runId, task: id } })
     return
@@ -113,7 +124,8 @@ function openDetail(kind: 'gene' | 'task', id: string) {
   <section class="run-result-overview" aria-label="预测结果概览">
     <p v-if="synthetic" class="notice notice-warn">当前为合成示例，仅用于展示软件交互。</p>
     <div v-else class="comparison-context" role="status">
-      <p v-if="loading">正在核对可用实测与任务覆盖；当前展示原运行结果。</p>
+      <p v-if="readOnly">公开展览使用原冻结群体；私有比较不公开。完整分析在私人工作区中进行。</p>
+      <p v-else-if="loading">正在核对可用实测与任务覆盖；当前展示原运行结果。</p>
       <p v-else-if="comparisonError" class="context-error">实测比较读取失败：{{ comparisonError }} <button type="button" @click="loadContext">重试</button></p>
       <p v-else-if="matched">当前概览使用匹配比较的同一基因面板与选定群体：对照、模型预测、扰动实测。表达为 mean(log1p(CP10K))；任务为表达派生分数。</p>
       <p v-else>{{ comparison?.reason || '暂无匹配实测比较，当前展示原运行的对照与模型预测。' }}</p>
@@ -127,8 +139,8 @@ function openDetail(kind: 'gene' | 'task', id: string) {
       <p v-if="entry?.tasks.status === 'error'" role="alert">代谢结果读取失败。<button type="button" @click="runs.retryBlock(runId, 'tasks')">重试代谢结果</button></p>
       <p v-if="entry?.genes.data?.truncated || entry?.tasks.data?.truncated">当前已加载的原运行结果不完整；可进入详细表格或导出完整记录。</p>
     </div>
-    <ResultOverview source-kind="run" :cell-line="record?.request.cell_line ?? ''" :perturbation="record?.request.perturbation ?? ''" :genes="genes" :tasks="tasks" :counts="populationCounts" :baseline-ratio="baselineRatio" :target-in-panel="targetInPanel" @select-gene="openDetail('gene', $event)" @select-task="openDetail('task', $event)" @interpret="openAssistant(false)" />
-    <details class="projection-inspection" :open="projectionOpen" @toggle="projectionOpen = ($event.target as HTMLDetailsElement).open">
+    <ResultOverview :read-only="readOnly" source-kind="run" :cell-line="record?.request.cell_line ?? ''" :perturbation="record?.request.perturbation ?? ''" :genes="genes" :tasks="tasks" :counts="populationCounts" :baseline-ratio="baselineRatio" :baseline-sensitive="baselineSensitive" :gene-count="geneCount" :source-label="matched ? '匹配群体：模型预测与实测诊断' : '原运行群体：对照与模型预测'" :expression-units="matched ? 'mean(log1p(CP10K))' : originalResult?.units.expression || undefined" :target-in-panel="targetInPanel" @select-gene="openDetail('gene', $event)" @select-task="openDetail('task', $event)" @interpret="openAssistant(false)" @focus-task="emit('focus-task', $event)"><template #atlas><SingleCellAtlas v-if="!matched && !synthetic" :record-id="runId" kind="prediction" :genes="genes.slice(0,8).map(row=>row.id)" :read-only="readOnly" @select="openDetail('gene',$event)" /></template><template #landscape><ResearchCanvas v-if="!synthetic" kind="prediction" :record-id="runId" @selection="emit('selection',$event)" /></template></ResultOverview>
+    <details v-if="!readOnly" class="projection-inspection" :open="projectionOpen" @toggle="projectionOpen = ($event.target as HTMLDetailsElement).open">
       <summary>进一步检查：表达状态分布 <span>共同坐标中的群体差异</span></summary>
       <div v-if="projectionOpen" class="projection-content"><p>点表示各组表达记录，不表示细胞形态或运动轨迹。分布图有独立的群体选择与尺度，请按图内说明核对。</p><CellStateTab :key="runId" :run-id="runId" embedding="umap" /></div>
     </details>

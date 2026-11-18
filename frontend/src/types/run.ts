@@ -114,13 +114,26 @@ export interface HealthResponse {
 
 export interface ReadyChecks {
   database: boolean
-  worker: boolean
-  gpu: boolean
+  /** Legacy configuration probes are not evidence of a live executor. */
+  worker?: boolean
+  gpu?: boolean
 }
-
+export interface ReadyCapabilities {
+  result_browsing: boolean
+  cpu_analysis: boolean
+  prediction: boolean
+}
+export interface WorkerStatus {
+  mode: string
+  live: Array<{ kind: string; heartbeat_at: string | null; source?: string; capabilities: { cpu_analysis?: boolean; prediction?: boolean; missing_dependencies?: string[]; [key: string]: unknown } }>
+  cpu_available: boolean
+  prediction_available: boolean
+}
 export interface ReadyResponse {
   ready: boolean
   checks: ReadyChecks
+  capabilities?: ReadyCapabilities
+  workers?: WorkerStatus
 }
 
 export interface ProjectionPoint {

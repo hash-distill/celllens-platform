@@ -19,6 +19,7 @@ for (const value of [null, undefined, NaN, Infinity, -0.1, 1.1]) assert.equal(co
 
 const tasks = [row('large-incomplete', { coverage: 0.5, delta: 999 }), row('unknown', { delta: 500 }), row('complete-small', { coverage: 1, delta: 1 }), row('complete-large', { coverage: 1, delta: -2 }), row('more-covered', { coverage: 0.8, delta: 0 })]
 assert.deepEqual(rankTasks(tasks).map(task => task.id), ['complete-large', 'complete-small', 'more-covered', 'large-incomplete', 'unknown'])
+assert.deepEqual(rankTasks([row('a-low',{coverage:1,delta:1}),row('z-high',{coverage:1,delta:100000})]).map(x=>x.id),['a-low','z-high'],'Task-specific scales must not create cross-task score ranking')
 assert.equal(tasks[0].id, 'large-incomplete', 'Sorting must not mutate source evidence')
 assert.deepEqual(rankGenes([row('missing'), row('zero', { delta: 0 }), row('negative', { delta: -5 }), row('positive', { delta: 2 })]).map(gene => gene.id), ['negative', 'positive', 'zero', 'missing'])
 

@@ -1,5 +1,7 @@
 # 脚本索引
 
+启动服务使用 `powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\run-local.ps1 -Port 8028`；需要模型预测时追加 `-Gpu`。停止服务使用 `ops/stop-local.ps1`。完整配置见[部署文档](../docs/CPU部署.md)。
+
 更新日期：2026-10-22。所有命令从仓库根目录运行。本文列出命令与范围，不表示本轮已执行或通过。脚本按用途保留，避免将仍可用于资产重建的工具误认为运行时必需步骤。
 
 ## 日常启动与检查

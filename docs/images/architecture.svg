@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" role="img" aria-labelledby="title desc">
+<title id="title">CellLens 系统架构</title>
+<desc id="desc">Vue 前端通过 HTTP API 访问 FastAPI 后端。API 将任务保存到 SQLite 或 MySQL；独立 CPU 和 GPU worker 轮询数据库领取任务并更新状态。实测分析与 STATE 预测生成表达及功能分析产物，校验后写入文件存储。API 读取已完成结果并提供图表、报告和来源记录。</desc>
+<defs>
+<marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#3E79B9"/></marker>
+<marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#278B84"/></marker>
+<marker id="arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#B88B27"/></marker>
+<marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 Z" fill="#8C77AF"/></marker>
+</defs>
+<style>
+text {font-family: "Microsoft YaHei", "Noto Sans CJK SC", "PingFang SC", sans-serif; fill: #20334B;}
+.heading {font-weight:700;}
+.line {fill:none;stroke-linecap:round;stroke-linejoin:round;}
+</style>
+<rect width="1800" height="1120" fill="#FFFFFF"/>
+<text x="60" y="82" font-size="42" style="fill:#20334B" font-weight="700" text-anchor="start">CellLens 系统架构</text>
+<text x="62" y="127" font-size="24" style="fill:#6D8095" font-weight="400" text-anchor="start">前端交互、后端服务与科学计算分层协作</text>
+<rect x="1384" y="55" width="356" height="54" rx="27" fill="#F3F6FA" stroke="none" stroke-width="1.6"/>
+<text x="1562" y="90" font-size="20" style="fill:#6D8095" font-weight="400" text-anchor="middle">Vue 3  /  FastAPI  /  CPU · GPU</text>
+<rect x="60" y="180" width="440" height="630" rx="24" fill="#FAFBFD" stroke="#DDE5EE" stroke-width="1.6"/>
+<rect x="88" y="208" width="43" height="32" rx="8" fill="#EDF4FC" stroke="none" stroke-width="1.6"/>
+<text x="109.5" y="231" font-size="17" style="fill:#3E79B9" font-weight="700" text-anchor="middle">01</text>
+<text x="148" y="237" font-size="30" style="fill:#20334B" font-weight="700" text-anchor="start">前端工作台</text>
+<text x="88" y="280" font-size="22" style="fill:#6D8095" font-weight="400" text-anchor="start">Vue 3 · TypeScript</text>
+<rect x="570" y="180" width="440" height="630" rx="24" fill="#FAFBFD" stroke="#DDE5EE" stroke-width="1.6"/>
+<rect x="598" y="208" width="43" height="32" rx="8" fill="#ECF7F4" stroke="none" stroke-width="1.6"/>
+<text x="619.5" y="231" font-size="17" style="fill:#278B84" font-weight="700" text-anchor="middle">02</text>
+<text x="658" y="237" font-size="30" style="fill:#20334B" font-weight="700" text-anchor="start">后端服务</text>
+<text x="598" y="280" font-size="22" style="fill:#6D8095" font-weight="400" text-anchor="start">FastAPI · Python</text>
+<rect x="1080" y="180" width="660" height="630" rx="24" fill="#FAFBFD" stroke="#DDE5EE" stroke-width="1.6"/>
+<rect x="1108" y="208" width="43" height="32" rx="8" fill="#FFF8E8" stroke="none" stroke-width="1.6"/>
+<text x="1129.5" y="231" font-size="17" style="fill:#B88B27" font-weight="700" text-anchor="middle">03</text>
+<text x="1168" y="237" font-size="30" style="fill:#20334B" font-weight="700" text-anchor="start">科学计算</text>
+<text x="1108" y="280" font-size="22" style="fill:#6D8095" font-weight="400" text-anchor="start">独立 CPU / GPU worker</text>
+<rect x="88" y="325" width="384" height="91" rx="14" fill="#EDF4FC" stroke="#BFD3EC" stroke-width="1.6"/>
+<g transform="translate(108 349)" stroke="#3E79B9" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="0" y="0" width="43" height="34" rx="5"/><path d="M0 10H43 M11 19H20 M11 26H31"/><circle cx="7" cy="5" r="1" fill="currentColor"/>
+</g>
+<text x="171" y="360" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">研究与数据输入</text>
+<text x="171" y="389" font-size="16.5" style="fill:#3E79B9" font-weight="400" text-anchor="start">公开数据 · H5AD 上传 · 参数设置</text>
+<rect x="88" y="437" width="384" height="91" rx="14" fill="#EDF4FC" stroke="#BFD3EC" stroke-width="1.6"/>
+<g transform="translate(108 461)" stroke="#3E79B9" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 0V35H43 M10 26V18 M21 26V8 M32 26V13"/><path d="M9 8L20 1L32 5"/>
+</g>
+<text x="171" y="472" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">结果与图表</text>
+<text x="171" y="501" font-size="16.5" style="fill:#3E79B9" font-weight="400" text-anchor="start">表达响应 · 功能证据 · 图表工作区</text>
+<rect x="88" y="549" width="384" height="91" rx="14" fill="#EDF4FC" stroke="#BFD3EC" stroke-width="1.6"/>
+<g transform="translate(108 573)" stroke="#3E79B9" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M22 0L44 11L22 22L0 11Z M0 20L22 31L44 20 M0 29L22 40L44 29"/>
+</g>
+<text x="171" y="584" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">记录与比较</text>
+<text x="171" y="613" font-size="16.5" style="fill:#3E79B9" font-weight="400" text-anchor="start">实验历史 · 匹配观测 · 研究备注</text>
+<rect x="88" y="661" width="384" height="91" rx="14" fill="#EDF4FC" stroke="#BFD3EC" stroke-width="1.6"/>
+<g transform="translate(108 685)" stroke="#3E79B9" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M7 0H29L40 11V39H7Z M29 0V11H40 M15 20H31 M15 28H31"/>
+</g>
+<text x="171" y="696" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">解读与导出</text>
+<text x="171" y="725" font-size="16.5" style="fill:#3E79B9" font-weight="400" text-anchor="start">AI 辅助解读 · 科研图 · 离线报告</text>
+<rect x="598" y="325" width="384" height="117" rx="14" fill="#ECF7F4" stroke="#B7DCD4" stroke-width="1.6"/>
+<g transform="translate(620 360)" stroke="#278B84" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M22 0L40 7V21C40 29 32 36 22 40C12 36 4 29 4 21V7Z M12 19L19 26L32 12"/>
+</g>
+<text x="683" y="372" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">请求与来源校验</text>
+<text x="683" y="405" font-size="18" style="fill:#278B84" font-weight="400" text-anchor="start">参数 · 访问权限 · 数据来源</text>
+<rect x="598" y="470" width="384" height="117" rx="14" fill="#ECF7F4" stroke="#B7DCD4" stroke-width="1.6"/>
+<g transform="translate(620 505)" stroke="#278B84" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="0" y="0" width="34" height="9" rx="3"/><rect x="0" y="15" width="34" height="9" rx="3"/><path d="M0 34H23 M32 29L38 34L32 39"/>
+</g>
+<text x="683" y="517" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">任务与状态管理</text>
+<text x="683" y="550" font-size="18" style="fill:#278B84" font-weight="400" text-anchor="start">入队 · 租约 · 取消 · 心跳</text>
+<rect x="598" y="615" width="384" height="117" rx="14" fill="#ECF7F4" stroke="#B7DCD4" stroke-width="1.6"/>
+<g transform="translate(620 650)" stroke="#278B84" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M7 0H29L40 11V39H7Z M29 0V11H40 M15 20H31 M15 28H31"/>
+</g>
+<text x="683" y="662" font-size="24" style="fill:#20334B" font-weight="700" text-anchor="start">结果查询与导出</text>
+<text x="683" y="695" font-size="18" style="fill:#278B84" font-weight="400" text-anchor="start">实验记录 · 图表 · AI 摘要</text>
+<path d="M500 408 H570" class="line" stroke="#3E79B9" stroke-width="2.8" marker-end="url(#arrow-blue)"/>
+<text x="535" y="390" font-size="16" style="fill:#3E79B9" font-weight="400" text-anchor="middle">请求</text>
+<path d="M570 520 H500" class="line" stroke="#3E79B9" stroke-width="2.8" marker-end="url(#arrow-blue)"/>
+<text x="535" y="548" font-size="16" style="fill:#3E79B9" font-weight="400" text-anchor="middle">响应</text>
+<path d="M1010 925 H1042 V315 H1570" class="line" stroke="#278B84" stroke-width="2.8" marker-start="url(#arrow-teal)" stroke-dasharray="8 7"/>
+<path d="M1250 315 V354" class="line" stroke="#278B84" stroke-width="2.8" marker-end="url(#arrow-teal)" stroke-dasharray="8 7"/>
+<path d="M1570 315 V354" class="line" stroke="#278B84" stroke-width="2.8" marker-end="url(#arrow-teal)" stroke-dasharray="8 7"/>
+<circle cx="1250" cy="315" r="4" fill="#278B84" stroke="none" stroke-width="2"/>
+<rect x="1112" y="354" width="276" height="174" rx="16" fill="#EDF4FC" stroke="#BFD3EC" stroke-width="1.6"/>
+<g transform="translate(1134 378)" stroke="#3E79B9" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="0" y="0" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.35" stroke="none"/>
+<rect x="12" y="0" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.6" stroke="none"/>
+<rect x="24" y="0" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.85" stroke="none"/>
+<rect x="36" y="0" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.35" stroke="none"/>
+<rect x="0" y="12" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.6" stroke="none"/>
+<rect x="12" y="12" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.85" stroke="none"/>
+<rect x="24" y="12" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.35" stroke="none"/>
+<rect x="36" y="12" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.6" stroke="none"/>
+<rect x="0" y="24" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.85" stroke="none"/>
+<rect x="12" y="24" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.35" stroke="none"/>
+<rect x="24" y="24" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.6" stroke="none"/>
+<rect x="36" y="24" width="8" height="8" rx="1" fill="#3E79B9" opacity="0.85" stroke="none"/>
+</g>
+<text x="1194" y="404" font-size="26" style="fill:#20334B" font-weight="700" text-anchor="start">实测分析</text>
+<text x="1134" y="451" font-size="21" style="fill:#3E79B9" font-weight="400" text-anchor="start">CPU worker</text>
+<text x="1134" y="493" font-size="18" style="fill:#6D8095" font-weight="400" text-anchor="start">公开数据 / 自有 H5AD</text>
+<rect x="1432" y="354" width="276" height="174" rx="16" fill="#FFF8E8" stroke="#E9D6A0" stroke-width="1.6"/>
+<g transform="translate(1454 378)" stroke="#B88B27" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M9 9L35 8L24 32L9 9 M9 9L0 31L24 32"/><circle cx="9" cy="9" r="5" fill="white"/><circle cx="35" cy="8" r="5" fill="white"/><circle cx="24" cy="32" r="5" fill="white"/><circle cx="0" cy="31" r="5" fill="white"/>
+</g>
+<text x="1514" y="404" font-size="26" style="fill:#20334B" font-weight="700" text-anchor="start">STATE 预测</text>
+<text x="1454" y="451" font-size="21" style="fill:#B88B27" font-weight="400" text-anchor="start">GPU worker · 可选</text>
+<text x="1454" y="493" font-size="18" style="fill:#6D8095" font-weight="400" text-anchor="start">模型权重 / 支持背景</text>
+<path d="M1250 528 V554 H1410 V586" class="line" stroke="#B88B27" stroke-width="2.8" marker-end="url(#arrow-gold)"/>
+<path d="M1570 528 V554 H1410" class="line" stroke="#B88B27" stroke-width="2.8"/>
+<rect x="1112" y="586" width="596" height="161" rx="16" fill="#FFF8E8" stroke="#E9D6A0" stroke-width="1.6"/>
+<g transform="translate(1138 616)" stroke="#B88B27" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 0V35H43 M10 26V18 M21 26V8 M32 26V13"/><path d="M9 8L20 1L32 5"/>
+</g>
+<text x="1201" y="639" font-size="28" style="fill:#20334B" font-weight="700" text-anchor="start">表达与功能分析</text>
+<text x="1138" y="681" font-size="22" style="fill:#B88B27" font-weight="400" text-anchor="start">表达响应 · scCellFie · 图表数据</text>
+<text x="1138" y="718" font-size="18" style="fill:#6D8095" font-weight="400" text-anchor="start">实测任务支持 Reactome 探索性通路富集</text>
+<rect x="570" y="868" width="440" height="146" rx="18" fill="#ECF7F4" stroke="#B7DCD4" stroke-width="1.6"/>
+<g transform="translate(602 908)" stroke="#278B84" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<ellipse cx="23" cy="7" rx="22" ry="7"/><path d="M1 7V37C1 46 45 46 45 37V7 M1 22C1 31 45 31 45 22"/>
+</g>
+<text x="674" y="914" font-size="27" style="fill:#20334B" font-weight="700" text-anchor="start">SQLite / MySQL</text>
+<text x="674" y="952" font-size="20" style="fill:#278B84" font-weight="400" text-anchor="start">任务 · 实验记录 · 图表配置</text>
+<text x="674" y="984" font-size="17" style="fill:#6D8095" font-weight="400" text-anchor="start">持久化状态与任务租约</text>
+<path d="M790 810 V868" class="line" stroke="#278B84" stroke-width="2.8" marker-end="url(#arrow-teal)" marker-start="url(#arrow-teal)"/>
+<rect x="810" y="822" width="132" height="28" rx="4" fill="#FFFFFF" stroke="none" stroke-width="1.6"/>
+<text x="819" y="842" font-size="16" style="fill:#278B84" font-weight="400" text-anchor="start">读写任务与记录</text>
+<rect x="1080" y="868" width="660" height="146" rx="18" fill="#F3EFF9" stroke="#D4C8E6" stroke-width="1.6"/>
+<g transform="translate(1114 908)" stroke="#8C77AF" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M1 37V3H17L23 9H45V37Z M1 17H45"/>
+</g>
+<text x="1186" y="914" font-size="27" style="fill:#20334B" font-weight="700" text-anchor="start">分析产物与来源记录</text>
+<text x="1186" y="952" font-size="20" style="fill:#8C77AF" font-weight="400" text-anchor="start">表达矩阵 · 图表 · 报告 · 来源清单</text>
+<text x="1186" y="984" font-size="17" style="fill:#6D8095" font-weight="400" text-anchor="start">文件存储与完整性校验</text>
+<path d="M1410 747 V868" class="line" stroke="#B88B27" stroke-width="2.8" marker-end="url(#arrow-gold)"/>
+<rect x="1428" y="822" width="164" height="28" rx="4" fill="#FFFFFF" stroke="none" stroke-width="1.6"/>
+<text x="1437" y="842" font-size="16" style="fill:#B88B27" font-weight="400" text-anchor="start">校验后发布结果</text>
+<path d="M1410 1014 V1052 H536 V700 H598" class="line" stroke="#8C77AF" stroke-width="2.8" marker-end="url(#arrow-purple)"/>
+<rect x="690" y="1037" width="202" height="30" rx="4" fill="#FFFFFF" stroke="none" stroke-width="1.6"/>
+<text x="791" y="1059" font-size="17" style="fill:#8C77AF" font-weight="400" text-anchor="middle">读取已完成的分析产物</text>
+<text x="62" y="894" font-size="20" style="fill:#20334B" font-weight="700" text-anchor="start">连接说明</text>
+<path d="M64 927 H110" class="line" stroke="#3E79B9" stroke-width="2.8" marker-end="url(#arrow-blue)"/>
+<text x="128" y="934" font-size="18" style="fill:#6D8095" font-weight="400" text-anchor="start">请求与响应</text>
+<path d="M64 968 H110" class="line" stroke="#278B84" stroke-width="2.8" marker-end="url(#arrow-teal)" stroke-dasharray="8 7"/>
+<text x="128" y="975" font-size="18" style="fill:#6D8095" font-weight="400" text-anchor="start">worker 领取任务并更新状态</text>
+<path d="M64 1009 H110" class="line" stroke="#8C77AF" stroke-width="2.8" marker-end="url(#arrow-purple)"/>
+<text x="128" y="1016" font-size="18" style="fill:#6D8095" font-weight="400" text-anchor="start">结果存储与读取</text>
+</svg>

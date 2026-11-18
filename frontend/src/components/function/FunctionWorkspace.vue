@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../../api/client'
 import { useRunStore } from '../../stores/run'
@@ -10,24 +10,42 @@ import { usePagedRows } from '../../utils/pagination'
 import { KIND_LABEL, layoutNodes } from '../../utils/functionNetwork'
 import type { NodeKind } from '../../utils/functionNetwork'
 import type { TaskTraceResponse, TraceScore } from '../../types/trace'
+import MetabolicTaskAtlas from '../MetabolicTaskAtlas.vue'
 import CellStateTab from '../tabs/CellStateTab.vue'
 import TablePager from '../TablePager.vue'
 import { hasPredictionChange, predictionTrace } from '../../utils/predictionEvidence'
 import { metabolicGroupName, taskName } from '../../utils/biologyLocale'
 import { buildTraceExport } from '../../utils/exportArtifacts'
 import { featureFilenameToken } from '../../utils/download'
+import { coverageState } from '../../utils/resultOverview'
 
 const props = defineProps<{ runId: string }>()
 const route = useRoute()
 const showCompleteAssociations = ref(false), projectionOpen = ref(false)
 const runs = useRunStore(), entry = computed(() => runs.entry(props.runId))
-const tasks = computed(() => (entry.value?.tasks.data?.items ?? []).filter(row => hasPredictionChange(row) || row.id === route.query.task))
+const atlasSelection = ref('')
+watch(() => props.runId, () => { atlasSelection.value = '' })
+const tasks = computed(() => (entry.value?.tasks.data?.items ?? []).filter(row => hasPredictionChange(row) || row.id === route.query.task || row.id === atlasSelection.value))
+const atlasTasks = computed(() => (entry.value?.tasks.data?.items ?? []).map(row => ({ id: row.id, label: taskName(row.id, row.label), category: metabolicGroupName(row.category), control: row.control ?? null, predicted: row.predicted ?? null, delta: row.predicted_delta })))
 const synthetic = computed(() => isSyntheticResult(entry.value?.record?.request.mode, props.runId, entry.value?.record?.result_kind))
-const search = ref(''), category = ref(''), sort = ref('change')
+const search = ref(''), category = ref(''), sort = ref('coverage')
 const categories = computed(() => [...new Set(tasks.value.map(task => task.category).filter((value): value is string => !!value))].sort())
-const filtered = computed(() => tasks.value.filter(task => (!category.value || task.category === category.value) && `${taskName(task.id, task.label)} ${task.label} ${task.id}`.toLowerCase().includes(search.value.trim().toLowerCase())).slice().sort((a,b) => sort.value === 'name' ? taskName(a.id, a.label).localeCompare(taskName(b.id, b.label), 'zh-CN') : Math.abs(b.predicted_delta)-Math.abs(a.predicted_delta)))
+const filtered = computed(() => tasks.value.filter(task => (!category.value || task.category === category.value) && `${taskName(task.id, task.label)} ${task.label} ${task.id}`.toLowerCase().includes(search.value.trim().toLowerCase())).slice().sort((a,b) => {
+  const names = (a.category ?? '').localeCompare(b.category ?? '') || taskName(a.id, a.label).localeCompare(taskName(b.id, b.label), 'zh-CN')
+  if (sort.value === 'name') return taskName(a.id, a.label).localeCompare(taskName(b.id, b.label), 'zh-CN')
+  const aCoverage = coverageState(a.coverage) === 'unknown' ? -1 : a.coverage
+  const bCoverage = coverageState(b.coverage) === 'unknown' ? -1 : b.coverage
+  return bCoverage - aCoverage || names
+}))
 const { page, pageSize, pages, visible } = usePagedRows(filtered)
 const taskId = ref(''), reactionId = ref(''), selected = ref('task:')
+const mainPanel = ref<HTMLElement | null>(null)
+async function inspectTask(id: string) {
+  atlasSelection.value = id
+  search.value = ''; category.value = ''; taskId.value = id
+  await nextTick()
+  mainPanel.value?.scrollIntoView({behavior: 'smooth', block: 'start'})
+}
 const projectionMethod = ref<'pca'|'umap'>('umap')
 const task = computed(() => tasks.value.find(row => row.id === taskId.value))
 const rawTrace = ref<TaskTraceResponse | null>(null), traceError = ref(''), loading = ref(false)
@@ -92,22 +110,23 @@ async function exportNetwork() {
 onBeforeUnmount(() => {traceController?.abort();networkController?.abort()})
 </script>
 <template>
-  <section class="function-workspace" aria-label="功能前后对比" :data-run="runId">
-    <header class="function-heading"><div><span class="eyebrow">MODEL PREDICTION / FUNCTION</span><h2>扰动前后细胞代谢状态的分布变化</h2><p>根据逐细胞代谢任务分数比较群体分布与预测变化，核对关联反应和基因；坐标表示功能特征，不表示细胞形态或真实位置。</p></div><span class="pill pill-neutral">{{ runSourceLabel(entry?.record?.request.mode,runId,entry?.record?.result_kind) }}</span></header>
+  <section class="function-workspace" aria-label="代谢任务可视化" :data-run="runId">
+    <header class="function-heading"><div><span class="eyebrow">MODEL PREDICTION / FUNCTION</span><h2>代谢任务与反应关联</h2><p>根据逐细胞代谢任务分数比较群体分布与预测变化，核对关联反应和基因；坐标表示功能特征，不表示细胞形态或真实位置。</p></div><span class="pill pill-neutral">{{ runSourceLabel(entry?.record?.request.mode,runId,entry?.record?.result_kind) }}</span></header>
     <p v-if="synthetic" class="notice notice-warn">此历史记录为合成数据，功能关联分析不可用。</p>
     <div v-if="entry?.tasks.status==='error'" class="notice notice-warn">任务结果读取失败。<button class="btn btn-sm" @click="runs.retryBlock(runId,'tasks')">重试任务</button></div>
     <p v-else-if="entry?.tasks.status!=='ok'" class="notice">正在读取本次运行的功能任务…</p>
-    <div v-else class="function-layout">
+    <section v-if="entry?.tasks.status==='ok'" class="card"><MetabolicTaskAtlas :tasks="atlasTasks" source-kind="run" :context="runId" :selected-id="taskId" @select="inspectTask" /></section>
+    <div v-if="entry?.tasks.status==='ok'" class="function-layout">
       <aside class="task-browser" aria-label="功能任务列表">
-        <header><h3>代谢任务 <small>{{ filtered.length }} / {{ tasks.length }}</small></h3><p>按预测变化幅度浏览代谢任务。</p></header>
+        <header><h3>代谢任务 <small>{{ filtered.length }} / {{ tasks.length }}</small></h3><p>按覆盖与名称查找任务；变化仅在同一任务的群体间比较。</p></header>
         <label>搜索任务<input v-model="search" type="search" placeholder="名称或任务 ID" aria-label="搜索功能任务" /></label>
         <label>功能分类<select v-model="category" aria-label="功能分类"><option value="">全部分类</option><option v-for="item in categories" :key="item" :value="item">{{ metabolicGroupName(item) }}</option></select></label>
-        <label>排序<select v-model="sort" aria-label="功能任务排序"><option value="change">变化幅度</option><option value="name">任务名称</option></select></label>
+        <label>排序<select v-model="sort" aria-label="功能任务排序"><option value="coverage">覆盖与分类</option><option value="name">任务名称</option></select></label>
         <div class="task-options"><button v-for="item in visible" :key="item.id" class="task-option" :class="{active:taskId===item.id}" :aria-pressed="taskId===item.id" :data-task="item.id" @click="taskId=item.id"><span>{{ taskName(item.id, item.label) }}</span><small>{{ metabolicGroupName(item.category) }}</small><strong :class="item.predicted_delta<0?'negative':'positive'">Δ {{ fmtDelta(item.predicted_delta,3) }}</strong></button><p v-if="!filtered.length" class="muted">未找到匹配的任务，请调整筛选条件。</p></div>
         <TablePager v-model:page="page" v-model:page-size="pageSize" :pages="pages" :total="filtered.length" />
         <small class="scope-note">{{ entry?.tasks.data?.scope==='all'?'本次已评分任务':'主要响应任务' }}{{ entry?.tasks.data?.truncated?'（已截断）':'' }}。</small>
       </aside>
-      <section class="function-main" aria-label="当前功能关联">
+      <section ref="mainPanel" class="function-main" aria-label="当前功能关联">
         <header class="task-heading"><span class="eyebrow">SELECTED FUNCTION</span><h3>{{ task ? taskName(task.id, task.label) : '请选择任务' }}</h3><p v-if="task">{{ task.id }} · {{ metabolicGroupName(task.category) }}{{ task.subcategory?' / '+metabolicGroupName(task.subcategory):'' }}</p></header>
         <div class="mode-controls" aria-label="代谢降维方式"><button class="btn btn-sm" :class="{'btn-primary':projectionMethod==='umap'}" :aria-pressed="projectionMethod==='umap'" @click="projectionMethod='umap'">UMAP</button><button class="btn btn-sm" :class="{'btn-primary':projectionMethod==='pca'}" :aria-pressed="projectionMethod==='pca'" @click="projectionMethod='pca'">PCA</button><span class="projection-label">代谢状态分布 · 所选任务分数着色</span><button class="btn btn-sm export-trace" :disabled="!rawTrace" @click="exportTrace">导出完整关联 JSON</button><button class="btn btn-sm" :disabled="!rawTrace || synthetic || networkDownloading" @click="exportNetwork">{{ networkDownloading?'下载中…':'所选任务网络包 ZIP' }}</button></div>
         <p v-if="exportError" class="notice notice-warn" role="alert">{{ exportError }}</p>
@@ -136,4 +155,5 @@ onBeforeUnmount(() => {traceController?.abort();networkController?.abort()})
 </template>
 <style scoped>
 .function-workspace{min-width:0}.function-heading{display:flex;justify-content:space-between;gap:20px;align-items:center;margin:25px 0}.function-heading h2{font-size:24px;font-weight:500;margin:10px 0}.function-heading p{font-size:12px;color:var(--muted);line-height:1.8}.function-heading .pill{white-space:normal;max-width:210px}.function-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:16px;align-items:start}.task-browser,.function-main,.node-detail{border:1px solid var(--border);background:var(--card);padding:18px;min-width:0}h3{font-size:15px;font-weight:500;margin:0 0 10px}h4{font-size:13px;font-weight:500;line-height:1.7;margin:12px 0}.task-browser header p,.reaction-browser p{font-size:10px;color:var(--muted);line-height:1.7}.task-browser h3 small{font-size:10px;color:var(--muted)}label{display:block;color:var(--muted);font-size:10px;margin:12px 0}input,select{display:block;width:100%;min-width:0;margin-top:6px;padding:9px;border:1px solid var(--border);background:var(--card);color:var(--ink);font:11px var(--font)}.task-options{max-height:490px;overflow:auto;margin-top:16px}.task-option{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);padding:13px 10px;background:transparent;cursor:pointer;color:var(--ink)}.task-option span{display:block;font-size:11px;line-height:1.6}.task-option small{display:block;color:var(--muted);font-size:9px;margin:6px 0}.task-option strong{font:11px Consolas,monospace}.task-option.active{background:var(--primary-weak);box-shadow:inset 3px 0 var(--primary)}.task-option:hover{background:var(--surface-tint-hover)}.negative{color:var(--delta-down)}.positive{color:var(--delta-up)}.scope-note{display:block;font-size:9px;color:var(--muted);margin-top:12px;line-height:1.8}.task-heading h3{font-size:18px;line-height:1.6;margin:10px 0}.task-heading p{font:10px Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}.mode-controls{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.projection-label{font-size:11px;color:var(--muted);align-self:center}.association-evidence{margin-top:24px;border-top:1px solid var(--border);padding-top:18px}.association-evidence>summary{cursor:pointer;color:var(--primary);font-size:12px}.export-trace{margin-left:auto}.network-message{min-height:250px;padding:60px 20px;text-align:center;background:var(--message-bg);color:var(--muted);font-size:12px;line-height:1.9}.reaction-browser{border-top:1px solid var(--border);margin-top:24px;padding-top:20px}.reaction-browser header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.reaction-browser header span{font-size:10px;color:var(--muted)}.reaction-options{display:flex;flex-wrap:wrap;gap:6px;max-height:210px;overflow:auto}.reaction-options .btn{font-size:10px}.reaction-options small{margin-left:6px}.node-detail{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 24px}.node-detail>.eyebrow,.node-detail>h3,.node-detail>h4,.node-detail>.identifier{grid-column:1/-1}.node-detail .identifier{font-size:10px;color:var(--muted)}.node-scores{margin:20px 0}.node-scores div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border);padding:12px 0}.node-scores dt{font-size:10px;color:var(--muted)}.node-scores dd{font:15px Consolas,monospace;margin:0}.detail-note,.coverage-detail p,.coverage-detail small,.gpr-detail p,.provenance-detail p{font-size:10px;line-height:1.9;color:var(--muted)}.node-detail section{border-top:1px solid var(--border);margin-top:18px;padding-top:4px}.coverage-detail strong{font:30px Georgia,serif;color:var(--primary)}.node-detail details{font-size:10px;line-height:1.8;margin:12px 0}.node-detail summary{cursor:pointer;color:var(--primary)}.node-detail code{display:block;font:11px Consolas,monospace;background:var(--code-bg);padding:12px;white-space:pre-wrap;overflow-wrap:anywhere}.node-detail p,.node-detail h4{overflow-wrap:anywhere}.gene-link{display:block;text-align:left;font:10px Consolas,monospace;padding:8px;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--primary);width:100%;cursor:pointer}.provenance-detail a{display:block;font-size:10px;line-height:2.4}.trace-notes{font-size:10px;color:var(--muted);line-height:1.9;margin-top:18px}.trace-notes summary{cursor:pointer;color:var(--primary)}.function-boundary{font-size:11px;line-height:2;color:var(--muted);border-top:1px solid var(--border);padding:18px 0;margin-top:22px}.task-browser :deep(.pager){gap:6px}.task-browser :deep(.pager span){flex-basis:100%;font-size:9px}
+.function-main{scroll-margin-top:100px}
 </style>

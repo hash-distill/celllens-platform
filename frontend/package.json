@@ -10,10 +10,11 @@
     "build": "node scripts/build.mjs",
     "build:if-needed": "node scripts/build.mjs --if-needed",
     "typecheck": "vue-tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node scripts/guard-picomatch.mjs"
   },
   "dependencies": {
-    "echarts": "^5.6.0",
+    "echarts": "^6.1.0",
     "pinia": "^2.3.1",
     "three": "0.186.1",
     "vue": "^3.5.13",
@@ -24,6 +25,9 @@
     "@vitejs/plugin-vue": "^5.2.3",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^3.3.14"
+  },
+  "overrides": {
+    "picomatch": "4.0.7"
   }
 }

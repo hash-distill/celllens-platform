@@ -21,17 +21,20 @@ const route = vue.reactive({ path: '/runs/run_test', params: { runId: 'run_test'
 const noop = () => {}
 const cleanup = []
 const navigations = []
+const apiCalls = []
+const accessSession = vue.ref({mode:'local',read_only:false})
 let assistantSource
 const requireModule = name => {
   if (name === 'vue') return { ...vue, onBeforeUnmount: callback => cleanup.push(callback) }
   if (name === 'vue-router') return { useRoute: () => route, useRouter: () => ({ replace: location => navigations.push(location) }) }
+  if (name.endsWith('stores/access')) return { accessSession }
   if (name.endsWith('stores/run')) return { useRunStore: () => ({ entry: () => entry, openRun: noop, leaveRun: noop, ensureTabData: noop }) }
   if (name.endsWith('stores/recent')) return { useRecentStore: () => ({ add: noop }) }
   if (name.endsWith('stores/candidates')) return { useCandidatesStore: () => ({}) }
   if (name.endsWith('stores/draft')) return { useDraftStore: () => ({}) }
   if (name.endsWith('stores/ui')) return { useUiStore: () => ({}) }
   if (name.endsWith('stores/assistantSource')) return { useAssistantSource: source => { assistantSource = source }, openAssistant: noop }
-  if (name.endsWith('api/http')) return { apiFetch: () => new Promise(noop) }
+  if (name.endsWith('api/http')) return { apiFetch: path => { apiCalls.push(path); return new Promise(noop) } }
   if (name.endsWith('utils/resultOverview')) return helpers
   if (name.endsWith('utils/biologyLocale')) return { taskName: (id, label) => label || id, metabolicGroupName: value => value || 'unknown' }
   if (name.endsWith('utils/source')) return { isSyntheticResult: () => false }
@@ -58,6 +61,13 @@ const scope = vue.effectScope()
 scope.run(() => {
   const workbench = setup('../src/views/WorkbenchView.vue', {})
   assert.equal(assistantSource().view, 'overview')
+  route.query = { tab: 'validation' }
+  assert.equal(workbench.activeTab.value, 'comparison', 'Legacy online-validation links open the available matched comparison')
+  assert.equal(assistantSource().view, 'comparison')
+  entry.record.request.mode = 'validation'
+  assert.equal(workbench.activeTab.value, 'validation', 'Saved validation runs retain their original validation view')
+  entry.record.request.mode = 'online'
+  route.query = {}
   const events = []
   const wrapper = setup('../src/components/RunResultOverview.vue', { runId: 'run_test' }, (event, value) => {
     events.push([event, value])
@@ -116,6 +126,31 @@ scope.run(() => {
   assert.equal(workbench.runId.value, 'run_next')
   assert.equal(assistantSource().view, 'overview', 'A new run must reset comparison mode before its context loads')
 })
+scope.run(() => {
+  accessSession.value = {mode:'public',read_only:true}
+  entry.tasks.data = {scope:'all',truncated:false,items:[
+    {id:'KNOWN',control:0,predicted:2,coverage:0.75},
+    {id:'ZERO',control:0,predicted:0,coverage:0},
+    {id:'UNKNOWN',control:2,predicted:3,coverage:null},
+  ]}
+  route.query.tab = 'comparison'
+  const count = apiCalls.length
+  const wrapper = setup('../src/components/RunResultOverview.vue', {runId:'run_test'})
+  assert.equal(apiCalls.length,count,'Public overview must not request private comparison or catalog coverage')
+  assert.equal(wrapper.tasks.value[0].coverage,0.75,'Public coverage must use the frozen run artifact')
+  assert.equal(wrapper.tasks.value[1].coverage,0,'Zero saved coverage remains a real zero')
+  assert.equal(wrapper.tasks.value[2].coverage,null,'Missing saved coverage cannot become zero')
+  assert.equal(wrapper.tasks.value[0].control,0)
+  assert.equal(wrapper.genes.value[0].observed,null,'Private matched means must never leak into a public original-population overview')
+  entry.tasks.data.truncated=true
+  assert.equal(wrapper.tasks.value[0].coverage,null,'Partial task responses cannot claim complete frozen coverage')
+  const beforeNavigation=navigations.length
+  wrapper.openDetail('gene','TARGET')
+  assert.equal(navigations.length,beforeNavigation,'Public cards do not open private detail tabs')
+  const workbench=setup('../src/views/WorkbenchView.vue',{})
+  assert.equal(workbench.activeTab.value,'overview','A public deep link must not mount a private comparison tab')
+  assert.equal(assistantSource(),null,'Public source must not activate AI interpretation')
+})
 for (const callback of cleanup) callback()
 scope.stop()
-console.log('Run overview: population isolation, missing tasks, panel coverage, target presence and AI population mapping passed')
+console.log('Run overview: population isolation, missing tasks, panel coverage, target presence and AI population mapping and public frozen readers passed')

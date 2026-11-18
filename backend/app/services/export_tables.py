@@ -27,6 +27,16 @@ METADATA_COLUMNS = [
     "result_source",
     "database_version",
     "manifest_sha256",
+    "comparison_sha256",
+    "comparison_manifest_sha256",
+    "observed_sha256",
+    "source_revision",
+    "protocol_status",
+    "reference_selection_sha256",
+    "diagnostics_sha256",
+    "selection_json",
+    "warnings_json",
+    "metadata_url",
 ]
 
 
@@ -57,6 +67,9 @@ def _optional_json(root: Any, manifest: dict, name: str) -> dict:
 def table_metadata(container: Any, run_id: str, population: str = "original") -> dict[str, Any]:
     if population not in {"original", "comparison"}:
         raise CellStateUnavailable("Unknown export population")
+    if population == "comparison" and getattr(container.settings, "deployment_mode", "local") == "public":
+        raise CellStateUnavailable("Public mode cannot read private comparisons")
+    api_prefix = getattr(container.settings, "api_prefix", "/api/v1")
     record, root, manifest, sha = _sources(container, run_id)
     contract = _optional_json(root, manifest, "expression_contract.json")
     trace = _optional_json(root, manifest, "task_trace.json")
@@ -89,6 +102,7 @@ def table_metadata(container: Any, run_id: str, population: str = "original") ->
         "validation_population": contract.get("validation_population"),
     }
     comparison_sha = None
+    comparison = {}
     warnings: list[str] = []
     if population == "comparison":
         comparison = load_comparison(container.settings.project_root, run_id)
@@ -140,6 +154,25 @@ def table_metadata(container: Any, run_id: str, population: str = "original") ->
         "database_version": database,
         "manifest_sha256": sha,
         "comparison_sha256": comparison_sha,
+        "comparison_manifest_sha256": comparison.get("comparison_manifest_sha256"),
+        "observed_sha256": comparison.get("source", {}).get("observed_sha256"),
+        "source_revision": comparison.get("source", {}).get("revision"),
+        "protocol_status": comparison.get(
+            "protocol_status",
+            "original_population" if population == "original" else "matched_observation_diagnostic",
+        ),
+        "reference_selection_sha256": comparison.get("evaluation_protocol", {}).get(
+            "reference_selection_sha256"
+        ),
+        "diagnostics_sha256": comparison.get("diagnostics_provenance", {}).get("diagnostics_sha256"),
+        "evaluation_protocol": comparison.get("evaluation_protocol"),
+        "batch_sensitivity": comparison.get("batch_sensitivity"),
+        "task_coverage": comparison.get("task_coverage"),
+        "selection_json": json.dumps(selection, ensure_ascii=False, separators=(",", ":")),
+        "warnings_json": json.dumps([*warnings, *comparison.get("warnings_zh", [])], ensure_ascii=False),
+        "metadata_url": f"{api_prefix}/runs/{run_id}/comparison/download?table=json"
+        if population == "comparison"
+        else f"{api_prefix}/research/results/prediction/{run_id}/export",
         "source_expression_scales": contract.get("source_scales", {}),
         "predicted_values_are_measured_counts": False,
         "warnings": warnings,
@@ -226,6 +259,16 @@ def export_table(container: Any, run_id: str, table: str, population: str = "ori
         ]
         if table == "reactions":
             columns.remove("absolute_error")
+        if table == "tasks":
+            columns += [
+                "coverage",
+                "evidence_level",
+                "missing_genes",
+                "coverage_source",
+                "input_scope",
+                "score_structure_id",
+                "same_score_structure_task_count",
+            ]
     elif table == "genes":
         with _file(root, manifest, "gene_deltas.csv").open(encoding="utf-8-sig", newline="") as stream:
             reader = csv.DictReader(stream)

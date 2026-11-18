@@ -31,12 +31,14 @@ const STAGE_HINT: Partial<Record<RunStatus, string>> = {
   validating: '正在生成表达／代谢状态分布图并保存结果',
 }
 
+const cancelled = computed(() => props.record.status === 'failed' && props.record.error_code === 'RUN_CANCELLED')
 const currentIndex = computed(() => {
   if (props.record.status === 'failed') return -1
   return STAGE_ORDER.indexOf(props.record.status)
 })
 
 const statusText = computed(() => {
+  if (cancelled.value) return '已取消'
   const base = STATUS_LABEL[props.record.status]
   if (props.record.status === 'completed' && props.record.warnings.length > 0) {
     return `${base}（有运行提示）`
@@ -45,6 +47,7 @@ const statusText = computed(() => {
 })
 
 const fillClass = computed(() => {
+  if (cancelled.value) return 'cancelled'
   if (props.record.status === 'failed') return 'failed'
   if (props.record.status === 'completed') return 'done'
   return ''
@@ -58,7 +61,8 @@ const fillClass = computed(() => {
       <span
         class="pill"
         :class="{
-          'pill-danger': record.status === 'failed',
+          'pill-danger': record.status === 'failed' && !cancelled,
+          'pill-neutral': cancelled,
           'pill-ok': record.status === 'completed' && record.warnings.length === 0,
           'pill-warn': record.status === 'completed' && record.warnings.length > 0,
           'pill-info':
@@ -95,7 +99,7 @@ const fillClass = computed(() => {
         :class="{
           active: index === currentIndex,
           passed: currentIndex > index,
-          failed: record.status === 'failed' && index === Math.max(0, STAGE_ORDER.length - 2),
+          failed: record.status === 'failed' && !cancelled && index === Math.max(0, STAGE_ORDER.length - 2),
         }"
       >
         <span class="stage-dot" aria-hidden="true"></span>
@@ -108,7 +112,8 @@ const fillClass = computed(() => {
 
     <div v-if="pollIssue" class="notice notice-warn" style="margin-top: 10px">{{ pollIssue }}</div>
 
-    <div v-if="record.status === 'failed'" class="notice notice-danger" style="margin-top: 10px">
+    <div v-if="cancelled" class="cancelled-note" role="status">分析已取消。运行参数与取消记录已保留；已停止的任务不会继续发布分析结果。</div>
+    <div v-else-if="record.status === 'failed'" class="notice notice-danger" style="margin-top: 10px">
       <strong>分析失败</strong>
       <p style="margin: 4px 0 0">
         错误码：<span class="mono">{{ record.error_code ?? '未提供' }}</span>
@@ -133,6 +138,8 @@ const fillClass = computed(() => {
 </template>
 
 <style scoped>
+.progress-fill.cancelled{background:var(--muted)}
+.cancelled-note{margin-top:14px;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;line-height:1.8}
 .progress-row {
   display: flex;
   align-items: center;

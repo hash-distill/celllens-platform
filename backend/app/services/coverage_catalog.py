@@ -1,24 +1,35 @@
 """Gene and task availability from verified panels; no model inference or expression scores."""
 
 import re
-from functools import lru_cache
+from collections import OrderedDict
+from threading import Lock
 from typing import Any
 
 from backend.app.services.completeness import compute_official_completeness
 from backend.app.services.task_trace import associations, task_metadata
 
+_verified_reports: OrderedDict[tuple, dict[str, Any]] = OrderedDict()
+_verified_reports_lock = Lock()
 
-@lru_cache(maxsize=8)
-def cached_completeness(genes: tuple[str, ...], database_root: str, manifest_sha256: str) -> dict[str, Any]:
-    # Callers still verify assets on each request; a changed manifest selects a new cache key.
-    from pathlib import Path
 
-    from backend.app.services.scientific_analysis import _load_frozen_database
+def clear_completeness_cache() -> None:
+    with _verified_reports_lock:
+        _verified_reports.clear()
 
-    database, version = _load_frozen_database(Path(database_root))
-    if database["_celllens_provenance"]["manifest_sha256"] != manifest_sha256:
-        raise ValueError("Database changed while computing coverage")
-    return compute_official_completeness(list(genes), database, version)
+
+def completeness_from_verified_database(
+    genes: list[str], database: dict[str, Any], database_version: str, database_root: str
+) -> dict[str, Any]:
+    """Reuse this request's verified parse instead of reopening all database files."""
+    key = (database_root, tuple(genes), database["_celllens_provenance"]["manifest_sha256"], database_version)
+    with _verified_reports_lock:
+        if key not in _verified_reports:
+            report = compute_official_completeness(genes, database, database_version)
+            _verified_reports[key] = report
+            if len(_verified_reports) > 8:
+                _verified_reports.popitem(last=False)
+        _verified_reports.move_to_end(key)
+        return _verified_reports[key]
 
 
 def coverage_catalog(

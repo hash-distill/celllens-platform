@@ -32,7 +32,7 @@ test('routine explanations do not occupy blue notice boxes', () => {
     assert.equal(source(path).includes('notice-info'), false, path)
   }
   assert.match(source('src/views/WorkbenchView.vue'), /原运行群体/)
-  assert.match(source('src/components/tabs/MeasuredComparisonTab.vue'), /scCellFie 计算/)
+  assert.match(source('src/components/tabs/MeasuredComparisonTab.vue'), /表达经 scCellFie 派生，不是代谢通量/)
   assert.doesNotMatch(source('src/views/ResearchView.vue'), /\.experiment-description\{[^}]*background:/)
   assert.doesNotMatch(source('src/components/MeasuredSetup.vue'), /\.coverage-state\{[^}]*background:/)
 })

@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRunStore } from '../../stores/run'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
-import DivergingBar, { type DivergingBarItem } from '../../charts/DivergingBar.vue'
 import { EVIDENCE_LABEL, fmtDelta, fmtNumber } from '../../utils/format'
 import type { EvidenceLevel, EvidenceItem } from '../../types/run'
 import TablePager from '../TablePager.vue'
@@ -14,6 +13,7 @@ import { taskName } from '../../utils/biologyLocale'
 import { api } from '../../api/client'
 import { downloadBlob } from '../../utils/csv'
 import { isSyntheticResult } from '../../utils/source'
+import { coverageState } from '../../utils/resultOverview'
 
 /**
  * 代谢功能：任务差异图与表格 + 反应聚合表；覆盖详情在独立目录。
@@ -49,7 +49,10 @@ function coverageLabel(task: EvidenceItem) {
 }
 
 // ---------- 任务 ----------
-const allTasks = computed<EvidenceItem[]>(() => (tasksBlock.value?.data?.items ?? []).filter(hasPredictionChange))
+const allTasks = computed<EvidenceItem[]>(() => (tasksBlock.value?.data?.items ?? []).filter(hasPredictionChange).slice().sort((a,b) => {
+  const ca=coverageState(a.coverage)==='unknown'?-1:a.coverage, cb=coverageState(b.coverage)==='unknown'?-1:b.coverage
+  return cb-ca || taskName(a.id,a.label).localeCompare(taskName(b.id,b.label),'zh-CN')
+}))
 
 const levelCounts = computed(() => {
   const counts: Record<EvidenceLevel, number> = { supported: 0, exploratory: 0, insufficient: 0 }
@@ -77,18 +80,6 @@ const searchedTasks = computed(() => {
       t.id.toLowerCase().includes(query),
   )
 })
-
-const barItems = computed<DivergingBarItem[]>(() =>
-  [...searchedTasks.value]
-    .sort((a, b) => Math.abs(b.predicted_delta) - Math.abs(a.predicted_delta))
-    .slice(0, 15)
-    .map((t) => ({
-      id: t.id,
-      name: taskName(t.id, t.label),
-      value: t.predicted_delta,
-      extra: coverageLabel(t),
-    })),
-)
 
 const { page: taskPage, pageSize: taskPageSize, pages: taskPages, visible: taskRows } = usePagedRows(searchedTasks)
 const { associations, retry: retryAssociations } = useTaskAssociations(() => props.runId, taskRows)
@@ -197,15 +188,7 @@ const { page: reactionPage, pageSize: reactionPageSize, pages: reactionPages, vi
         <p class="task-filter-status muted small" role="status">当前：{{ filterLabel(evidenceFilter) }} · 匹配 {{ searchedTasks.length }} 项。点击条形或任务名查看详情。</p>
 
         <template v-if="searchedTasks.length > 0">
-          <DivergingBar
-            v-if="barItems.length > 0"
-            :items="barItems"
-            category-name="代谢任务"
-            value-label="任务分数变化"
-            :height="Math.min(120 + barItems.length * 26, 460)"
-            :selected-name="selectedTask ? taskName(selectedTask.id, selectedTask.label) : undefined"
-            @select="selectedTaskId = $event"
-          />
+          <p class="muted small">按覆盖与名称检索任务；分数变化仅用于同一任务跨群体比较，不比较不同任务的变化幅度。</p>
           <section v-if="selectedTask" class="task-detail" aria-label="选中代谢任务详情">
             <h4>{{ taskName(selectedTask.id, selectedTask.label) }}</h4>
             <p class="muted small">{{ coverageLabel(selectedTask) }} · {{ selectedTask.id }}</p>

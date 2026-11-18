@@ -1,5 +1,6 @@
 import asyncio
 import html
+import json
 import logging
 import shutil
 import threading
@@ -48,8 +49,15 @@ class AnalysisPipeline:
         await asyncio.to_thread(self._run_sync, run_id)
 
     def _run_sync(self, run_id: str) -> None:
-        with self.store.named_lock("celllens:a6000", timeout_seconds=self.lease_seconds):
-            self._run_with_gpu_lock(run_id)
+        from backend.app.services.resource_downloads import ResourceLease
+
+        # OS lock also serializes separate SQLite worker processes on this host.
+        lease = ResourceLease(self.derived_root / ".prediction.lock")
+        try:
+            with self.store.named_lock("celllens:a6000", timeout_seconds=self.lease_seconds):
+                self._run_with_gpu_lock(run_id)
+        finally:
+            lease.close()
 
     def _run_with_gpu_lock(self, run_id: str) -> None:
         try:
@@ -60,10 +68,32 @@ class AnalysisPipeline:
             )
         except JobAlreadyClaimedError:
             return
+        with _lease_heartbeat(self.store, attempt.id, self.lease_seconds):
+            self._execute_claimed(run_id, attempt)
+
+    def _execute_claimed(self, run_id, attempt):
         record = self.store.get(run_id)
         request = record.request
         partial = self.derived_root / f"{run_id}.attempt-{attempt.attempt_no}.partial"
         final = self.derived_root / run_id
+        if final.exists():
+            try:
+                self._adopt_published(run_id, attempt, request, final)
+            except JobAlreadyClaimedError:
+                raise
+            except Exception as exc:
+                self.store.transition(
+                    run_id,
+                    RunStatus.FAILED,
+                    record.stage_progress,
+                    error_code="PUBLICATION_RECOVERY_FAILED",
+                    error_message=str(exc),
+                )
+                self.store.finish_attempt(
+                    attempt.id, succeeded=False, error_code="PUBLICATION_RECOVERY_FAILED"
+                )
+                raise
+            return
         if partial.exists():
             shutil.rmtree(partial)
         partial.mkdir(parents=True, exist_ok=False)
@@ -184,9 +214,7 @@ class AnalysisPipeline:
                         source_root=partial,
                     )
                 self.store.transition(run_id, RunStatus.VALIDATING, 95, warnings=warnings)
-            if final.exists():
-                raise FileExistsError(f"Immutable run directory already exists: {final}")
-            partial.replace(final)
+            self.store.publish_attempt(run_id, partial, final)
             for path in final.iterdir():
                 if path.is_file():
                     self.store.register_artifact(
@@ -200,8 +228,12 @@ class AnalysisPipeline:
             figure_manifest = final / "cell_state" / "prepared.json"
             if figure_manifest.is_file():
                 self.store.register_artifact(
-                    run_id, "cell_state_preparation", f"{run_id}/cell_state/prepared.json",
-                    file_sha256(figure_manifest), figure_manifest.stat().st_size, "application/json",
+                    run_id,
+                    "cell_state_preparation",
+                    f"{run_id}/cell_state/prepared.json",
+                    file_sha256(figure_manifest),
+                    figure_manifest.stat().st_size,
+                    "application/json",
                 )
             if (self.registry.registry_root / "observations.json").is_file():
                 try:
@@ -230,6 +262,9 @@ class AnalysisPipeline:
                 self.store.put_cache(cache_key, run_id)
             self.store.finish_attempt(attempt.id, succeeded=True)
         except Exception as exc:
+            if isinstance(exc, JobAlreadyClaimedError):
+                # A superseded worker must never overwrite a successor's state.
+                raise
             error_code = exc.code if isinstance(exc, CellLensError) else "PIPELINE_FAILED"
             current = self.store.get(run_id)
             if current.status not in {RunStatus.COMPLETED, RunStatus.FAILED}:
@@ -241,10 +276,52 @@ class AnalysisPipeline:
                     error_code=error_code,
                     error_message=str(exc),
                 )
-            failure_root = partial if partial.exists() else final
-            atomic_write_json(failure_root / "failure.json", {"error_code": error_code, "message": str(exc)})
+            if partial.exists():
+                atomic_write_json(partial / "failure.json", {"error_code": error_code, "message": str(exc)})
             self.store.finish_attempt(attempt.id, succeeded=False, error_code=error_code)
             raise
+
+    def _adopt_published(self, run_id, attempt, request, final):
+        """Recover a crash after atomic rename without recomputing or replacing bytes."""
+        manifest = json.loads((final / "manifest.json").read_text(encoding="utf-8"))
+        if manifest.get("request") != request.model_dump(mode="json"):
+            raise ScientificContractError("Published result request does not match recovered run")
+        for name, entry in manifest["outputs"].items():
+            path = (final / name).resolve()
+            if not path.is_relative_to(final.resolve()) or file_sha256(path) != entry["sha256"]:
+                raise ScientificContractError("Published result hash mismatch during recovery")
+        summary = RunSummary.model_validate(json.loads((final / "summary.json").read_text(encoding="utf-8")))
+        validate_projection(final / "projection.json")
+        for path in final.iterdir():
+            if path.is_file():
+                self.store.register_artifact(
+                    run_id,
+                    _artifact_kind(path),
+                    f"{run_id}/{path.name}",
+                    file_sha256(path),
+                    path.stat().st_size,
+                    _mime_type(path),
+                )
+        figure = final / "cell_state/prepared.json"
+        if figure.is_file():
+            self.store.register_artifact(
+                run_id,
+                "cell_state_preparation",
+                f"{run_id}/cell_state/prepared.json",
+                file_sha256(figure),
+                figure.stat().st_size,
+                "application/json",
+            )
+        self.store.transition(
+            run_id,
+            RunStatus.COMPLETED,
+            100,
+            warnings=summary.warnings,
+            message="verified immutable publication recovered",
+        )
+        if cache_key := self.store.cache_key(run_id):
+            self.store.put_cache(cache_key, run_id)
+        self.store.finish_attempt(attempt.id, succeeded=True)
 
     def allocate_run_id(self) -> str:
         return f"run_{uuid.uuid4().hex[:16]}"

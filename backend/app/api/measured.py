@@ -99,6 +99,24 @@ def projection(identifier: str, request: Request, embedding: Literal["pca", "uma
         raise translate(exc) from exc
 
 
+@router.get("/{identifier}/task-evidence")
+def task_evidence(identifier: str, request: Request, task: str = Query(min_length=1, max_length=500)):
+    from backend.app.services.measured_trace import measured_task_evidence
+
+    try:
+        directory, summary, _ = request.app.state.measured.result(identifier)
+        if summary.get("analysis_id") != identifier:
+            raise ValueError("任务证据与分析记录标识不一致")
+        payload = measured_task_evidence(
+            request.app.state.container.settings.project_root, directory, summary, task
+        )
+        _, digest = request.app.state.measured.store.get(identifier)
+        payload["analysis_manifest_sha256"] = digest
+        return JSONResponse(payload, headers=HEADERS)
+    except (KeyError, ValueError, OSError) as exc:
+        raise translate(exc) from exc
+
+
 @router.get("/{identifier}/download")
 async def download(
     identifier: str,

@@ -31,12 +31,9 @@ def client(tmp_path):
 @pytest.mark.parametrize(
     "method,path",
     [
-        ("GET", "/datasets"),
         ("GET", "/login"),
         ("GET", "/analyses/ana_" + "a" * 32),
         ("GET", "/api/v1/data-capabilities"),
-        ("GET", "/api/v1/datasets"),
-        ("POST", "/api/v1/datasets"),
         ("GET", "/api/v1/datasets/ds_" + "a" * 32),
         ("POST", "/api/v1/analyses"),
         ("GET", "/api/v1/analyses/ana_" + "a" * 32),
@@ -49,14 +46,28 @@ def test_retired_routes_are_unavailable(client, method, path):
 def test_public_contract_only_exposes_current_workflows(client):
     schema = client.get("/openapi.json").json()
     assert not any(
-        path.startswith(("/api/v1/datasets", "/api/v1/analyses", "/api/v1/data-capabilities"))
-        for path in schema["paths"]
+        path.startswith(("/api/v1/analyses", "/api/v1/data-capabilities")) for path in schema["paths"]
     )
     status = client.get("/api/v1/system-status").json()
     assert not any(key.startswith("upload") for key in status["workers"])
     assert "limits" not in status
     assert client.get("/api/v1/experiments").json()["items"] == []
     assert client.get("/api/v1/experiments?source=upload").status_code == 422
+
+
+def test_dataset_library_reuses_path_without_restoring_arbitrary_uploads(client):
+    assert client.get("/datasets").status_code == 200
+    catalog = client.get("/api/v1/datasets")
+    assert catalog.status_code == 200
+    assert catalog.json()["items"][0]["status"] == "needs_preparation"
+    assert (
+        client.post("/api/v1/datasets", json={"url": "https://example.org/private.h5ad"}).status_code == 405
+    )
+    schema = client.get("/openapi.json").json()["paths"]
+    assert set(schema["/api/v1/datasets"]) == {"get"}
+    assert "/api/v1/datasets/{dataset_id}/conditions" in schema
+    assert "/api/v1/datasets/{dataset_id}/analyses" in schema
+    assert client.get("/api/v1/datasets/unregistered/conditions").status_code == 404
 
 
 def test_assistant_and_coverage_reject_retired_sources(client):

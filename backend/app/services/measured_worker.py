@@ -15,7 +15,7 @@ from backend.app.services.resource_control import watch_parent
 
 
 def execute_measured_job(
-    root, request, staging, final, report, *, inputs=None, metabolism=True, compute_umap=True
+    root, request, staging, final, report, *, inputs=None, metabolism=True, compute_umap=True, publish=True
 ):
     staging.mkdir(parents=True, exist_ok=True)
     inputs = copy.deepcopy(inputs) if inputs is not None else prepare_inputs(root, request, staging, report)
@@ -31,7 +31,7 @@ def execute_measured_job(
     atomic_write_json(staging / "summary.json", summary)
     render_report(summary, staging)
     packages = {}
-    for name in ("anndata", "numpy", "pandas", "scikit-learn", "umap-learn", "scCellFie"):
+    for name in ("anndata", "numpy", "pandas", "scipy", "scikit-learn", "umap-learn", "scCellFie"):
         try:
             packages[name] = version(name)
         except PackageNotFoundError:
@@ -51,9 +51,10 @@ def execute_measured_job(
         "packages": packages,
     }
     atomic_write_json(staging / "manifest.json", manifest)
-    if final.exists():
-        raise ValueError("目标实测分析已存在，未覆盖原结果")
-    staging.replace(final)
+    if publish:
+        if final.exists():
+            raise ValueError("目标实测分析已存在，未覆盖原结果")
+        staging.replace(final)
     return summary
 
 
@@ -62,6 +63,7 @@ def main() -> None:
     parser.add_argument("--root", required=True)
     parser.add_argument("--request-file", required=True)
     parser.add_argument("--parent-pid", required=True, type=int)
+    parser.add_argument("--no-publish", action="store_true")
     args = parser.parse_args()
     threading.Thread(target=watch_parent, args=(args.parent_pid,), daemon=True).start()
     root = Path(args.root).resolve()
@@ -78,7 +80,7 @@ def main() -> None:
         print(json.dumps({"progress": progress, "message": message}, ensure_ascii=True), flush=True)
 
     try:
-        execute_measured_job(root, request, path.parent, final, report)
+        execute_measured_job(root, request, path.parent, final, report, publish=not args.no_publish)
     except Exception as exc:
         print(json.dumps({"error": str(exc)}, ensure_ascii=True), flush=True)
         sys.exit(1)

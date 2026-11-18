@@ -5,6 +5,8 @@ export const router = createRouter({
   routes: [
     { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
     { path: '/data-catalog', name: 'data-catalog', component: () => import('../views/DataCatalogView.vue') },
+    { path: '/datasets', name: 'datasets', component: () => import('../views/DatasetLibraryView.vue') },
+    { path: '/figures/:recordKind/:recordId', name: 'figure-workspace', component: () => import('../views/FigureWorkspaceView.vue') },
     { path: '/research', name: 'research', component: () => import('../views/ResearchView.vue') },
     { path: '/measured', name: 'measured', redirect: to => ({path:'/research', query:{...to.query, type:'measured'}, hash:to.hash}) },
     { path: '/measured/:analysisId', name: 'measured-detail', component: () => import('../views/MeasuredAnalysisView.vue') },

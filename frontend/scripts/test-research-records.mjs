@@ -60,12 +60,35 @@ test('partial, shifting and cancelled responses never masquerade as complete his
   await assert.rejects(collectRecordPages(async () => { throw new Error('must not fetch') }, controller.signal), { name: 'AbortError' })
 })
 
-test('navigation separates interpretation from the single unified record table', () => {
+test('approved navigation keeps research, coverage and one source-filterable record table', () => {
   const header = source('components/AppHeader.vue'), records = source('views/RecordsView.vue')
-  assert.match(header, /结果解读/)
-  assert.match(header, /实验记录/)
+  for (const label of ['研究概览', '研究工作台', '数据图谱', '实验记录']) assert.ok(header.includes(label), `Missing approved navigation: ${label}`)
+  assert.match(source('components/SectionNavigation.vue'), /records\?status=completed/)
+  assert.doesNotMatch(source('components/SectionNavigation.vue'), /已完成结果/)
+  assert.match(records, /id="record-status"/)
+  assert.doesNotMatch(records, /RESULT INTERPRETATION|只看完成结果|已完成研究/)
   assert.match(records, /id="record-category"/)
   assert.doesNotMatch(records, /<MeasuredHistory|实验分析<|加入比较</)
   assert.doesNotMatch(source('components/SectionNavigation.vue'), /label:'实测记录'|label:'预测记录'/)
   assert.doesNotMatch(source('components/MeasuredHistory.vue'), /打开分析/)
+})
+
+test('private measured records preserve input provenance instead of claiming public data', () => {
+  const base = { id: 'private', status: 'completed', cell_line: 'K562', perturbation: 'ALDOA', max_cells: 128, progress: 100, created_at: '2026-11-07T12:00:00' }
+  assert.equal(measuredRecord({ ...base, import_id: 'frozen-import' }).sourceLabel, '自有实测')
+  assert.equal(measuredRecord({ ...base, source: { type: 'controlled_private_h5ad' } }).sourceLabel, '自有实测')
+  assert.equal(measuredRecord({ ...base, summary: { provenance: { source: { kind: 'controlled_private_h5ad' } } } }).sourceLabel, '自有实测')
+  assert.equal(measuredRecord({ ...base, source: { type: 'measured_rna' } }).sourceLabel, '公开实测')
+})
+
+
+test('cancelled predictions are listed and filtered as cancelled while real failures stay failed', () => {
+  const base={id:'cancelled-run',status:'failed',created_at:'2026-11-07T12:00:00',title:'K562 / GENE',subtitle:'run',run:{stage_progress:28,error_code:'RUN_CANCELLED'}}
+  const cancelled=predictedRecord(base)
+  const failed=predictedRecord({...base,id:'failed-run',run:{...base.run,error_code:'EXECUTION_FAILED'}})
+  assert.equal(cancelled.status,'cancelled')
+  assert.equal(failed.status,'failed')
+  assert.deepEqual(selectRecords([cancelled,failed],{...filters,status:'failed'}).map(row=>row.id),['failed-run'])
+  assert.deepEqual(selectRecords([cancelled,failed],{...filters,status:'cancelled'}).map(row=>row.id),['cancelled-run'])
+  assert.equal(selectRecords([cancelled],{...filters,status:'active'}).length,0)
 })

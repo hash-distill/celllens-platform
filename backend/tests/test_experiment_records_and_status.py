@@ -112,7 +112,14 @@ def test_status_probes_resources_and_does_not_expose_secrets(app, monkeypatch):
         "online_running",
         "online_pending",
         "sources",
+        "mode",
+        "live",
+        "cpu_available",
+        "prediction_available",
     }
+    assert result["workers"]["cpu_available"] is False
+    assert result["workers"]["prediction_available"] is False
+    assert result["workers"]["live"] == []
     assert result["workers"]["sources"]["worker_enabled"] in {"environment", "env_file", "default"}
     for forbidden in ("records.db", "database_url", "password", "username"):
         assert forbidden not in response.text
@@ -203,7 +210,14 @@ def test_status_uses_effective_settings_and_live_environment(app, monkeypatch):
         "online_running",
         "online_pending",
         "sources",
+        "mode",
+        "live",
+        "cpu_available",
+        "prediction_available",
     }
+    assert result["workers"]["cpu_available"] is False
+    assert result["workers"]["prediction_available"] is False
+    assert result["workers"]["live"] == []
     # A second manual check reads the changed values instead of a saved snapshot.
     monkeypatch.setattr("backend.app.services.system_status.cpu_model", lambda: "Host CPU B")
     result = client.get("/api/v1/system-status").json()

@@ -16,6 +16,7 @@ from sqlalchemy import func, select, text
 
 from backend.app.config import PROJECT_ROOT
 from backend.app.db.models import RunModel
+from backend.app.services.worker_status import workers_status
 
 
 def setting_sources(fields: tuple[str, ...]) -> dict[str, str]:
@@ -227,6 +228,10 @@ def system_status(container) -> dict:
         **counts,
         "sources": setting_sources(("worker_enabled", "gpu_available")),
     }
+    try:
+        workers.update(workers_status(container))
+    except Exception:
+        workers.update(mode=settings.worker_mode, live=[], cpu_available=False, prediction_available=False)
     return {
         "service": "celllens",
         "checked_at": datetime.now(UTC).isoformat(),

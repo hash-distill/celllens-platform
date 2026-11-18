@@ -1,0 +1,13 @@
+[Unit]
+Description=CellLens database migrations
+After=network.target
+
+[Service]
+Type=oneshot
+User=celllens
+Group=celllens
+WorkingDirectory=/srv/celllens
+EnvironmentFile=/etc/celllens/celllens.env
+ExecStart=/srv/celllens/.venv/bin/alembic upgrade head
+RemainAfterExit=true
+NoNewPrivileges=true

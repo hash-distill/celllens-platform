@@ -53,6 +53,9 @@ def main():
     symbols, keys = metabolic_query_keys(adapter, set(decoder.protein))
     import state.emb.nn.model as installed_model
 
+    installed_model_file = installed_model.__file__
+    if installed_model_file is None:
+        raise RuntimeError("Installed STATE training module has no source file to fingerprint")
     records = []
     for context in ("K562", "RPE1", "Jurkat", "HepG2"):
         slug = context.lower()
@@ -102,7 +105,7 @@ def main():
             "perturbation": "AAMP",
             "output_genes": len(symbols),
             "decoder": decoder.provenance,
-            "installed_training_model_sha256": file_sha256(Path(installed_model.__file__)),
+            "installed_training_model_sha256": file_sha256(Path(installed_model_file)),
             "condition_contract": "StateEmbeddingModel.shared_step mu = nanmean(Y excluding zeros)",
             "estimator_scope": "measured 6546 source features; sampled SE training task not reproduced",
             "condition_source_control_sha256": file_sha256(control_path),

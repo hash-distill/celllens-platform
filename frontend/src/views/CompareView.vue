@@ -123,7 +123,7 @@ function sourceLabel(runId: string): string {
           </p>
         </div>
         <div class="comparison-actions">
-          <RouterLink to="/records?view=results&amp;category=predicted" class="btn btn-primary">选择预测结果</RouterLink>
+          <RouterLink to="/records?status=completed&amp;category=predicted" class="btn btn-primary">选择预测结果</RouterLink>
           <button v-if="items.length" class="btn clear-comparison" type="button" @click="clearCandidates">清空比较</button>
           <button class="btn" type="button" @click="router.push('/workbench')">返回工作台</button>
         </div>
@@ -135,7 +135,7 @@ function sourceLabel(runId: string): string {
       <p class="muted small">
         先打开已完成的预测结果，点击「加入比较」，再回到本页。可随时移出单个实验或清空列表，选择新的比较组合。
       </p>
-      <button class="btn btn-primary" type="button" style="margin-top: 12px" @click="router.push('/records?view=results&category=predicted')">
+      <button class="btn btn-primary" type="button" style="margin-top: 12px" @click="router.push('/records?status=completed&category=predicted')">
         选择已完成预测
       </button>
     </div>

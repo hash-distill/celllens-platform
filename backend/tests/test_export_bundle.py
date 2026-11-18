@@ -110,6 +110,19 @@ def test_analysis_is_whitelisted_hashed_readonly_zip(tmp_path):
     assert before == {p: file_sha256(p) for p in tmp_path.rglob("*") if p.is_file()}
 
 
+def test_table_metadata_supports_default_and_configured_api_prefix(tmp_path):
+    from backend.app.services.export_tables import table_metadata
+
+    container, _, _ = bundle_fixture(tmp_path)
+    assert table_metadata(container, "run_cells")["metadata_url"] == (
+        "/api/v1/research/results/prediction/run_cells/export"
+    )
+    container.settings.api_prefix = "/custom/v2"
+    assert table_metadata(container, "run_cells")["metadata_url"] == (
+        "/custom/v2/research/results/prediction/run_cells/export"
+    )
+
+
 def test_single_cell_exports_real_hvg_target_cells_batch_and_identity(tmp_path, monkeypatch):
     container, _, _ = bundle_fixture(tmp_path, hvg=True)
     from backend.app.services import cell_state

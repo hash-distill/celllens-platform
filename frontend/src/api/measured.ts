@@ -7,6 +7,7 @@ import type { PerturbationList } from '../types/run'
 const root = '/measured/analyses'
 const itemPath = (id: string) => `${root}/${encodeURIComponent(id)}`
 export const measuredApi = {
+  expressionSummary: (id: string, signal?: AbortSignal) => apiFetch<MeasuredTable & {record_id:string}>(`/figures/measured/${encodeURIComponent(id)}/expression-summary`, {signal}),
   list: (limit = 20, offset = 0, signal?: AbortSignal) => apiFetch<MeasuredPage<MeasuredAnalysis>>(root, { query: { limit, offset }, signal }),
   create: (body: MeasuredRequest, signal?: AbortSignal) => apiFetch<MeasuredAnalysis>(root, { method: 'POST', body, signal }),
   get: (id: string, signal?: AbortSignal) => apiFetch<MeasuredAnalysis>(itemPath(id), { signal }),

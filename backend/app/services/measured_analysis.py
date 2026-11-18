@@ -41,15 +41,26 @@ def checked_frame(entry: dict, cell: str, label: str):
     frame = ad.read_h5ad(path)
     if not frame.n_obs or not frame.n_vars or not frame.obs_names.is_unique:
         raise ValueError("实测输入为空或细胞记录 ID 重复")
-    for column, expected in (("cell_line", cell.lower()), ("gene", label.lower())):
+    contract = entry.get("group_contract")
+    if contract:
+        if contract["cell_line"].lower() != cell.lower():
+            raise ValueError("实测群体背景与比较契约不一致")
+        expected_labels = {**contract["labels"], "celllens_group": contract["group"]}
+        if frame.uns.get("celllens_dataset_version_id") != contract["dataset_version_id"]:
+            raise ValueError("实测群体与冻结数据版本不一致")
+    else:
+        expected_labels = {"cell_line": cell, "gene": label}
+    for column, expected in expected_labels.items():
         if column not in frame.obs or set(frame.obs[column].astype(str).str.strip().str.lower()) != {
-            expected
+            str(expected).strip().lower()
         }:
             raise ValueError(f"实测输入的 {column} 标签与所选分析不一致")
     if "source_row" in frame.obs and frame.obs["source_row"].duplicated().any():
         raise ValueError("实测输入包含重复的源细胞行")
     try:
-        return prepare_log_expression(frame, entry["expression_scale"])
+        return prepare_log_expression(
+            frame, entry["expression_scale"], total_counts_key=entry.get("total_counts_key")
+        )
     except CellLensError as exc:
         raise ValueError(str(exc)) from exc
 
@@ -214,6 +225,20 @@ def analyse_measured(
 
     output.mkdir(parents=True, exist_ok=True)
     report(30, "校验真实对照与目标扰动观测")
+    if request.get("dataset_id"):
+        # Verify both group contracts against the frozen queued request, not only
+        # against labels provided by an individual input descriptor.
+        contrast = request["contrast"]
+        for group, key in (("control", "control_filter"), ("observed", "observed_filter")):
+            expected = {
+                "group": group,
+                "condition_id": contrast["id"],
+                "dataset_version_id": request["dataset_version"]["id"],
+                "cell_line": contrast["cell_line"],
+                "labels": contrast[key],
+            }
+            if inputs["groups"][group].get("group_contract") != expected:
+                raise ValueError("实测输入群体契约与排队比较条件不一致")
     control = checked_frame(inputs["groups"]["control"], request["cell_line"], "non-targeting")
     observed = checked_frame(inputs["groups"]["observed"], request["cell_line"], request["perturbation"])
     input_counts = {"control": int(control.n_obs), "observed": int(observed.n_obs)}
@@ -237,8 +262,20 @@ def analyse_measured(
             metabolism_skip_reason = "知识库或身份映射缺失／不匹配；保留真实表达分析"
         else:
             # Ambiguous identities remain a hard error, rather than silently changing gene semantics.
-            control, identity["control"] = adapter.adapt(control)
-            observed, identity["observed"] = adapter.adapt(observed)
+            if request.get("dataset_id"):
+                from backend.app.services.dataset_providers import adapt_dataset_gene_identity
+
+                control, identity["control"] = adapt_dataset_gene_identity(adapter, control)
+                observed, identity["observed"] = adapt_dataset_gene_identity(adapter, observed)
+                collisions = identity["control"].get("unresolved_alias_collision_count", 0)
+                if collisions:
+                    warnings.append(
+                        f"{collisions} 个旧别名与现存标准基因冲突；"
+                        "保留原始独立特征，未合并表达或按该别名映射。"
+                    )
+            else:
+                control, identity["control"] = adapter.adapt(control)
+                observed, identity["observed"] = adapter.adapt(observed)
             atomic_write_json(output / "gene_identity.json", identity)
             bind_analysis_assets(analysis_assets, frozen_identity)
             bind_analysis_assets(analysis_assets, frozen_database)
@@ -248,13 +285,44 @@ def analyse_measured(
         raise ValueError(str(exc)) from exc
     control, observed = aligned[:2]
     frames = {"control": control, "observed": observed}
+    from backend.app.services.dataset_contracts import check_analysis_budget
+
+    check_analysis_budget(control.n_obs, observed.n_obs, len(genes))
     matrices = {name: np.asarray(_dense_matrix(frame.X), dtype=float) for name, frame in frames.items()}
+    # This is the actual analysed population, with stable IDs shared with the
+    # projection. A sparse frozen artifact supports later single-gene views.
+    from scipy import sparse
+
+    sparse.save_npz(
+        output / "expression_preview.npz",
+        sparse.vstack([sparse.csr_matrix(matrices[group]) for group in ("control", "observed")]),
+    )
+    atomic_write_json(
+        output / "expression_preview.json",
+        {
+            "schema": "celllens-expression-preview-v1",
+            "genes": genes,
+            "cells": [
+                {"cell_id": str(name), "source": group}
+                for group in ("control", "observed")
+                for name in frames[group].obs_names
+            ],
+            "units": "log1p(CP10K)",
+            "counts": {group: int(frame.n_obs) for group, frame in frames.items()},
+        },
+    )
     table = pd.DataFrame(
         {"control": matrices["control"].mean(0), "observed": matrices["observed"].mean(0)},
         index=pd.Index(genes, name="gene"),
     )
     table["observed_delta"] = table["observed"] - table["control"]
     table.to_csv(output / "genes.csv")
+    from backend.app.services.pathway_analysis import analyse_measured_pathways
+
+    pathways, frozen_pathways = analyse_measured_pathways(
+        root, request, inputs, matrices, genes, table, output
+    )
+    bind_analysis_assets(analysis_assets, frozen_pathways)
     top = table.iloc[np.argsort(-np.abs(table["observed_delta"].to_numpy()))[:20]].reset_index()
     report(40, "计算真实表达的二维参考投影")
     projections = {}
@@ -307,6 +375,7 @@ def analyse_measured(
         "expression_units": "mean(log1p(CP10K))",
         "top_genes": json.loads(top.to_json(orient="records")),
         "metabolism": metabolic,
+        "pathways": pathways,
         "projections": projections,
         "batch_matching": batches,
         "warnings": warnings,
@@ -319,6 +388,11 @@ def analyse_measured(
             "实测数据的存在与本次分析完成不证明预测模型的泛化能力。",
         ],
     }
+    if request.get("dataset_id"):
+        summary["dataset_id"] = request["dataset_id"]
+        summary["dataset_version_id"] = request["dataset_version"]["id"]
+        summary["contrast"] = request["contrast"]
+        summary["limitations"].extend(request["contrast"].get("limitations", []))
     atomic_write_json(output / "summary.json", summary)
     render_report(summary, output)
     report(95, "实测分析完成，正在核验并冻结结果")

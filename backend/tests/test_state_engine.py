@@ -96,7 +96,9 @@ def test_state_output_rejects_a_different_cell_background(tmp_path: Path):
 
 
 def test_cli_perturbation_preserves_official_mixed_case_vocabulary(tmp_path: Path):
-    import torch
+    torch = pytest.importorskip(
+        "torch", reason="STATE vocabulary test requires the optional model environment"
+    )
 
     engine = StateCliEngine()
     assert hasattr(engine, "perturbation_label"), "official vocabulary resolution is missing"

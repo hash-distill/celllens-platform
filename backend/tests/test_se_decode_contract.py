@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
-import torch
 
 from backend.app.core.errors import ScientificContractError
-from backend.app.engines.se_decode_engine import (
+
+torch = pytest.importorskip("torch", reason="SE decoder tests require the optional model environment")
+
+from backend.app.engines.se_decode_engine import (  # noqa: E402
     decoder_inputs,
     positive_log_expression_mean,
     resolve_read_depths,

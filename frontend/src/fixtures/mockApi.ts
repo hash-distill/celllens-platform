@@ -136,10 +136,10 @@ export async function contexts(): Promise<ContextItem[]> {
       validation_ready: false,
       precomputed_ready: false,
       model_id: 'state-rpe1-mock',
-      disabled_reason: 'model assets are disabled, missing, or have invalid hashes（mock 样例原因）',
+      disabled_reason: '模型文件未启用、缺失或校验失败（演示数据）',
       readiness_reasons: [
-        'model assets are disabled, missing, or have invalid hashes',
-        'control dataset is disabled, missing, or has an invalid hash',
+        '模型文件未启用、缺失或校验失败',
+        '对照数据未启用、缺失或校验失败',
       ],
     },
   ]

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRunStore } from '../../stores/run'
 import { useUiStore } from '../../stores/ui'
 import BlockState, { type BlockDisplay } from '../BlockState.vue'
-import DivergingBar, { type DivergingBarItem } from '../../charts/DivergingBar.vue'
+import ExpressionResponseGallery from '../ExpressionResponseGallery.vue'
+import { accessSession } from '../../stores/access'
 import { fmtDelta, fmtNumber } from '../../utils/format'
 import { downloadBlob } from '../../utils/csv'
 import { api } from '../../api/client'
@@ -27,7 +28,9 @@ const ui = useUiStore()
 
 const entry = computed(() => runs.entry(props.runId))
 const block = computed(() => entry.value?.genes ?? null)
-const summary = computed(() => entry.value?.summary.data ?? null)
+const galleryRows = computed(() => (block.value?.data?.items ?? []).map(row => ({id:row.gene, control:row.control ?? null, predicted:row.predicted, delta:row.predicted_delta})))
+const tableTools = ref<HTMLElement | null>(null)
+async function inspectGene(id: string) { selectedGene.value = id; search.value = id; await nextTick(); tableTools.value?.scrollIntoView({behavior:'smooth',block:'start'}) }
 
 const route = useRoute()
 const search = ref('')
@@ -43,7 +46,7 @@ let exportController: AbortController | undefined
 watch(() => props.runId, () => {exportController?.abort();exporting.value=false;exportError.value=''}, {flush:'sync'})
 onBeforeUnmount(() => exportController?.abort())
 
-const items = computed<GeneRow[]>(() => (block.value?.data?.items ?? []).filter(row => hasPredictionChange(row) || row.gene === route.query.gene))
+const items = computed<GeneRow[]>(() => (block.value?.data?.items ?? []).filter(row => hasPredictionChange(row) || row.gene === route.query.gene || row.gene === selectedGene.value))
 const truncated = computed(() => block.value?.data?.truncated ?? false)
 
 const filtered = computed(() => {
@@ -67,33 +70,9 @@ const sorted = computed(() => {
   })
 })
 
-const barItems = computed<DivergingBarItem[]>(() =>
-  items.value
-    .filter((row) => row.predicted_delta !== null)
-    .sort((a, b) => Math.abs(b.predicted_delta ?? 0) - Math.abs(a.predicted_delta ?? 0))
-    .slice(0, 15)
-    .map((row) => ({
-      name: row.gene,
-      value: row.predicted_delta ?? 0,
-      extra: `对照 ${fmtNumber(row.control)} → 预测 ${fmtNumber(row.predicted)}`,
-    })),
-)
-
 const { page, pageSize, pages, visible: pageRows } = usePagedRows(sorted)
 
-const selected = computed(() => items.value.find((row) => row.gene === selectedGene.value) ?? null)
-
-const expressionScale = computed(() => Math.max(1e-9, ...[selected.value?.control, selected.value?.predicted, selected.value?.observed].filter((v): v is number => v !== null && v !== undefined).map(Math.abs)))
-watch(items, rows => {
-  if (!rows.some(row => row.gene === selectedGene.value)) selectedGene.value = barItems.value[0]?.name ?? null
-}, {immediate:true})
-
 const hasObserved = computed(() => items.value.some((row) => row.observed !== null || row.observed_delta !== null))
-const expressionValues = computed(() => selected.value ? [
-  {label:'对照',value:selected.value.control,color:'var(--source-control)'},
-  {label:'预测',value:selected.value.predicted,color:'var(--source-predicted)'},
-  ...(selected.value.observed !== null ? [{label:'观测',value:selected.value.observed,color:'var(--source-observed)'}] : []),
-] : [])
 watch(hasObserved, available => {
   if (!available && (sortKey.value === 'observed' || sortKey.value === 'observed_delta')) sortKey.value = 'predicted_delta'
 })
@@ -156,77 +135,9 @@ async function exportCsv(): Promise<void> {
       <p v-if="exportUnavailable" class="muted small">此数据来源暂不支持完整表导出。</p>
       <p v-if="exportError" class="notice notice-warn" role="alert">{{ exportError }}</p>
     </template>
-    <!-- 后端 Top 基因概览 -->
-    <div v-if="summary && summary.top_genes.length > 0" class="overview">
-      <span class="small muted">主要响应基因：</span>
-      <span
-        v-for="gene in summary.top_genes.filter(g => items.some(row => row.gene === g.id)).slice(0,4)"
-        :key="gene.id"
-        class="pill pill-info"
-        title="模型预测的表达变化"
-      >
-        {{ gene.label }} {{ fmtDelta(gene.predicted_delta) }}
-      </span>
-    </div>
-
-    <div v-if="truncated" class="notice notice-warn">
-      当前显示前 {{ block?.data?.limit }} 条基因结果。
-    </div>
-
-    <div class="gene-analysis-grid">
-    <!-- 差异条形图 -->
-    <div class="chart-card">
-      <div class="flex-between">
-        <h3 class="chart-title">模型预测变化最大的基因（前 {{ barItems.length }}）</h3>
-        <span class="small muted">预测减对照的平均归一化表达差</span>
-      </div>
-      <DivergingBar
-        v-if="barItems.length > 0"
-        :items="barItems"
-        category-name="基因"
-        value-label="预测变化"
-        :height="380"
-        :selected-name="selectedGene"
-        @select="selectedGene = $event"
-      />
-      <p v-else class="muted small">已加载记录中没有有效的预测变化数值。</p>
-      <p class="muted small" style="margin:4px 0 0">点击条形或表格行查看同一基因的数值。</p>
-    </div>
-
-    <!-- 选中基因详情 -->
-    <div v-if="selected" class="gene-detail" role="region" aria-label="选中基因详情">
-      <div class="flex-between">
-        <strong>{{ selected.gene }}</strong>
-        <button class="btn btn-ghost btn-sm" type="button" @click="selectedGene = null">关闭</button>
-      </div>
-      <div class="expression-values">
-        <div v-for="item in expressionValues" :key="item.label" class="expression-value">
-          <span>{{ item.label }}</span><div class="expression-track"><i v-if="item.value!==null" :style="{width:Math.abs(item.value)/expressionScale*100+'%',background:item.color}"></i></div><strong>{{ fmtNumber(item.value) }}</strong>
-        </div>
-      </div>
-      <p class="micro">本页展示群体平均归一化表达</p>
-      <RouterLink v-if="!isSyntheticResult(entry?.record?.request.mode,runId,entry?.record?.result_kind)" class="btn btn-sm" :to="{path:'/demo',query:{run:runId,tab:'cell',feature_kind:'gene',feature_id:selected.gene}}">查看该基因逐细胞分布</RouterLink>
-      <dl class="evidence-list" style="margin-top: 8px">
-        <dt>对照表达</dt>
-        <dd>{{ fmtNumber(selected.control) }}</dd>
-        <dt>预测表达</dt>
-        <dd>{{ fmtNumber(selected.predicted) }}</dd>
-        <dt>预测变化</dt>
-        <dd>{{ fmtDelta(selected.predicted_delta) }}（预测减对照的平均归一化表达差）</dd>
-        <template v-if="selected.observed !== null">
-          <dt>观测表达</dt>
-          <dd>{{ fmtNumber(selected.observed) }}</dd>
-        </template>
-        <template v-if="selected.observed_delta !== null">
-          <dt>观测变化</dt>
-          <dd>{{ fmtDelta(selected.observed_delta) }}</dd>
-        </template>
-      </dl>
-    </div>
-
-<div v-if="!selected" class="gene-detail gene-detail-empty"><span class="micro">GENE INSPECTOR</span><p>选择条形或表格记录，查看本次表达数值。</p></div></div>
+    <ExpressionResponseGallery :record-id="runId" source-kind="run" :rows="galleryRows" :selected-id="selectedGene || undefined" :truncated="truncated" :read-only="Boolean(accessSession?.read_only)" units="平均归一化表达（原运行尺度）" @select="inspectGene" />
     <!-- 表格工具行 -->
-    <div class="table-tools">
+    <div ref="tableTools" class="table-tools" style="scroll-margin-top:100px;margin-top:30px">
       <label class="sr-only" for="gene-search">搜索基因</label>
       <input
         id="gene-search"

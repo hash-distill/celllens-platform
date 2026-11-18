@@ -1,0 +1,1145 @@
+{
+  "schema": "celllens-dataset-v1",
+  "version": {
+    "id": "scperturb-sciplex2-v1.4-0adabca03632",
+    "dataset_id": "scperturb-sciplex2",
+    "provider": "scperturb-sciplex2",
+    "source": {
+      "kind": "public_dataset",
+      "provider": "scperturb",
+      "dataset_id": "scperturb-sciplex2",
+      "version": "1.4",
+      "revision": "zenodo-13350497",
+      "url": "https://zenodo.org/records/13350497",
+      "download_url": "https://zenodo.org/records/13350497/files/SrivatsanTrapnell2020_sciplex2.h5ad",
+      "doi": "10.5281/zenodo.13350497",
+      "study_accession": "GSE139944/GSM4150377",
+      "study_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4150377",
+      "license": "CC-BY-4.0 (scPerturb record)"
+    },
+    "file": "data/raw/scperturb/SrivatsanTrapnell2020_sciplex2.h5ad",
+    "file_sha256": "0adabca03632ac9421a769fc9eaa4178447d4d572f4c2c54e4fde93a81acde67",
+    "file_md5": "12a48293a166a859f994551653a2ad8c",
+    "file_bytes": 145178504,
+    "expression_slot": "X",
+    "expression_scale": "raw_counts",
+    "gene_identifier": "gene_symbol+ensembl_id",
+    "total_cell_count": 24262,
+    "cell_count": 24262,
+    "gene_count": 58347,
+    "species": "human",
+    "cell_line": "A549",
+    "inspection": {
+      "matrix_format": "csr",
+      "matrix_shape": [
+        24262,
+        58347
+      ],
+      "stored_values": 60135001,
+      "all_stored_values_integer_nonnegative_finite": true,
+      "positive_library_counts": true,
+      "source_ncounts_matches_matrix": true,
+      "obs_columns": [
+        "ncounts",
+        "hash_umis",
+        "pval_demultiplexing",
+        "qval_demultiplexing",
+        "top_to_second_best_ratio",
+        "top_oligo",
+        "perturbation",
+        "dose_value",
+        "well",
+        "celltype",
+        "cell_line",
+        "cancer",
+        "disease",
+        "tissue_type",
+        "organism",
+        "perturbation_type",
+        "ngenes",
+        "percent_mito",
+        "percent_ribo",
+        "nperts",
+        "chembl-ID"
+      ],
+      "var_columns": [
+        "ensembl_id",
+        "ncounts",
+        "ncells"
+      ],
+      "organisms": {
+        "human": 24262
+      },
+      "backgrounds": {
+        "A549": 24262
+      },
+      "perturbations": {
+        "Dex": 8064,
+        "Nutlin": 5956,
+        "SAHA": 5530,
+        "BMS": 4183,
+        "control": 529
+      },
+      "dose_values": [
+        "0",
+        "0.1",
+        "0.5",
+        "1",
+        "5",
+        "10",
+        "50",
+        "100"
+      ],
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "replicate_status": "not_verified",
+      "biological_replicate_count": null,
+      "well_label_count": 192,
+      "well_labels_are_verified_biological_replicates": false,
+      "excluded_unassigned_control_cells": 529,
+      "excluded_nonhuman_gene_count": 0,
+      "counts_evidence_url": "https://github.com/sanderlab/scPerturb/blob/fd4f5b360233520b0fc297f1bdf8953a6bee2dbb/dataset_processing/scripts/SrivatsanTrapnell2020.py",
+      "counts_evidence": "Official processing constructs X directly from UMI.count.matrix as CSR; the downloaded matrix was independently streamed and checked for integer counts.",
+      "selection": "organism=human; cell_line=A549; positive dose versus same-drug dose=0"
+    }
+  },
+  "contrasts": [
+    {
+      "id": "contrast_ac02081c8986ca13",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 0.1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "0.1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 930,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0.1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_ef3b583393378979",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 0.5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "0.5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 739,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0.5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_97b434f33ba7befc",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 512,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_0e9bf28886f40b58",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 452,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_0c3b1caf7f484200",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 10",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "10",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 298,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "10"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_900131aefed39ede",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 50",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "50",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 143,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "50"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_59c7b0a1610448cd",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "BMS · dose 100",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "BMS",
+      "perturbation_type": "drug",
+      "dose": "100",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "BMS · dose 0",
+      "cell_count": 129,
+      "control_cell_count": 980,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "100"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "BMS",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_52dfa587a453af67",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 0.1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "0.1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 918,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0.1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_ddfb86b4c89b9ada",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 0.5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "0.5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 845,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0.5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_06ce56d3ac42ac43",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 1051,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_389f7c5680862fe9",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 1011,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_7ce37fc208c91c98",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 10",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "10",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 898,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "10"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_ac2f12a125e3e3df",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 50",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "50",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 1131,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "50"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_e12223c6912d04b1",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Dex · dose 100",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Dex",
+      "perturbation_type": "drug",
+      "dose": "100",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Dex · dose 0",
+      "cell_count": 1296,
+      "control_cell_count": 914,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "100"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Dex",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_495cf151eef3c954",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 0.1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "0.1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 849,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0.1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_da85239d088a732f",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 0.5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "0.5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 792,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0.5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_cfb42034236c4005",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 892,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_164b32ae29644c4d",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 829,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_efb75cb8cce2c746",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 10",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "10",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 1096,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "10"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_cdefa30c59ee14fa",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 50",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "50",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 410,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "50"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_973df189b1af4bb7",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "Nutlin · dose 100",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "Nutlin",
+      "perturbation_type": "drug",
+      "dose": "100",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "Nutlin · dose 0",
+      "cell_count": 86,
+      "control_cell_count": 1002,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "100"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "Nutlin",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_8e3d9f86f904758c",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 0.1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "0.1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 782,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0.1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_f63c496c32bfdeb1",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 0.5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "0.5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 718,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0.5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_840c600a9ed1add2",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 1",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "1",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 664,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "1"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_7d5c5c73a33d001e",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 5",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "5",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 536,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "5"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_0517df539debcd95",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 10",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "10",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 540,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "10"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_8003d82b809dd0f1",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 50",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "50",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 749,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "50"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    },
+    {
+      "id": "contrast_724107103aea48fa",
+      "dataset_version_id": "scperturb-sciplex2-v1.4-0adabca03632",
+      "label": "SAHA · dose 100",
+      "cell_line": "A549",
+      "species": "human",
+      "perturbation": "SAHA",
+      "perturbation_type": "drug",
+      "dose": "100",
+      "dose_unit": null,
+      "time": null,
+      "time_unit": null,
+      "control_type": "zero_dose_same_drug_label",
+      "control_label": "SAHA · dose 0",
+      "cell_count": 536,
+      "control_cell_count": 1005,
+      "observed_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "100"
+      },
+      "control_filter": {
+        "organism": "human",
+        "cell_line": "A549",
+        "perturbation": "SAHA",
+        "dose_value": "0"
+      },
+      "sample_count": null,
+      "biological_replicate_count": null,
+      "replicate_status": "not_verified",
+      "limitations": [
+        "对照为同一药物标签下源数据 dose_value=0 的细胞；不将其改称已核实的 DMSO 对照。",
+        "源文件未提供剂量单位和处理时间；dose 保留原始值，不推断单位或时间。",
+        "well 为原始实验标签，其独立生物学重复身份未核实；不计算正式差异显著性。"
+      ]
+    }
+  ]
+}
